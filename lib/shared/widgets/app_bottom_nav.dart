@@ -15,21 +15,21 @@ class AppBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      _NavItem(
+      const _NavItem(
         'হোম',
         icon: Icons.home_outlined,
         activeIcon: Icons.home_filled,
         route: '/dashboard',
         selectedColor: AppColors.gold,
       ),
-      _NavItem(
+      const _NavItem(
         'স্বর্ণ',
         icon: Icons.diamond_outlined,
         activeIcon: Icons.diamond,
         route: '/gold-price',
         selectedColor: AppColors.gold,
       ),
-      _NavItem(
+      const _NavItem(
         'রৌপ্য',
         icon: Icons.diamond_outlined,
         activeIcon: Icons.diamond_outlined,
@@ -37,14 +37,14 @@ class AppBottomNav extends StatelessWidget {
         selectedColor: AppColors.silver,
         activeSize: 24,
       ),
-      _NavItem(
+      const _NavItem(
         'ক্যালকুলেটর',
         icon: Icons.calculate_outlined,
         activeIcon: Icons.calculate,
         route: '/calculator',
         selectedColor: AppColors.gold,
       ),
-      _NavItem(
+      const _NavItem(
         'প্রোফাইল',
         icon: Icons.person_outlined,
         activeIcon: Icons.person,
