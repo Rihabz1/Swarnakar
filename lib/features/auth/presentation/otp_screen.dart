@@ -9,8 +9,13 @@ import 'dart:async';
 
 class OtpScreen extends StatefulWidget {
   final String email;
+  final String flow;
 
-  const OtpScreen({super.key, required this.email});
+  const OtpScreen({
+    super.key,
+    required this.email,
+    this.flow = 'signup',
+  });
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -43,6 +48,9 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   void _startTimer() {
+    if (_secondsRemaining <= 0) {
+      _secondsRemaining = 42;
+    }
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         if (_secondsRemaining > 0) {
@@ -61,6 +69,60 @@ class _OtpScreenState extends State<OtpScreen> {
     final username = parts[0];
     final masked = username[0] + '*' * (username.length - 2) + username[username.length - 1];
     return '$masked@${parts[1]}';
+  }
+
+  String _otpCode() {
+    return _otpControllers.map((c) => c.text.trim()).join();
+  }
+
+  void _handleOtpInput(int index, String value) {
+    // Handle paste/autofill of multiple digits from any box.
+    if (value.length > 1) {
+      final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+      for (int i = 0; i < 6; i++) {
+        _otpControllers[i].text = i < digits.length ? digits[i] : '';
+      }
+      final nextFocus = digits.length >= 6 ? 5 : digits.length;
+      _otpFocusNodes[nextFocus.clamp(0, 5)].requestFocus();
+      return;
+    }
+
+    if (value.isNotEmpty) {
+      if (index < 5) {
+        _otpFocusNodes[index + 1].requestFocus();
+      } else {
+        _otpFocusNodes[index].unfocus();
+      }
+      return;
+    }
+
+    // If current box is emptied (backspace), move focus to previous and clear it.
+    if (index > 0) {
+      final prevIndex = index - 1;
+      _otpControllers[prevIndex].clear();
+      _otpFocusNodes[prevIndex].requestFocus();
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _handleVerify() {
+    final code = _otpCode();
+    if (code.length != 6 || code.contains(RegExp(r'[^0-9]'))) {
+      _showMessage('৬ সংখ্যার সঠিক OTP দিন।');
+      return;
+    }
+
+    if (widget.flow == 'reset') {
+      context.go('/reset-password?email=${widget.email}');
+      return;
+    }
+
+    context.go('/login');
   }
 
   @override
@@ -133,7 +195,7 @@ class _OtpScreenState extends State<OtpScreen> {
                           FadeInUp(
                             delay: const Duration(milliseconds: 180),
                             child: Text(
-                              AppStrings.verifyOtpTitle,
+                              widget.flow == 'reset' ? 'পাসওয়ার্ড রিসেট OTP' : AppStrings.verifyOtpTitle,
                               style: AppTextStyles.hindSiliguri(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -159,10 +221,8 @@ class _OtpScreenState extends State<OtpScreen> {
                           FadeInUp(
                             delay: const Duration(milliseconds: 520),
                             child: GoldenButton(
-                              text: AppStrings.verify,
-                              onPressed: () {
-                                context.go('/login');
-                              },
+                              text: widget.flow == 'reset' ? 'OTP যাচাই করুন' : AppStrings.verify,
+                              onPressed: _handleVerify,
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -233,11 +293,7 @@ class _OtpScreenState extends State<OtpScreen> {
                       fontWeight: FontWeight.bold,
                       color: AppColors.gold,
                     ),
-                    onChanged: (value) {
-                      if (value.isNotEmpty && index < 5) {
-                        _otpFocusNodes[index + 1].requestFocus();
-                      }
-                    },
+                    onChanged: (value) => _handleOtpInput(index, value),
                   ),
                 ),
               ),
@@ -269,6 +325,7 @@ class _OtpScreenState extends State<OtpScreen> {
               )
             : GestureDetector(
                 onTap: () {
+                  _timer.cancel();
                   setState(() {
                     _secondsRemaining = 42;
                   });

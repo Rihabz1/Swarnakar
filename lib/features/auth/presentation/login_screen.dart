@@ -21,6 +21,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
 
+  void _forceEmailLowercase(String value) {
+    final lowered = value.toLowerCase();
+    if (_emailController.text == lowered) return;
+    final currentSelection = _emailController.selection.baseOffset;
+    final nextOffset = currentSelection < 0
+        ? lowered.length
+        : currentSelection.clamp(0, lowered.length);
+    _emailController.value = _emailController.value.copyWith(
+      text: lowered,
+      selection: TextSelection.collapsed(offset: nextOffset),
+      composing: TextRange.empty,
+    );
+  }
+
+  void _handleForgotPassword() {
+    context.go('/forgot-password');
+  }
+
   @override
   void initState() {
     super.initState();
@@ -113,6 +131,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           icon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
                           controller: _emailController,
+                          onChanged: _forceEmailLowercase,
                           isGlassmorphic: true,
                         ),
                       ),
@@ -132,11 +151,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         delay: const Duration(milliseconds: 430),
                         child: Align(
                           alignment: Alignment.centerRight,
-                          child: Text(
-                            AppStrings.forgotPassword,
-                            style: AppTextStyles.hindSiliguri(
-                              fontSize: 11,
-                              color: AppColors.gold.withValues(alpha: 0.72),
+                          child: TextButton(
+                            onPressed: _handleForgotPassword,
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              AppStrings.forgotPassword,
+                              style: AppTextStyles.hindSiliguri(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.gold,
+                              ),
                             ),
                           ),
                         ),
@@ -182,10 +210,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       child: Column(
         children: [
           Container(
-            width: 62,
-            height: 62,
+            width: 76,
+            height: 76,
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.gold, width: 1.6),
+              border: Border.all(color: AppColors.gold, width: 1.4),
               shape: BoxShape.circle,
               gradient: const LinearGradient(
                 begin: Alignment.topCenter,
@@ -196,10 +225,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ],
               ),
             ),
-            child: const Icon(
-              Icons.workspace_premium_outlined,
-              color: AppColors.gold,
-              size: 30,
+            child: Image.asset(
+              'assets/images/swarnakar-nobg.png',
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(height: 14),

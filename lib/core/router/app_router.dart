@@ -3,6 +3,8 @@ import 'package:swarnakar/features/splash/presentation/splash_screen.dart';
 import 'package:swarnakar/features/auth/presentation/login_screen.dart';
 import 'package:swarnakar/features/auth/presentation/signup_screen.dart';
 import 'package:swarnakar/features/auth/presentation/otp_screen.dart';
+import 'package:swarnakar/features/auth/presentation/forgot_password_screen.dart';
+import 'package:swarnakar/features/auth/presentation/reset_password_screen.dart';
 import 'package:swarnakar/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:swarnakar/features/gold_price/presentation/gold_price_screen.dart';
 import 'package:swarnakar/features/silver_price/presentation/silver_price_screen.dart';
@@ -31,11 +33,25 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const SignupScreen(),
     ),
     GoRoute(
+      path: '/forgot-password',
+      name: 'forgot-password',
+      builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+    GoRoute(
       path: '/otp',
       name: 'otp',
       builder: (context, state) {
         final email = state.uri.queryParameters['email'] ?? '';
-        return OtpScreen(email: email);
+        final flow = state.uri.queryParameters['flow'] ?? 'signup';
+        return OtpScreen(email: email, flow: flow);
+      },
+    ),
+    GoRoute(
+      path: '/reset-password',
+      name: 'reset-password',
+      builder: (context, state) {
+        final email = state.uri.queryParameters['email'] ?? '';
+        return ResetPasswordScreen(email: email);
       },
     ),
     GoRoute(

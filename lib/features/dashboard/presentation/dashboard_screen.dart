@@ -6,8 +6,10 @@ import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/core/utils/currency_formatter.dart';
+import 'package:swarnakar/core/providers/core_providers.dart';
 import 'package:swarnakar/shared/widgets/app_bottom_nav.dart';
 import 'package:swarnakar/features/dashboard/providers/dashboard_provider.dart';
+import 'package:intl/intl.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -16,6 +18,9 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final goldPrice = ref.watch(dashboardGoldPriceProvider);
     final silverPrice = ref.watch(dashboardSilverPriceProvider);
+    final isSubscribed = ref.watch(isSubscribedProvider);
+    final exactUpdateTime = DateFormat('dd MMMM yyyy, hh:mm a', 'bn_BD').format(DateTime.now());
+    final updateText = 'সর্বশেষ আপডেট: $exactUpdateTime';
 
     final dashboardCards = [
       ('সোনার বাজার', 'Gold Market', Icons.diamond_outlined, '/gold-price'),
@@ -82,27 +87,96 @@ class DashboardScreen extends ConsumerWidget {
                         width: 1,
                       ),
                     ),
-                    child: Row(
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: _buildPriceSection(
-                            'সোনার বর্তমান বাজার',
-                            CurrencyFormatter.formatBDT(goldPrice),
-                            'গত আপডেট ৯:৩৫ am',
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildPriceSection(
+                                'সোনার বর্তমান বাজার',
+                                CurrencyFormatter.formatBDT(goldPrice),
+                                updateText,
+                                isLocked: !isSubscribed,
+                              ),
+                            ),
+                            Container(
+                              width: 1,
+                              height: 46,
+                              color: AppColors.gold.withValues(alpha: 0.15),
+                            ),
+                            Expanded(
+                              child: _buildPriceSection(
+                                'রৌপ্যের বর্তমান বাজার',
+                                CurrencyFormatter.formatBDT(silverPrice),
+                                updateText,
+                                isLocked: !isSubscribed,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        if (!isSubscribed)
+                          Align(
+                            alignment: Alignment.center,
+                            child: OutlinedButton.icon(
+                              onPressed: () => context.go('/paywall'),
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(0, 34),
+                                visualDensity: const VisualDensity(
+                                  horizontal: -2,
+                                  vertical: -2,
+                                ),
+                                side: BorderSide(
+                                  color: AppColors.gold.withValues(alpha: 0.55),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                              ),
+                              icon: const Icon(
+                                Icons.lock_outline,
+                                color: AppColors.gold,
+                                size: 14,
+                              ),
+                              label: Text(
+                                'প্রিমিয়াম আনলক করুন',
+                                style: AppTextStyles.hindSiliguri(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.gold,
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          Align(
+                            alignment: Alignment.center,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.gold.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(
+                                  color: AppColors.gold.withValues(alpha: 0.35),
+                                ),
+                              ),
+                              child: Text(
+                                'প্রিমিয়াম সক্রিয়',
+                                style: AppTextStyles.hindSiliguri(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.gold,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                        Container(
-                          width: 1,
-                          height: 46,
-                          color: AppColors.gold.withValues(alpha: 0.15),
-                        ),
-                        Expanded(
-                          child: _buildPriceSection(
-                            'রৌপ্যের বর্তমান বাজার',
-                            CurrencyFormatter.formatBDT(silverPrice),
-                            'গত আপডেট ৯:৩৯ am',
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -163,7 +237,12 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPriceSection(String label, String value, String subtext) {
+  Widget _buildPriceSection(
+    String label,
+    String value,
+    String subtext, {
+    bool isLocked = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -175,13 +254,26 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 2),
-        Text(
-          value,
-          style: AppTextStyles.hindSiliguri(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            color: AppColors.gold,
-          ),
+        Row(
+          children: [
+            if (isLocked)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Icon(
+                  Icons.lock_outline,
+                  size: 12,
+                  color: AppColors.vividGold.withValues(alpha: 0.82),
+                ),
+              ),
+            Text(
+              isLocked ? '••••••' : value,
+              style: AppTextStyles.hindSiliguri(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: isLocked ? AppColors.mutedChampagne : AppColors.gold,
+              ),
+            ),
+          ],
         ),
         if (subtext.isNotEmpty)
           Padding(

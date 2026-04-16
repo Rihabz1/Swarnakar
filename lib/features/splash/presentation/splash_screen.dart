@@ -114,29 +114,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Widget _buildLogo() {
-    return Container(
-      width: 112,
-      height: 112,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: AppColors.gold.withValues(alpha: 0.9),
-          width: 2,
-        ),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[
-            AppColors.surfaceRaised,
-            AppColors.surface,
-          ],
-        ),
-      ),
-      child: const Icon(
-        Icons.workspace_premium_outlined,
-        size: 52,
-        color: AppColors.gold,
-      ),
+    return Image.asset(
+      'assets/images/swarnakar-nobg.png',
+      width: 132,
+      height: 132,
+      fit: BoxFit.contain,
     );
   }
 
