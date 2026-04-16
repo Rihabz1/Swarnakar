@@ -77,17 +77,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isLoading = ref.watch(isLoadingProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.backgroundSecondary,
-              AppColors.background,
-            ],
-          ),
-        ),
+        color: AppColors.background,
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -121,6 +113,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           icon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
                           controller: _emailController,
+                          isGlassmorphic: true,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -131,6 +124,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           icon: Icons.lock_outline,
                           obscureText: true,
                           controller: _passwordController,
+                          isGlassmorphic: true,
                         ),
                       ),
                       const SizedBox(height: 10),

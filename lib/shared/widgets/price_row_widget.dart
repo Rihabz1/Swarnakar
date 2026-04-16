@@ -37,13 +37,26 @@ class PriceRowWidget extends StatelessWidget {
               color: AppColors.textSecondary,
             ),
           ),
-          Text(
-            CurrencyFormatter.formatBDT(price),
-            style: AppTextStyles.hindSiliguri(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: isBlurred ? AppColors.textMuted : AppColors.gold,
-            ),
+          Row(
+            children: [
+              if (isBlurred)
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: Icon(
+                    Icons.lock_outline,
+                    size: 14,
+                    color: AppColors.vividGold.withValues(alpha: 0.82),
+                  ),
+                ),
+              Text(
+                isBlurred ? '••••••' : CurrencyFormatter.formatBDT(price),
+                style: AppTextStyles.hindSiliguri(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isBlurred ? AppColors.mutedChampagne : AppColors.gold,
+                ),
+              ),
+            ],
           ),
         ],
       ),

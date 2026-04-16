@@ -65,16 +65,7 @@ class GoldPriceScreen extends ConsumerWidget {
         ],
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.backgroundSecondary,
-              AppColors.background,
-            ],
-          ),
-        ),
+        color: AppColors.background,
         child: SingleChildScrollView(
           child: Column(
             children: [
@@ -87,8 +78,6 @@ class GoldPriceScreen extends ConsumerWidget {
                       isCentered: true,
                     ),
                     GoldPriceCard(
-                      isLocked: !isSubscribed,
-                      onLockedTap: () => context.go('/paywall'),
                       children: entry.value.map((price) {
                         return PriceRowWidget(
                           label: price.label,
