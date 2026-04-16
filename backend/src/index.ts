@@ -42,7 +42,7 @@ app.notFound((c) => c.json({ success: false, error: 'Route not found' }, 404))
 
 const port = Number(process.env.PORT ?? 8787)
 
-if (typeof Bun !== 'undefined') {
+if (import.meta.main) {
   Bun.serve({
     fetch: app.fetch,
     port,
@@ -50,5 +50,3 @@ if (typeof Bun !== 'undefined') {
 
   console.log(`Swarnakar backend running at http://localhost:${port}`)
 }
-
-export default app
