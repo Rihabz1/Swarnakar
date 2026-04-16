@@ -1,18 +1,106 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/widgets/app_bottom_nav.dart';
-import 'package:swarnakar/core/providers/core_providers.dart';
+import 'package:swarnakar/features/auth/providers/auth_provider.dart';
+
+final profileDocProvider =
+    FutureProvider.family<Map<String, dynamic>?, String>((ref, uid) async {
+  return ref.watch(firebaseServiceProvider).getUserData(uid);
+});
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
+  String _resolveName({
+    required User? firebaseUser,
+    required Map<String, dynamic>? profileDoc,
+    required String? providerName,
+  }) {
+    final fromProvider = providerName?.trim() ?? '';
+    if (fromProvider.isNotEmpty) {
+      return fromProvider;
+    }
+
+    final fromFirestore = (profileDoc?['name'] as String?)?.trim() ?? '';
+    if (fromFirestore.isNotEmpty) {
+      return fromFirestore;
+    }
+
+    final fromFirebase = firebaseUser?.displayName?.trim() ?? '';
+    if (fromFirebase.isNotEmpty) {
+      return fromFirebase;
+    }
+
+    return 'Guest User';
+  }
+
+  String _resolveEmail({
+    required User? firebaseUser,
+    required Map<String, dynamic>? profileDoc,
+    required String? providerEmail,
+  }) {
+    final fromProvider = providerEmail?.trim() ?? '';
+    if (fromProvider.isNotEmpty) {
+      return fromProvider;
+    }
+
+    final fromFirestore = (profileDoc?['email'] as String?)?.trim() ?? '';
+    if (fromFirestore.isNotEmpty) {
+      return fromFirestore;
+    }
+
+    final fromFirebase = firebaseUser?.email?.trim() ?? '';
+    if (fromFirebase.isNotEmpty) {
+      return fromFirebase;
+    }
+
+    return 'No email';
+  }
+
+  String _initials(String name, String email) {
+    final trimmed = name.trim();
+    if (trimmed.isNotEmpty && trimmed != 'Guest User') {
+      final parts = trimmed.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+      if (parts.length == 1) {
+        return parts.first.substring(0, 1).toUpperCase();
+      }
+      final first = parts.first.substring(0, 1);
+      final second = parts[1].substring(0, 1);
+      return '$first$second'.toUpperCase();
+    }
+    if (email.isNotEmpty && email != 'No email') {
+      return email.substring(0, 1).toUpperCase();
+    }
+    return 'U';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isSubscribed = ref.watch(isSubscribedProvider);
+    final authState = ref.watch(authProvider);
+    final firebaseUser = ref.watch(authStateProvider).valueOrNull;
+    final profileDocAsync = firebaseUser == null
+        ? const AsyncValue<Map<String, dynamic>?>.data(null)
+        : ref.watch(profileDocProvider(firebaseUser.uid));
+
+    final profileDoc = profileDocAsync.valueOrNull;
+    final name = _resolveName(
+      firebaseUser: firebaseUser,
+      profileDoc: profileDoc,
+      providerName: authState.user?.name,
+    );
+    final email = _resolveEmail(
+      firebaseUser: firebaseUser,
+      profileDoc: profileDoc,
+      providerEmail: authState.user?.email,
+    );
+    final photoUrl = firebaseUser?.photoURL;
+    final isSubscribed =
+        authState.user?.isSubscribed ?? (profileDoc?['isSubscribed'] as bool?) ?? false;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -73,15 +161,34 @@ class SettingsScreen extends ConsumerWidget {
                           width: 2,
                         ),
                       ),
-                      child: Center(
-                        child: Text(
-                          'R',
-                          style: AppTextStyles.hindSiliguri(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.gold,
-                          ),
-                        ),
+                      child: ClipOval(
+                        child: photoUrl != null && photoUrl.isNotEmpty
+                            ? Image.network(
+                                photoUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Text(
+                                      _initials(name, email),
+                                      style: AppTextStyles.hindSiliguri(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.gold,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                            : Center(
+                                child: Text(
+                                  _initials(name, email),
+                                  style: AppTextStyles.hindSiliguri(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.gold,
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -90,7 +197,7 @@ class SettingsScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Md. Abdur Rahim',
+                            name,
                             style: AppTextStyles.hindSiliguri(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -98,7 +205,7 @@ class SettingsScreen extends ConsumerWidget {
                             ),
                           ),
                           Text(
-                            'rahim@example.com',
+                            email,
                             style: AppTextStyles.hindSiliguri(
                               fontSize: 11,
                               color: AppColors.textMuted,
@@ -180,7 +287,11 @@ class SettingsScreen extends ConsumerWidget {
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () {
-                      context.go('/login');
+                      ref.read(authProvider.notifier).signOut().then((_) {
+                        if (context.mounted) {
+                          context.go('/login');
+                        }
+                      });
                     },
                     borderRadius: BorderRadius.circular(10),
                     child: Padding(

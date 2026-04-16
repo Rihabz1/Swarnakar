@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
+import 'package:swarnakar/features/auth/providers/auth_provider.dart';
 import 'dart:async';
 
-class OtpScreen extends StatefulWidget {
+class OtpScreen extends ConsumerStatefulWidget {
   final String email;
 
   const OtpScreen({super.key, required this.email});
 
   @override
-  State<OtpScreen> createState() => _OtpScreenState();
+  ConsumerState<OtpScreen> createState() => _OtpScreenState();
 }
 
-class _OtpScreenState extends State<OtpScreen> {
+class _OtpScreenState extends ConsumerState<OtpScreen> {
   late List<TextEditingController> _otpControllers;
   late List<FocusNode> _otpFocusNodes;
   late Timer _timer;
   int _secondsRemaining = 42;
+  bool _isVerifying = false;
 
   @override
   void initState() {
@@ -32,10 +35,10 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   void dispose() {
-    for (var controller in _otpControllers) {
+    for (final controller in _otpControllers) {
       controller.dispose();
     }
-    for (var node in _otpFocusNodes) {
+    for (final node in _otpFocusNodes) {
       node.dispose();
     }
     _timer.cancel();
@@ -61,6 +64,71 @@ class _OtpScreenState extends State<OtpScreen> {
     final username = parts[0];
     final masked = username[0] + '*' * (username.length - 2) + username[username.length - 1];
     return '$masked@${parts[1]}';
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green,
+        ),
+      );
+  }
+
+  Future<void> _verifyOtp() async {
+    final otp = _otpControllers.map((c) => c.text.trim()).join();
+    if (otp.length != 6 || !RegExp(r'^\d{6}$').hasMatch(otp)) {
+      _showError('সঠিক ৬ সংখ্যার OTP দিন');
+      return;
+    }
+
+    setState(() {
+      _isVerifying = true;
+    });
+
+    try {
+      final authNotifier = ref.read(authProvider.notifier);
+      await authNotifier.verifySignupOtp(email: widget.email, code: otp);
+      _showSuccess('OTP ভেরিফিকেশন সফল!');
+      if (mounted) {
+        context.go('/dashboard');
+      }
+    } catch (e) {
+      _showError(e.toString());
+    }
+
+    if (mounted) {
+      setState(() {
+        _isVerifying = false;
+      });
+    }
+  }
+
+  Future<void> _resendOtp() async {
+    try {
+      final authNotifier = ref.read(authProvider.notifier);
+      await authNotifier.sendSignupOtp(widget.email);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _secondsRemaining = 42;
+      });
+      _startTimer();
+      _showSuccess('OTP আবার পাঠানো হয়েছে।');
+    } catch (e) {
+      _showError(e.toString());
+    }
   }
 
   @override
@@ -160,9 +228,8 @@ class _OtpScreenState extends State<OtpScreen> {
                             delay: const Duration(milliseconds: 520),
                             child: GoldenButton(
                               text: AppStrings.verify,
-                              onPressed: () {
-                                context.go('/login');
-                              },
+                              isLoading: _isVerifying,
+                              onPressed: _verifyOtp,
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -206,7 +273,7 @@ class _OtpScreenState extends State<OtpScreen> {
             width: 44,
             height: 54,
             child: FadeInUp(
-              delay: Duration(milliseconds: 500 + (index * 100)),
+              delay: Duration(milliseconds: 380 + (index * 80)),
               child: Container(
                 decoration: BoxDecoration(
                   color: AppColors.surface,
@@ -236,6 +303,8 @@ class _OtpScreenState extends State<OtpScreen> {
                     onChanged: (value) {
                       if (value.isNotEmpty && index < 5) {
                         _otpFocusNodes[index + 1].requestFocus();
+                      } else if (value.isEmpty && index > 0) {
+                        _otpFocusNodes[index - 1].requestFocus();
                       }
                     },
                   ),
@@ -254,26 +323,15 @@ class _OtpScreenState extends State<OtpScreen> {
       children: [
         Text(
           AppStrings.didntReceiveCode,
-          style: AppTextStyles.hindSiliguri(
-            fontSize: 11,
-            color: AppColors.textMuted,
-          ),
+          style: AppTextStyles.hindSiliguri(fontSize: 11, color: AppColors.textMuted),
         ),
         _secondsRemaining > 0
             ? Text(
-                '${AppStrings.resendCode} ($_secondsRemaining:${(_secondsRemaining % 60).toString().padLeft(2, '0')})',
-                style: AppTextStyles.hindSiliguri(
-                  fontSize: 11,
-                  color: AppColors.gold,
-                ),
+                '${AppStrings.resendCode} (${_secondsRemaining ~/ 60}:${(_secondsRemaining % 60).toString().padLeft(2, '0')})',
+                style: AppTextStyles.hindSiliguri(fontSize: 11, color: AppColors.gold),
               )
             : GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _secondsRemaining = 42;
-                  });
-                  _startTimer();
-                },
+                onTap: _resendOtp,
                 child: Text(
                   AppStrings.resendCode,
                   style: AppTextStyles.hindSiliguri(

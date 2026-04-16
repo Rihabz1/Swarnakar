@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +8,7 @@ import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
-import 'package:swarnakar/core/providers/core_providers.dart';
+import 'package:swarnakar/features/auth/providers/auth_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -43,6 +44,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
   }
 
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green,
+        ),
+      );
+  }
+
   bool _validateLogin() {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -65,16 +77,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _showError('পাসওয়ার্ডে স্পেস ব্যবহার করা যাবে না।');
       return false;
     }
-    if (password.length < 8) {
-      _showError('পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।');
+    if (password.length < 6) {
+      _showError('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
       return false;
     }
     return true;
   }
 
+  bool get _isGoogleSignInSupported {
+    return kIsWeb ||
+        defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(isLoadingProvider);
+    final authState = ref.watch(authProvider);
+    final authNotifier = ref.read(authProvider.notifier);
+    
+    // Listen for auth state changes
+    ref.listen(authProvider, (previous, next) {
+      if (next.error != null) {
+        _showError(next.error!);
+      }
+      if (next.user != null) {
+        _showSuccess('সফলভাবে লগইন করেছেন!');
+        context.go('/dashboard');
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -132,11 +163,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         delay: const Duration(milliseconds: 430),
                         child: Align(
                           alignment: Alignment.centerRight,
-                          child: Text(
-                            AppStrings.forgotPassword,
-                            style: AppTextStyles.hindSiliguri(
-                              fontSize: 11,
-                              color: AppColors.gold.withValues(alpha: 0.72),
+                          child: GestureDetector(
+                            onTap: () {
+                              _showForgotPasswordDialog();
+                            },
+                            child: Text(
+                              AppStrings.forgotPassword,
+                              style: AppTextStyles.hindSiliguri(
+                                fontSize: 11,
+                                color: AppColors.gold.withValues(alpha: 0.72),
+                              ),
                             ),
                           ),
                         ),
@@ -146,10 +182,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         delay: const Duration(milliseconds: 530),
                         child: GoldenButton(
                           text: AppStrings.signIn,
-                          isLoading: isLoading,
-                          onPressed: () {
+                          isLoading: authState.isLoading,
+                          onPressed: () async {
                             if (!_validateLogin()) return;
-                            context.go('/dashboard');
+                            await authNotifier.signIn(
+                              email: _emailController.text.trim(),
+                              password: _passwordController.text,
+                            );
                           },
                         ),
                       ),
@@ -158,7 +197,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(height: 14),
                       FadeInUp(
                         delay: const Duration(milliseconds: 650),
-                        child: _buildGoogleSignIn(),
+                        child: _buildGoogleSignIn(authNotifier, authState.isLoading),
                       ),
                       const SizedBox(height: 24),
                       FadeInUp(
@@ -172,6 +211,65 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showForgotPasswordDialog() {
+    final emailController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text(
+          'পাসওয়ার্ড রিসেট',
+          style: AppTextStyles.hindSiliguri(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.gold,
+          ),
+        ),
+        content: GoldenInputField(
+          hint: 'আপনার ইমেইল দিন',
+          icon: Icons.email_outlined,
+          controller: emailController,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'বাতিল',
+              style: AppTextStyles.hindSiliguri(
+                fontSize: 14,
+                color: Colors.white70,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              final email = emailController.text.trim();
+              if (email.isNotEmpty) {
+                final firebaseService = ref.read(firebaseServiceProvider);
+                await firebaseService.sendPasswordResetEmail(email);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  _showSuccess('পাসওয়ার্ড রিসেট লিংক ইমেইলে পাঠানো হয়েছে');
+                }
+              } else {
+                _showError('দয়া করে ইমেইল দিন');
+              }
+            },
+            child: Text(
+              'রিসেট লিংক পাঠান',
+              style: AppTextStyles.hindSiliguri(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.gold,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -253,9 +351,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildGoogleSignIn() {
+  Widget _buildGoogleSignIn(AuthNotifier authNotifier, bool isLoading) {
     return OutlinedButton.icon(
-      onPressed: () {},
+      onPressed: isLoading ? null : () async {
+        if (!_isGoogleSignInSupported) {
+          _showError('Google Sign-In Linux এ সাপোর্ট করে না। Android/iOS/Web ব্যবহার করুন।');
+          return;
+        }
+        await authNotifier.signInWithGoogle(allowNewUser: false);
+      },
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(double.infinity, 50),
         side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
@@ -274,7 +378,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
       ),
       label: Text(
-        AppStrings.signUpWithGoogle,
+        'Google দিয়ে সাইন ইন করুন',
         style: AppTextStyles.hindSiliguri(
           fontSize: 12,
           color: Colors.white.withValues(alpha: 0.8),

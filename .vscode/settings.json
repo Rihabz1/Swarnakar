@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "/home/kabbo/Desktop/Swarnakar/linux"
+    "cmake.sourceDirectory": "/home/kabbo/Desktop/Swarnakar/linux",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
