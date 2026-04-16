@@ -45,7 +45,7 @@ class GoldPriceScreen extends ConsumerWidget {
         title: Text(
           AppStrings.goldMarket,
           style: AppTextStyles.hindSiliguri(
-            fontSize: 24,
+            fontSize: 22,
             fontWeight: FontWeight.w700,
             color: AppColors.gold,
           ),
@@ -53,11 +53,11 @@ class GoldPriceScreen extends ConsumerWidget {
         centerTitle: true,
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 14),
+            padding: const EdgeInsets.only(right: 10),
             child: Row(
               children: [
                 _buildTabChip(AppStrings.gold, true, context),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 _buildTabChip(AppStrings.silver, false, context),
               ],
             ),
@@ -128,7 +128,7 @@ class GoldPriceScreen extends ConsumerWidget {
         }
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: isActive ? AppColors.gold.withValues(alpha: 0.14) : Colors.transparent,
           border: Border.all(

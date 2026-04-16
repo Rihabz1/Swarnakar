@@ -47,6 +47,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+    final whitespaceRegex = RegExp(r'\s');
 
     if (email.isEmpty || password.isEmpty) {
       _showError('ইমেইল ও পাসওয়ার্ড দিন।');
@@ -54,6 +55,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
     if (!emailRegex.hasMatch(email)) {
       _showError('সঠিক ইমেইল ফরম্যাট দিন (example@email.com)।');
+      return false;
+    }
+    if (whitespaceRegex.hasMatch(email)) {
+      _showError('ইমেইলে স্পেস ব্যবহার করা যাবে না।');
+      return false;
+    }
+    if (whitespaceRegex.hasMatch(password)) {
+      _showError('পাসওয়ার্ডে স্পেস ব্যবহার করা যাবে না।');
       return false;
     }
     if (password.length < 8) {

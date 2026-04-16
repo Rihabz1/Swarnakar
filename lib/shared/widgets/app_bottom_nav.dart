@@ -21,6 +21,7 @@ class AppBottomNav extends StatelessWidget {
       ('ক্যালকুলেটর', Icons.calculate_outlined, '/calculator'),
       ('প্রোফাইল', Icons.person_outlined, '/settings'),
     ];
+    final safeIndex = currentIndex >= 0 && currentIndex < items.length ? currentIndex : 0;
 
     return Container(
       decoration: BoxDecoration(
@@ -40,7 +41,7 @@ class AppBottomNav extends StatelessWidget {
         ],
       ),
       child: BottomNavigationBar(
-        currentIndex: currentIndex,
+        currentIndex: safeIndex,
         onTap: (index) {
           final route = items[index].$3;
           context.go(route);
@@ -73,7 +74,21 @@ class AppBottomNav extends StatelessWidget {
   }
 
   static int getIndexFromRoute(String route) {
-    const routes = ['/dashboard', '/gold-price', '/silver-price', '/calculator', '/settings'];
-    return routes.indexOf(route);
+    switch (route) {
+      case '/dashboard':
+        return 0;
+      case '/gold-price':
+        return 1;
+      case '/silver-price':
+        return 2;
+      case '/calculator':
+      case '/zakat':
+        return 3;
+      case '/settings':
+      case '/reports':
+        return 4;
+      default:
+        return 0;
+    }
   }
 }
