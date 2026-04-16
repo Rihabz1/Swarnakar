@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,10 +8,8 @@ import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
-import 'package:swarnakar/core/providers/core_providers.dart';
-import 'package:swarnakar/core/constants/app_assets.dart';
+import 'package:swarnakar/features/auth/providers/auth_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -20,53 +19,19 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  late TextEditingController _phoneController;
+  late TextEditingController _emailController;
   late TextEditingController _passwordController;
-
-  void _sanitizePhoneInput(String value) {
-    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-    final cleaned = digits.length > 13 ? digits.substring(0, 13) : digits;
-    if (_phoneController.text == cleaned) return;
-    final currentSelection = _phoneController.selection.baseOffset;
-    final nextOffset = currentSelection < 0
-        ? cleaned.length
-        : currentSelection.clamp(0, cleaned.length);
-    _phoneController.value = _phoneController.value.copyWith(
-      text: cleaned,
-      selection: TextSelection.collapsed(offset: nextOffset),
-      composing: TextRange.empty,
-    );
-  }
-
-  String _normalizePhone(String value) {
-    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.startsWith('880') && digits.length == 13) {
-      return digits.substring(2);
-    }
-    if (digits.startsWith('88') && digits.length == 13) {
-      return digits.substring(2);
-    }
-    return digits;
-  }
-
-  bool _isValidBdMobile(String phone) {
-    return RegExp(r'^01[3-9]\d{8}$').hasMatch(phone);
-  }
-
-  void _handleForgotPassword() {
-    context.go('/forgot-password');
-  }
 
   @override
   void initState() {
     super.initState();
-    _phoneController = TextEditingController();
+    _emailController = TextEditingController();
     _passwordController = TextEditingController();
   }
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -79,53 +44,68 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
   }
 
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green,
+        ),
+      );
+  }
+
   bool _validateLogin() {
-    final phone = _normalizePhone(_phoneController.text.trim());
+    final email = _emailController.text.trim();
     final password = _passwordController.text;
+    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
     final whitespaceRegex = RegExp(r'\s');
 
-    if (phone.isEmpty || password.isEmpty) {
-      _showError('মোবাইল নম্বর ও পাসওয়ার্ড দিন।');
+    if (email.isEmpty || password.isEmpty) {
+      _showError('ইমেইল ও পাসওয়ার্ড দিন।');
       return false;
     }
-    if (!_isValidBdMobile(phone)) {
-      _showError('সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন (01XXXXXXXXX)।');
+    if (!emailRegex.hasMatch(email)) {
+      _showError('সঠিক ইমেইল ফরম্যাট দিন (example@email.com)।');
+      return false;
+    }
+    if (whitespaceRegex.hasMatch(email)) {
+      _showError('ইমেইলে স্পেস ব্যবহার করা যাবে না।');
       return false;
     }
     if (whitespaceRegex.hasMatch(password)) {
       _showError('পাসওয়ার্ডে স্পেস ব্যবহার করা যাবে না।');
       return false;
     }
-    if (password.length < 8) {
-      _showError('পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।');
+    if (password.length < 6) {
+      _showError('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
       return false;
     }
     return true;
   }
 
-  Future<void> _handleGoogleSignIn() async {
-    ref.read(isLoadingProvider.notifier).state = true;
-    try {
-      final user = await FirebaseAuthService.instance.signInWithGoogle();
-      if (!mounted) return;
-      if (user == null) {
-        _showError('Google সাইন-ইন বাতিল হয়েছে।');
-        return;
-      }
-      context.go('/dashboard');
-    } catch (_) {
-      if (!mounted) return;
-      _showError('Google সাইন-ইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
-    } finally {
-      if (mounted) {
-        ref.read(isLoadingProvider.notifier).state = false;
-      }
-    }
+  bool get _isGoogleSignInSupported {
+    return kIsWeb ||
+        defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(isLoadingProvider);
+    final authState = ref.watch(authProvider);
+    final authNotifier = ref.read(authProvider.notifier);
+    
+    // Listen for auth state changes
+    ref.listen(authProvider, (previous, next) {
+      if (next.error != null) {
+        _showError(next.error!);
+      }
+      if (next.user != null) {
+        _showSuccess('সফলভাবে লগইন করেছেন!');
+        context.go('/dashboard');
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -160,12 +140,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       FadeInUp(
                         delay: const Duration(milliseconds: 200),
                         child: GoldenInputField(
-                          hint: AppStrings.mobileNumber,
-                          icon: Icons.phone_outlined,
-                          keyboardType: TextInputType.phone,
-                          maxLength: 13,
-                          controller: _phoneController,
-                          onChanged: _sanitizePhoneInput,
+                          hint: AppStrings.email,
+                          icon: Icons.email_outlined,
+                          keyboardType: TextInputType.emailAddress,
+                          controller: _emailController,
                           isGlassmorphic: true,
                         ),
                       ),
@@ -185,19 +163,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         delay: const Duration(milliseconds: 430),
                         child: Align(
                           alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: _handleForgotPassword,
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
+                          child: GestureDetector(
+                            onTap: () {
+                              _showForgotPasswordDialog();
+                            },
                             child: Text(
                               AppStrings.forgotPassword,
                               style: AppTextStyles.hindSiliguri(
                                 fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.gold,
+                                color: AppColors.gold.withValues(alpha: 0.72),
                               ),
                             ),
                           ),
@@ -208,10 +182,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         delay: const Duration(milliseconds: 530),
                         child: GoldenButton(
                           text: AppStrings.signIn,
-                          isLoading: isLoading,
-                          onPressed: () {
+                          isLoading: authState.isLoading,
+                          onPressed: () async {
                             if (!_validateLogin()) return;
-                            context.go('/dashboard');
+                            await authNotifier.signIn(
+                              email: _emailController.text.trim(),
+                              password: _passwordController.text,
+                            );
                           },
                         ),
                       ),
@@ -220,7 +197,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(height: 14),
                       FadeInUp(
                         delay: const Duration(milliseconds: 650),
-                        child: _buildGoogleSignIn(),
+                        child: _buildGoogleSignIn(authNotifier, authState.isLoading),
                       ),
                       const SizedBox(height: 24),
                       FadeInUp(
@@ -238,17 +215,75 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  void _showForgotPasswordDialog() {
+    final emailController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text(
+          'পাসওয়ার্ড রিসেট',
+          style: AppTextStyles.hindSiliguri(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.gold,
+          ),
+        ),
+        content: GoldenInputField(
+          hint: 'আপনার ইমেইল দিন',
+          icon: Icons.email_outlined,
+          controller: emailController,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'বাতিল',
+              style: AppTextStyles.hindSiliguri(
+                fontSize: 14,
+                color: Colors.white70,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              final email = emailController.text.trim();
+              if (email.isNotEmpty) {
+                final firebaseService = ref.read(firebaseServiceProvider);
+                await firebaseService.sendPasswordResetEmail(email);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  _showSuccess('পাসওয়ার্ড রিসেট লিংক ইমেইলে পাঠানো হয়েছে');
+                }
+              } else {
+                _showError('দয়া করে ইমেইল দিন');
+              }
+            },
+            child: Text(
+              'রিসেট লিংক পাঠান',
+              style: AppTextStyles.hindSiliguri(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.gold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeader() {
     return FadeInDown(
       delay: const Duration(milliseconds: 200),
       child: Column(
         children: [
           Container(
-            width: 76,
-            height: 76,
-            padding: const EdgeInsets.all(8),
+            width: 62,
+            height: 62,
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.gold, width: 1.4),
+              border: Border.all(color: AppColors.gold, width: 1.6),
               shape: BoxShape.circle,
               gradient: const LinearGradient(
                 begin: Alignment.topCenter,
@@ -259,9 +294,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ],
               ),
             ),
-            child: Image.asset(
-              'assets/images/swarnakar-nobg.png',
-              fit: BoxFit.contain,
+            child: const Icon(
+              Icons.workspace_premium_outlined,
+              color: AppColors.gold,
+              size: 30,
             ),
           ),
           const SizedBox(height: 14),
@@ -315,9 +351,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildGoogleSignIn() {
+  Widget _buildGoogleSignIn(AuthNotifier authNotifier, bool isLoading) {
     return OutlinedButton.icon(
-      onPressed: _handleGoogleSignIn,
+      onPressed: isLoading ? null : () async {
+        if (!_isGoogleSignInSupported) {
+          _showError('Google Sign-In Linux এ সাপোর্ট করে না। Android/iOS/Web ব্যবহার করুন।');
+          return;
+        }
+        await authNotifier.signInWithGoogle(allowNewUser: false);
+      },
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(double.infinity, 50),
         side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
@@ -325,13 +367,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           borderRadius: BorderRadius.circular(14),
         ),
       ),
-      icon: SvgPicture.asset(
-        AppAssets.googleLogo,
+      icon: SvgPicture.network(
+        'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
         width: 18,
         height: 18,
+        placeholderBuilder: (context) => const SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 1.4),
+        ),
       ),
       label: Text(
-        AppStrings.signUpWithGoogle,
+        'Google দিয়ে সাইন ইন করুন',
         style: AppTextStyles.hindSiliguri(
           fontSize: 12,
           color: Colors.white.withValues(alpha: 0.8),

@@ -13,6 +13,22 @@ class UserModel {
     this.subscriptionExpiry,
   });
 
+  UserModel copyWith({
+    String? uid,
+    String? name,
+    String? email,
+    bool? isSubscribed,
+    DateTime? subscriptionExpiry,
+  }) {
+    return UserModel(
+      uid: uid ?? this.uid,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      isSubscribed: isSubscribed ?? this.isSubscribed,
+      subscriptionExpiry: subscriptionExpiry ?? this.subscriptionExpiry,
+    );
+  }
+
   String getInitials() {
     final names = name.split(' ');
     if (names.isNotEmpty) {

@@ -1,64 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
-import 'package:swarnakar/core/constants/app_assets.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
+import 'package:swarnakar/features/auth/providers/auth_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
 
-class SignupScreen extends StatefulWidget {
+class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
 
   @override
-  State<SignupScreen> createState() => _SignupScreenState();
+  ConsumerState<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
+class _SignupScreenState extends ConsumerState<SignupScreen> {
   late TextEditingController _nameController;
-  late TextEditingController _phoneController;
+  late TextEditingController _emailController;
   late TextEditingController _passwordController;
   late TextEditingController _confirmPasswordController;
-  bool _isGoogleLoading = false;
-
-  void _sanitizePhoneInput(String value) {
-    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-    final cleaned = digits.length > 13 ? digits.substring(0, 13) : digits;
-    if (_phoneController.text == cleaned) return;
-    final currentSelection = _phoneController.selection.baseOffset;
-    final nextOffset = currentSelection < 0
-        ? cleaned.length
-        : currentSelection.clamp(0, cleaned.length);
-    _phoneController.value = _phoneController.value.copyWith(
-      text: cleaned,
-      selection: TextSelection.collapsed(offset: nextOffset),
-      composing: TextRange.empty,
-    );
-  }
-
-  String _normalizePhone(String value) {
-    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.startsWith('880') && digits.length == 13) {
-      return digits.substring(2);
-    }
-    if (digits.startsWith('88') && digits.length == 13) {
-      return digits.substring(2);
-    }
-    return digits;
-  }
-
-  bool _isValidBdMobile(String phone) {
-    return RegExp(r'^01[3-9]\d{8}$').hasMatch(phone);
-  }
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController();
-    _phoneController = TextEditingController();
+    _emailController = TextEditingController();
     _passwordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
   }
@@ -66,7 +36,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -80,27 +50,43 @@ class _SignupScreenState extends State<SignupScreen> {
       );
   }
 
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green,
+        ),
+      );
+  }
+
   bool _validateSignup() {
     final name = _nameController.text.trim();
-    final phone = _normalizePhone(_phoneController.text.trim());
+    final email = _emailController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
+    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
     final whitespaceRegex = RegExp(r'\s');
 
-    if (name.isEmpty || phone.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       _showError('সবগুলো তথ্য দিন।');
       return false;
     }
-    if (!_isValidBdMobile(phone)) {
-      _showError('সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন (01XXXXXXXXX)।');
+    if (!emailRegex.hasMatch(email)) {
+      _showError('সঠিক ইমেইল ফরম্যাট দিন (example@email.com)।');
+      return false;
+    }
+    if (whitespaceRegex.hasMatch(email)) {
+      _showError('ইমেইলে স্পেস ব্যবহার করা যাবে না।');
       return false;
     }
     if (whitespaceRegex.hasMatch(password) || whitespaceRegex.hasMatch(confirmPassword)) {
       _showError('পাসওয়ার্ডে স্পেস ব্যবহার করা যাবে না।');
       return false;
     }
-    if (password.length < 8) {
-      _showError('পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।');
+    if (password.length < 6) {
+      _showError('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
       return false;
     }
     if (password != confirmPassword) {
@@ -110,28 +96,24 @@ class _SignupScreenState extends State<SignupScreen> {
     return true;
   }
 
-  Future<void> _handleGoogleSignIn() async {
-    setState(() => _isGoogleLoading = true);
-    try {
-      final user = await FirebaseAuthService.instance.signInWithGoogle();
-      if (!mounted) return;
-      if (user == null) {
-        _showError('Google সাইন-ইন বাতিল হয়েছে।');
-        return;
-      }
-      context.go('/dashboard');
-    } catch (_) {
-      if (!mounted) return;
-      _showError('Google সাইন-ইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
-    } finally {
-      if (mounted) {
-        setState(() => _isGoogleLoading = false);
-      }
-    }
+  bool get _isGoogleSignInSupported {
+    return kIsWeb ||
+        defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final authNotifier = ref.read(authProvider.notifier);
+    
+    ref.listen(authProvider, (previous, next) {
+      if (next.error != null) {
+        _showError(next.error!);
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Container(
@@ -199,12 +181,10 @@ class _SignupScreenState extends State<SignupScreen> {
                           FadeInUp(
                             delay: const Duration(milliseconds: 280),
                             child: GoldenInputField(
-                              hint: AppStrings.mobileNumber,
-                              icon: Icons.phone_outlined,
-                              keyboardType: TextInputType.phone,
-                              maxLength: 13,
-                              controller: _phoneController,
-                              onChanged: _sanitizePhoneInput,
+                              hint: AppStrings.email,
+                              icon: Icons.email_outlined,
+                              keyboardType: TextInputType.emailAddress,
+                              controller: _emailController,
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -232,10 +212,34 @@ class _SignupScreenState extends State<SignupScreen> {
                             delay: const Duration(milliseconds: 560),
                             child: GoldenButton(
                               text: AppStrings.createAccount,
-                              onPressed: () {
+                              isLoading: authState.isLoading,
+                              onPressed: () async {
                                 if (!_validateSignup()) return;
-                                final phone = _normalizePhone(_phoneController.text.trim());
-                                context.go('/otp?phone=$phone');
+                                  final router = GoRouter.of(context);
+                                final createdUser = await authNotifier.signUp(
+                                  name: _nameController.text.trim(),
+                                  email: _emailController.text.trim(),
+                                  password: _passwordController.text,
+                                );
+                                if (createdUser == null || !mounted) {
+                                  return;
+                                }
+
+                                try {
+                                  await authNotifier.sendSignupOtp(_emailController.text.trim());
+                                } catch (_) {
+                                  if (!mounted) {
+                                    return;
+                                  }
+                                  _showError('OTP পাঠানো যায়নি। আবার চেষ্টা করুন।');
+                                  return;
+                                }
+
+                                _showSuccess(
+                                  'অ্যাকাউন্ট তৈরি হয়েছে। ইমেইলে ৬ সংখ্যার OTP পাঠানো হয়েছে।',
+                                );
+                                  final email = _emailController.text.trim();
+                                  router.go('/otp?email=$email');
                               },
                             ),
                           ),
@@ -244,7 +248,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           const SizedBox(height: 12),
                           FadeInUp(
                             delay: const Duration(milliseconds: 660),
-                            child: _buildGoogleSignUp(),
+                            child: _buildGoogleSignUp(authNotifier, authState.isLoading),
                           ),
                           const SizedBox(height: 20),
                           FadeInUp(
@@ -277,10 +281,7 @@ class _SignupScreenState extends State<SignupScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             AppStrings.or,
-            style: AppTextStyles.hindSiliguri(
-              fontSize: 11,
-              color: AppColors.textMuted,
-            ),
+            style: AppTextStyles.hindSiliguri(fontSize: 11, color: AppColors.textMuted),
           ),
         ),
         Expanded(
@@ -293,9 +294,23 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Widget _buildGoogleSignUp() {
+  Widget _buildGoogleSignUp(AuthNotifier authNotifier, bool isLoading) {
     return OutlinedButton.icon(
-      onPressed: _isGoogleLoading ? null : _handleGoogleSignIn,
+      onPressed: isLoading ? null : () async {
+        if (!_isGoogleSignInSupported) {
+          _showError('Google Sign-In Linux এ সাপোর্ট করে না। Android/iOS/Web ব্যবহার করুন।');
+          return;
+        }
+        final router = GoRouter.of(context);
+        final user = await authNotifier.signInWithGoogle(
+          allowNewUser: true,
+          allowExistingUser: false,
+        );
+        if (user != null && mounted) {
+          _showSuccess('Google account দিয়ে signup সফল হয়েছে!');
+          router.go('/dashboard');
+        }
+      },
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(double.infinity, 50),
         side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
@@ -303,17 +318,19 @@ class _SignupScreenState extends State<SignupScreen> {
           borderRadius: BorderRadius.circular(14),
         ),
       ),
-      icon: SvgPicture.asset(
-        AppAssets.googleLogo,
+      icon: SvgPicture.network(
+        'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
         width: 18,
         height: 18,
+        placeholderBuilder: (context) => const SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 1.4),
+        ),
       ),
       label: Text(
-        AppStrings.signUpWithGoogle,
-        style: AppTextStyles.hindSiliguri(
-          fontSize: 12,
-          color: Colors.white.withValues(alpha: 0.8),
-        ),
+        'Google দিয়ে সাইন আপ করুন',
+        style: AppTextStyles.hindSiliguri(fontSize: 12, color: Colors.white.withValues(alpha: 0.8)),
       ),
     );
   }
@@ -324,20 +341,13 @@ class _SignupScreenState extends State<SignupScreen> {
       children: [
         Text(
           AppStrings.haveAccount,
-          style: AppTextStyles.hindSiliguri(
-            fontSize: 12,
-            color: AppColors.textMuted,
-          ),
+          style: AppTextStyles.hindSiliguri(fontSize: 12, color: AppColors.textMuted),
         ),
         GestureDetector(
           onTap: () => context.go('/login'),
           child: Text(
             AppStrings.signInHere,
-            style: AppTextStyles.hindSiliguri(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: AppColors.gold,
-            ),
+            style: AppTextStyles.hindSiliguri(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.gold),
           ),
         ),
       ],

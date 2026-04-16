@@ -1,31 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
+import 'package:swarnakar/features/auth/providers/auth_provider.dart';
 import 'dart:async';
 
-class OtpScreen extends StatefulWidget {
-  final String phone;
-  final String flow;
+class OtpScreen extends ConsumerStatefulWidget {
+  final String email;
 
-  const OtpScreen({
-    super.key,
-    required this.phone,
-    this.flow = 'signup',
-  });
+  const OtpScreen({super.key, required this.email});
 
   @override
-  State<OtpScreen> createState() => _OtpScreenState();
+  ConsumerState<OtpScreen> createState() => _OtpScreenState();
 }
 
-class _OtpScreenState extends State<OtpScreen> {
+class _OtpScreenState extends ConsumerState<OtpScreen> {
   late List<TextEditingController> _otpControllers;
   late List<FocusNode> _otpFocusNodes;
   late Timer _timer;
   int _secondsRemaining = 42;
+  bool _isVerifying = false;
 
   @override
   void initState() {
@@ -37,10 +35,10 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   void dispose() {
-    for (var controller in _otpControllers) {
+    for (final controller in _otpControllers) {
       controller.dispose();
     }
-    for (var node in _otpFocusNodes) {
+    for (final node in _otpFocusNodes) {
       node.dispose();
     }
     _timer.cancel();
@@ -48,9 +46,6 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   void _startTimer() {
-    if (_secondsRemaining <= 0) {
-      _secondsRemaining = 42;
-    }
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         if (_secondsRemaining > 0) {
@@ -62,65 +57,78 @@ class _OtpScreenState extends State<OtpScreen> {
     });
   }
 
-  String _maskPhone(String phone) {
-    if (phone.length < 7) return phone;
-    final start = phone.substring(0, 3);
-    final end = phone.substring(phone.length - 2);
-    return '$start*****$end';
+  String _maskEmail(String email) {
+    if (email.length < 3) return email;
+    final parts = email.split('@');
+    if (parts.length != 2) return email;
+    final username = parts[0];
+    final masked = username[0] + '*' * (username.length - 2) + username[username.length - 1];
+    return '$masked@${parts[1]}';
   }
 
-  String _otpCode() {
-    return _otpControllers.map((c) => c.text.trim()).join();
-  }
-
-  void _handleOtpInput(int index, String value) {
-    // Handle paste/autofill of multiple digits from any box.
-    if (value.length > 1) {
-      final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-      for (int i = 0; i < 6; i++) {
-        _otpControllers[i].text = i < digits.length ? digits[i] : '';
-      }
-      final nextFocus = digits.length >= 6 ? 5 : digits.length;
-      _otpFocusNodes[nextFocus.clamp(0, 5)].requestFocus();
-      return;
-    }
-
-    if (value.isNotEmpty) {
-      if (index < 5) {
-        _otpFocusNodes[index + 1].requestFocus();
-      } else {
-        _otpFocusNodes[index].unfocus();
-      }
-      return;
-    }
-
-    // If current box is emptied (backspace), move focus to previous and clear it.
-    if (index > 0) {
-      final prevIndex = index - 1;
-      _otpControllers[prevIndex].clear();
-      _otpFocusNodes[prevIndex].requestFocus();
-    }
-  }
-
-  void _showMessage(String message) {
+  void _showError(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+      ..showSnackBar(
+        SnackBar(content: Text(message)),
+      );
   }
 
-  void _handleVerify() {
-    final code = _otpCode();
-    if (code.length != 6 || code.contains(RegExp(r'[^0-9]'))) {
-      _showMessage('৬ সংখ্যার সঠিক OTP দিন।');
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green,
+        ),
+      );
+  }
+
+  Future<void> _verifyOtp() async {
+    final otp = _otpControllers.map((c) => c.text.trim()).join();
+    if (otp.length != 6 || !RegExp(r'^\d{6}$').hasMatch(otp)) {
+      _showError('সঠিক ৬ সংখ্যার OTP দিন');
       return;
     }
 
-    if (widget.flow == 'reset') {
-      context.go('/reset-password?phone=${widget.phone}');
-      return;
+    setState(() {
+      _isVerifying = true;
+    });
+
+    try {
+      final authNotifier = ref.read(authProvider.notifier);
+      await authNotifier.verifySignupOtp(email: widget.email, code: otp);
+      _showSuccess('OTP ভেরিফিকেশন সফল!');
+      if (mounted) {
+        context.go('/dashboard');
+      }
+    } catch (e) {
+      _showError(e.toString());
     }
 
-    context.go('/login');
+    if (mounted) {
+      setState(() {
+        _isVerifying = false;
+      });
+    }
+  }
+
+  Future<void> _resendOtp() async {
+    try {
+      final authNotifier = ref.read(authProvider.notifier);
+      await authNotifier.sendSignupOtp(widget.email);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _secondsRemaining = 42;
+      });
+      _startTimer();
+      _showSuccess('OTP আবার পাঠানো হয়েছে।');
+    } catch (e) {
+      _showError(e.toString());
+    }
   }
 
   @override
@@ -193,7 +201,7 @@ class _OtpScreenState extends State<OtpScreen> {
                           FadeInUp(
                             delay: const Duration(milliseconds: 180),
                             child: Text(
-                              widget.flow == 'reset' ? 'পাসওয়ার্ড রিসেট OTP' : AppStrings.verifyOtpTitle,
+                              AppStrings.verifyOtpTitle,
                               style: AppTextStyles.hindSiliguri(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -205,7 +213,7 @@ class _OtpScreenState extends State<OtpScreen> {
                           FadeInUp(
                             delay: const Duration(milliseconds: 260),
                             child: Text(
-                              _maskPhone(widget.phone),
+                              _maskEmail(widget.email),
                               style: AppTextStyles.hindSiliguri(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
@@ -219,8 +227,9 @@ class _OtpScreenState extends State<OtpScreen> {
                           FadeInUp(
                             delay: const Duration(milliseconds: 520),
                             child: GoldenButton(
-                              text: widget.flow == 'reset' ? 'OTP যাচাই করুন' : AppStrings.verify,
-                              onPressed: _handleVerify,
+                              text: AppStrings.verify,
+                              isLoading: _isVerifying,
+                              onPressed: _verifyOtp,
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -264,7 +273,7 @@ class _OtpScreenState extends State<OtpScreen> {
             width: 44,
             height: 54,
             child: FadeInUp(
-              delay: Duration(milliseconds: 500 + (index * 100)),
+              delay: Duration(milliseconds: 380 + (index * 80)),
               child: Container(
                 decoration: BoxDecoration(
                   color: AppColors.surface,
@@ -291,7 +300,13 @@ class _OtpScreenState extends State<OtpScreen> {
                       fontWeight: FontWeight.bold,
                       color: AppColors.gold,
                     ),
-                    onChanged: (value) => _handleOtpInput(index, value),
+                    onChanged: (value) {
+                      if (value.isNotEmpty && index < 5) {
+                        _otpFocusNodes[index + 1].requestFocus();
+                      } else if (value.isEmpty && index > 0) {
+                        _otpFocusNodes[index - 1].requestFocus();
+                      }
+                    },
                   ),
                 ),
               ),
@@ -308,27 +323,15 @@ class _OtpScreenState extends State<OtpScreen> {
       children: [
         Text(
           AppStrings.didntReceiveCode,
-          style: AppTextStyles.hindSiliguri(
-            fontSize: 11,
-            color: AppColors.textMuted,
-          ),
+          style: AppTextStyles.hindSiliguri(fontSize: 11, color: AppColors.textMuted),
         ),
         _secondsRemaining > 0
             ? Text(
-                '${AppStrings.resendCode} ($_secondsRemaining:${(_secondsRemaining % 60).toString().padLeft(2, '0')})',
-                style: AppTextStyles.hindSiliguri(
-                  fontSize: 11,
-                  color: AppColors.gold,
-                ),
+                '${AppStrings.resendCode} (${_secondsRemaining ~/ 60}:${(_secondsRemaining % 60).toString().padLeft(2, '0')})',
+                style: AppTextStyles.hindSiliguri(fontSize: 11, color: AppColors.gold),
               )
             : GestureDetector(
-                onTap: () {
-                  _timer.cancel();
-                  setState(() {
-                    _secondsRemaining = 42;
-                  });
-                  _startTimer();
-                },
+                onTap: _resendOtp,
                 child: Text(
                   AppStrings.resendCode,
                   style: AppTextStyles.hindSiliguri(
