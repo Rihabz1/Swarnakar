@@ -23,28 +23,47 @@ class BlurPriceOverlay extends StatelessWidget {
     return Stack(
       children: [
         child,
-        BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-          child: Container(
-            color: Colors.transparent,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.lock_outline,
-                    color: AppColors.gold,
-                    size: 14,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    AppStrings.subscribeToView,
-                    style: AppTextStyles.hindSiliguri(
-                      fontSize: 8,
-                      color: AppColors.gold,
+        Positioned.fill(
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: FractionallySizedBox(
+              widthFactor: 0.42,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.horizontal(
+                  right: Radius.circular(14),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                        child: Container(
+                          color: AppColors.background.withValues(alpha: 0.06),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                    Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.lock_outline,
+                            color: AppColors.gold,
+                            size: 13,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            AppStrings.subscribeToView,
+                            style: AppTextStyles.hindSiliguri(
+                              fontSize: 8,
+                              color: AppColors.gold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

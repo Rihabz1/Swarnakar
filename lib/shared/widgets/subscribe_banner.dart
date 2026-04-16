@@ -19,11 +19,18 @@ class SubscribeBanner extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.gold.withOpacity(0.2),
+          color: AppColors.gold.withValues(alpha: 0.24),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -34,7 +41,7 @@ class SubscribeBanner extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: AppColors.gold.withOpacity(0.35),
+                color: AppColors.gold.withValues(alpha: 0.35),
                 width: 1.5,
               ),
             ),
@@ -57,7 +64,7 @@ class SubscribeBanner extends StatelessWidget {
           Text(
             AppStrings.unlockFeatures,
             style: AppTextStyles.hindSiliguri(
-              fontSize: 9.5,
+              fontSize: 10.5,
               color: AppColors.textMuted,
             ),
           ),

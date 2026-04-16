@@ -30,52 +30,97 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                FadeInDown(
-                  duration: const Duration(milliseconds: 600),
-                  child: _buildLogo(),
-                ),
-                const SizedBox(height: 20),
-                FadeInUp(
-                  duration: const Duration(milliseconds: 600),
-                  delay: const Duration(milliseconds: 200),
-                  child: Text(
-                    AppStrings.appName,
-                    style: AppTextStyles.splashBrandName,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                FadeInUp(
-                  duration: const Duration(milliseconds: 600),
-                  delay: const Duration(milliseconds: 300),
-                  child: Text(
-                    AppStrings.appTagline,
-                    style: AppTextStyles.splashTagline,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                _buildAnimatedDots(),
-              ],
-            ),
-          ),
-          Positioned(
-            bottom: 20,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Text(
-                AppStrings.appVersion,
-                style: AppTextStyles.hindSiliguri(
-                  fontSize: 10,
-                  color: AppColors.textMuted,
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF09121E),
+                    AppColors.background,
+                    AppColors.background,
+                  ],
+                  stops: [0.0, 0.42, 1.0],
                 ),
               ),
+            ),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(0, -1.05),
+                    radius: 1.0,
+                    colors: [
+                      AppColors.gold.withValues(alpha: 0.1),
+                      Colors.transparent,
+                    ],
+                    stops: const [0.0, 0.75],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Stack(
+              children: [
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FadeInDown(
+                    duration: const Duration(milliseconds: 650),
+                    child: _buildLogo(),
+                  ),
+                  const SizedBox(height: 28),
+                  FadeInUp(
+                    duration: const Duration(milliseconds: 600),
+                    delay: const Duration(milliseconds: 180),
+                    child: Text(
+                      AppStrings.appName,
+                      style: AppTextStyles.hindSiliguri(
+                        fontSize: 46,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.gold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  FadeInUp(
+                    duration: const Duration(milliseconds: 600),
+                    delay: const Duration(milliseconds: 280),
+                    child: Text(
+                      'স্বর্ণের বাজারের নির্ভরযোগ্য সঙ্গী',
+                      style: AppTextStyles.hindSiliguri(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 54),
+                  _buildAnimatedDots(),
+                ],
+              ),
+            ),
+            Positioned(
+              bottom: 24,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Text(
+                  AppStrings.appVersion,
+                  style: AppTextStyles.hindSiliguri(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+            ),
+              ],
             ),
           ),
         ],
@@ -84,31 +129,28 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Widget _buildLogo() {
-    return Transform.rotate(
-      angle: 0.785, // 45 degrees in radians
-      child: Container(
-        width: 80,
-        height: 80,
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: AppColors.gold,
-            width: 2,
-          ),
-          borderRadius: BorderRadius.circular(4),
+    return Container(
+      width: 112,
+      height: 112,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: AppColors.gold.withValues(alpha: 0.9),
+          width: 2,
         ),
-        child: Center(
-          child: Transform.rotate(
-            angle: -0.785,
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.gold,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[
+            AppColors.surfaceRaised,
+            AppColors.surface,
+          ],
         ),
+      ),
+      child: const Icon(
+        Icons.workspace_premium_outlined,
+        size: 52,
+        color: AppColors.gold,
       ),
     );
   }
@@ -118,9 +160,9 @@ class _SplashScreenState extends State<SplashScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _buildDot(0),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         _buildDot(1, isActive: true),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         _buildDot(2),
       ],
     );
@@ -129,17 +171,20 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget _buildDot(int index, {bool isActive = false}) {
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: 1),
-      duration: Duration(milliseconds: 600 + (index * 200)),
+      duration: Duration(milliseconds: 600 + (index * 220)),
       curve: Curves.easeInOut,
       builder: (context, value, child) {
-        return Opacity(
-          opacity: isActive ? 1.0 : 0.3,
-          child: Container(
-            width: 6,
-            height: 6,
-            decoration: const BoxDecoration(
-              color: AppColors.gold,
-              shape: BoxShape.circle,
+        return Transform.scale(
+          scale: isActive ? 1 + (0.14 * value) : 1,
+          child: Opacity(
+            opacity: isActive ? 1.0 : 0.35,
+            child: Container(
+              width: 7,
+              height: 7,
+              decoration: const BoxDecoration(
+                color: AppColors.gold,
+                shape: BoxShape.circle,
+              ),
             ),
           ),
         );

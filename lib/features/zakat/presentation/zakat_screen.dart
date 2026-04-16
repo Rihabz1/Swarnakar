@@ -41,10 +41,16 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: GestureDetector(
-          onTap: () => context.pop(),
+          onTap: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/dashboard');
+            }
+          },
           child: const Icon(
             Icons.arrow_back_ios_new,
             color: AppColors.gold,
@@ -53,14 +59,29 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
         ),
         title: Text(
           AppStrings.zakatTitle,
-          style: AppTextStyles.heading2,
+          style: AppTextStyles.hindSiliguri(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: AppColors.gold,
+          ),
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
-          child: Column(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.backgroundSecondary,
+              AppColors.background,
+            ],
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
+            child: Column(
             children: [
               _buildNisabReferenceCard(),
               const SizedBox(height: 20),
@@ -134,6 +155,7 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
                 ),
               const SizedBox(height: 20),
             ],
+            ),
           ),
         ),
       ),
@@ -150,7 +172,7 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: AppColors.gold.withOpacity(0.2),
+          color: AppColors.gold.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -192,7 +214,7 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: AppColors.gold.withOpacity(0.2),
+          color: AppColors.gold.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -212,7 +234,7 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Divider(
-              color: AppColors.gold.withOpacity(0.15),
+              color: AppColors.gold.withValues(alpha: 0.15),
             ),
           ),
           _buildResultRow(

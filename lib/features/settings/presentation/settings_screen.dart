@@ -17,10 +17,16 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: GestureDetector(
-          onTap: () => context.pop(),
+          onTap: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/dashboard');
+            }
+          },
           child: const Icon(
             Icons.arrow_back_ios_new,
             color: AppColors.gold,
@@ -29,22 +35,37 @@ class SettingsScreen extends ConsumerWidget {
         ),
         title: Text(
           AppStrings.settingsTitle,
-          style: AppTextStyles.heading2,
+          style: AppTextStyles.hindSiliguri(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: AppColors.gold,
+          ),
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.backgroundSecondary,
+              AppColors.background,
+            ],
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
             // Profile Card
             Padding(
               padding: const EdgeInsets.all(14),
               child: Container(
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.gold.withOpacity(0.12),
+                    color: AppColors.gold.withValues(alpha: 0.18),
                     width: 1,
                   ),
                 ),
@@ -52,8 +73,8 @@ class SettingsScreen extends ConsumerWidget {
                 child: Row(
                   children: [
                     Container(
-                      width: 46,
-                      height: 46,
+                      width: 52,
+                      height: 52,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
@@ -65,7 +86,7 @@ class SettingsScreen extends ConsumerWidget {
                         child: Text(
                           'R',
                           style: AppTextStyles.hindSiliguri(
-                            fontSize: 16,
+                            fontSize: 17,
                             fontWeight: FontWeight.bold,
                             color: AppColors.gold,
                           ),
@@ -80,7 +101,7 @@ class SettingsScreen extends ConsumerWidget {
                           Text(
                             'Md. Abdur Rahim',
                             style: AppTextStyles.hindSiliguri(
-                              fontSize: 13,
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
                               color: AppColors.white,
                             ),
@@ -88,7 +109,7 @@ class SettingsScreen extends ConsumerWidget {
                           Text(
                             'rahim@example.com',
                             style: AppTextStyles.hindSiliguri(
-                              fontSize: 10,
+                              fontSize: 11,
                               color: AppColors.textMuted,
                             ),
                           ),
@@ -97,9 +118,9 @@ class SettingsScreen extends ConsumerWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: AppColors.gold.withOpacity(0.1),
+                                color: AppColors.gold.withValues(alpha: 0.1),
                                 border: Border.all(
-                                  color: AppColors.gold.withOpacity(0.3),
+                                  color: AppColors.gold.withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                                 borderRadius: BorderRadius.circular(4),
@@ -107,7 +128,7 @@ class SettingsScreen extends ConsumerWidget {
                               child: Text(
                                 AppStrings.premiumMember,
                                 style: AppTextStyles.hindSiliguri(
-                                  fontSize: 8.5,
+                                  fontSize: 9,
                                   color: AppColors.gold,
                                 ),
                               ),
@@ -116,11 +137,11 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ),
                     Container(
-                      width: 28,
-                      height: 28,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: AppColors.gold.withOpacity(0.2),
+                          color: AppColors.gold.withValues(alpha: 0.2),
                           width: 1,
                         ),
                         borderRadius: BorderRadius.circular(8),
@@ -128,7 +149,7 @@ class SettingsScreen extends ConsumerWidget {
                       child: const Icon(
                         Icons.edit_outlined,
                         color: AppColors.gold,
-                        size: 14,
+                        size: 16,
                       ),
                     ),
                   ],
@@ -158,10 +179,10 @@ class SettingsScreen extends ConsumerWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 6),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: AppColors.error.withOpacity(0.25),
+                    color: AppColors.error.withValues(alpha: 0.25),
                     width: 1,
                   ),
-                  color: AppColors.error.withOpacity(0.08),
+                  color: AppColors.error.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Material(
@@ -188,7 +209,8 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: AppBottomNav(
@@ -204,14 +226,14 @@ class SettingsScreen extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: AppColors.gold.withOpacity(0.12),
+            color: AppColors.gold.withValues(alpha: 0.18),
             width: 1,
           ),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
           child: Column(
             children: [
               for (int i = 0; i < rows.length; i++) ...[
@@ -219,7 +241,7 @@ class SettingsScreen extends ConsumerWidget {
                 if (i < rows.length - 1)
                   Divider(
                     height: 1,
-                    color: Colors.white.withOpacity(0.04),
+                    color: Colors.white.withValues(alpha: 0.04),
                   ),
               ],
             ],
@@ -235,12 +257,12 @@ class SettingsScreen extends ConsumerWidget {
       child: Row(
         children: [
           Container(
-            width: 28,
-            height: 28,
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
-              color: AppColors.gold.withOpacity(0.08),
+              color: AppColors.gold.withValues(alpha: 0.08),
               border: Border.all(
-                color: AppColors.gold.withOpacity(0.15),
+                color: AppColors.gold.withValues(alpha: 0.15),
                 width: 1,
               ),
               borderRadius: BorderRadius.circular(8),
@@ -248,14 +270,14 @@ class SettingsScreen extends ConsumerWidget {
             child: Icon(
               icon,
               color: AppColors.gold,
-              size: 14,
+              size: 15,
             ),
           ),
           const SizedBox(width: 12),
           Text(
             label,
             style: AppTextStyles.hindSiliguri(
-              fontSize: 11,
+              fontSize: 12,
               color: AppColors.textSecondary,
             ),
           ),
@@ -264,9 +286,9 @@ class SettingsScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.gold.withOpacity(0.1),
+                color: AppColors.gold.withValues(alpha: 0.1),
                 border: Border.all(
-                  color: AppColors.gold.withOpacity(0.3),
+                  color: AppColors.gold.withValues(alpha: 0.3),
                   width: 1,
                 ),
                 borderRadius: BorderRadius.circular(4),
@@ -274,7 +296,7 @@ class SettingsScreen extends ConsumerWidget {
               child: Text(
                 'প্রিমিয়াম',
                 style: AppTextStyles.hindSiliguri(
-                  fontSize: 8,
+                  fontSize: 9,
                   color: AppColors.gold,
                 ),
               ),

@@ -45,10 +45,16 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: GestureDetector(
-          onTap: () => context.pop(),
+          onTap: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/dashboard');
+            }
+          },
           child: const Icon(
             Icons.arrow_back_ios_new,
             color: AppColors.gold,
@@ -57,14 +63,29 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
         ),
         title: Text(
           AppStrings.calculatorTitle,
-          style: AppTextStyles.heading2,
+          style: AppTextStyles.hindSiliguri(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: AppColors.gold,
+          ),
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
-          child: Column(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.backgroundSecondary,
+              AppColors.background,
+            ],
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
+            child: Column(
             children: [
               _buildUnitDropdown(ref),
               const SizedBox(height: 12),
@@ -110,6 +131,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                   child: _buildResultCard(result),
                 ),
             ],
+            ),
           ),
         ),
       ),
@@ -127,7 +149,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(9),
         border: Border.all(
-          color: AppColors.gold.withOpacity(0.18),
+          color: AppColors.gold.withValues(alpha: 0.18),
           width: 1,
         ),
       ),
@@ -172,7 +194,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: AppColors.gold.withOpacity(0.2),
+          color: AppColors.gold.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -191,7 +213,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Divider(
-              color: AppColors.gold.withOpacity(0.15),
+              color: AppColors.gold.withValues(alpha: 0.15),
             ),
           ),
           _buildResultRow(

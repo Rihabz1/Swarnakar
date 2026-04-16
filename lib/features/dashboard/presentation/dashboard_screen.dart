@@ -29,11 +29,17 @@ class DashboardScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        toolbarHeight: 72,
         title: Text(
           AppStrings.appName,
-          style: AppTextStyles.heading2,
+          style: AppTextStyles.hindSiliguri(
+            fontSize: 30,
+            fontWeight: FontWeight.w700,
+            color: AppColors.gold,
+            height: 1.2,
+          ),
         ),
         centerTitle: false,
         actions: [
@@ -58,106 +64,105 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Price Ticker Strip
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: FadeInDown(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: AppColors.gold.withOpacity(0.12),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _buildPriceSection(
-                          'সোনা / ভরি',
-                          CurrencyFormatter.formatBDT(goldPrice),
-                          'আজ সকাল ৯:৩০',
-                        ),
-                      ),
-                      Container(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.backgroundSecondary,
+              AppColors.background,
+            ],
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: FadeInDown(
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: AppColors.gold.withValues(alpha: 0.2),
                         width: 1,
-                        height: 40,
-                        color: AppColors.gold.withOpacity(0.15),
-                      ),
-                      Expanded(
-                        child: _buildPriceSection(
-                          'রূপা / ভরি',
-                          CurrencyFormatter.formatBDT(silverPrice),
-                          'আজ সকাল ৯:৩০',
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 40,
-                        color: AppColors.gold.withOpacity(0.15),
-                      ),
-                      Expanded(
-                        child: _buildPriceSection(
-                          'আপডেট',
-                          'আজ ৯টা',
-                          '',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            // Services Section Label
-            Padding(
-              padding: const EdgeInsets.only(left: 14, top: 12, bottom: 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  AppStrings.services.toUpperCase(),
-                  style: AppTextStyles.poppins(
-                    fontSize: 9,
-                    color: AppColors.textMuted,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-            ),
-            // Dashboard Cards Grid
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                ),
-                itemCount: dashboardCards.length,
-                itemBuilder: (context, index) {
-                  final (bengaliName, englishName, icon, route) = dashboardCards[index];
-                  return FadeInUp(
-                    delay: Duration(milliseconds: index * 100),
-                    child: GestureDetector(
-                      onTap: () => context.go(route),
-                      child: _buildDashboardCard(
-                        bengaliName,
-                        englishName,
-                        icon,
                       ),
                     ),
-                  );
-                },
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildPriceSection(
+                            'সোনার বর্তমান বাজার',
+                            CurrencyFormatter.formatBDT(goldPrice),
+                            'গত আপডেট ৯:৩৫ am',
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 46,
+                          color: AppColors.gold.withValues(alpha: 0.15),
+                        ),
+                        Expanded(
+                          child: _buildPriceSection(
+                            'রৌপ্যের বর্তমান বাজার',
+                            CurrencyFormatter.formatBDT(silverPrice),
+                            'গত আপডেট ৯:৩৯ am',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 30),
-          ],
+              Padding(
+                padding: const EdgeInsets.only(left: 16, top: 4, bottom: 10),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    AppStrings.services,
+                    style: AppTextStyles.hindSiliguri(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.white,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 1.25,
+                  ),
+                  itemCount: dashboardCards.length,
+                  itemBuilder: (context, index) {
+                    final (bengaliName, englishName, icon, route) = dashboardCards[index];
+                    return FadeInUp(
+                      delay: Duration(milliseconds: index * 90),
+                      child: GestureDetector(
+                        onTap: () => context.go(route),
+                        child: _buildDashboardCard(
+                          bengaliName,
+                          englishName,
+                          icon,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 26),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: AppBottomNav(
@@ -174,15 +179,15 @@ class DashboardScreen extends ConsumerWidget {
         Text(
           label,
           style: AppTextStyles.hindSiliguri(
-            fontSize: 8.5,
-            color: AppColors.textMuted,
+            fontSize: 9.5,
+            color: AppColors.white,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           value,
           style: AppTextStyles.hindSiliguri(
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: FontWeight.bold,
             color: AppColors.gold,
           ),
@@ -193,8 +198,8 @@ class DashboardScreen extends ConsumerWidget {
             child: Text(
               subtext,
               style: AppTextStyles.hindSiliguri(
-                fontSize: 8,
-                color: AppColors.textMuted,
+                fontSize: 9,
+                color: AppColors.white,
               ),
             ),
           ),
@@ -206,39 +211,39 @@ class DashboardScreen extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.gold.withOpacity(0.1),
+          color: AppColors.gold.withValues(alpha: 0.18),
           width: 1,
         ),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.gold.withOpacity(0.08),
+              color: AppColors.gold.withValues(alpha: 0.1),
               border: Border.all(
-                color: AppColors.gold.withOpacity(0.2),
+                color: AppColors.gold.withValues(alpha: 0.28),
                 width: 1,
               ),
             ),
             child: Icon(
               icon,
               color: AppColors.gold,
-              size: 18,
+              size: 20,
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 8),
           Text(
             bengaliName,
             textAlign: TextAlign.center,
             style: AppTextStyles.hindSiliguri(
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: FontWeight.bold,
               color: AppColors.gold,
             ),
@@ -247,8 +252,8 @@ class DashboardScreen extends ConsumerWidget {
             englishName,
             textAlign: TextAlign.center,
             style: AppTextStyles.poppins(
-              fontSize: 9,
-              color: AppColors.textMuted,
+              fontSize: 10,
+              color: AppColors.white,
             ),
           ),
         ],

@@ -8,10 +8,10 @@ import 'package:swarnakar/shared/widgets/app_bottom_nav.dart';
 import 'package:swarnakar/shared/widgets/section_heading.dart';
 import 'package:swarnakar/shared/widgets/gold_price_card.dart';
 import 'package:swarnakar/shared/widgets/price_row_widget.dart';
-import 'package:swarnakar/shared/widgets/blur_price_overlay.dart';
 import 'package:swarnakar/shared/widgets/subscribe_banner.dart';
 import 'package:swarnakar/core/providers/core_providers.dart';
 import 'package:swarnakar/features/gold_price/providers/gold_price_provider.dart';
+import 'package:intl/intl.dart';
 
 class GoldPriceScreen extends ConsumerWidget {
   const GoldPriceScreen({super.key});
@@ -20,14 +20,22 @@ class GoldPriceScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isSubscribed = ref.watch(isSubscribedProvider);
     final pricesBySection = ref.watch(goldPricesBySection);
+    final exactUpdateTime = DateFormat('dd MMMM yyyy, hh:mm a', 'bn_BD').format(DateTime.now());
+    final subtitleText = 'সর্বশেষ আপডেট: $exactUpdateTime';
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: GestureDetector(
-          onTap: () => context.pop(),
+          onTap: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/dashboard');
+            }
+          },
           child: const Icon(
             Icons.arrow_back_ios_new,
             color: AppColors.gold,
@@ -36,7 +44,11 @@ class GoldPriceScreen extends ConsumerWidget {
         ),
         title: Text(
           AppStrings.goldMarket,
-          style: AppTextStyles.heading2,
+          style: AppTextStyles.hindSiliguri(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: AppColors.gold,
+          ),
         ),
         centerTitle: true,
         actions: [
@@ -52,37 +64,53 @@ class GoldPriceScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            ...pricesBySection.entries.map((entry) {
-              return Column(
-                children: [
-                  SectionHeading(title: entry.key),
-                  GoldPriceCard(
-                    children: entry.value.map((price) {
-                      return BlurPriceOverlay(
-                        isSubscribed: isSubscribed,
-                        child: PriceRowWidget(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.backgroundSecondary,
+              AppColors.background,
+            ],
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              ...pricesBySection.entries.map((entry) {
+                return Column(
+                  children: [
+                    SectionHeading(
+                      title: entry.key,
+                      subtitle: subtitleText,
+                      isCentered: true,
+                    ),
+                    GoldPriceCard(
+                      isLocked: !isSubscribed,
+                      onLockedTap: () => context.go('/paywall'),
+                      children: entry.value.map((price) {
+                        return PriceRowWidget(
                           label: price.label,
                           price: price.price,
-                        ),
-                      );
-                    }).toList(),
+                          isBlurred: !isSubscribed,
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                );
+              }),
+              if (!isSubscribed)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 60),
+                  child: SubscribeBanner(
+                    onSubscribe: () => context.go('/paywall'),
                   ),
-                ],
-              );
-            }),
-            if (!isSubscribed)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 60),
-                child: SubscribeBanner(
-                  onSubscribe: () => context.go('/paywall'),
                 ),
-              ),
-            if (isSubscribed)
-              const SizedBox(height: 20),
-          ],
+              if (isSubscribed)
+                const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: AppBottomNav(
@@ -100,19 +128,19 @@ class GoldPriceScreen extends ConsumerWidget {
         }
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.gold.withOpacity(0.15) : Colors.transparent,
+          color: isActive ? AppColors.gold.withValues(alpha: 0.14) : Colors.transparent,
           border: Border.all(
-            color: isActive ? AppColors.gold : AppColors.textMuted,
+            color: isActive ? AppColors.gold : AppColors.textMuted.withValues(alpha: 0.45),
             width: 1,
           ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Text(
           label,
           style: AppTextStyles.hindSiliguri(
-            fontSize: 11,
+            fontSize: 12,
             color: isActive ? AppColors.gold : AppColors.textMuted,
           ),
         ),

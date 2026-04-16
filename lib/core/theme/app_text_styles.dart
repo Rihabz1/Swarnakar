@@ -3,6 +3,28 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 class AppTextStyles {
+  static const double _globalTextScale = 1.18;
+
+  static double _scaled(double size) => size * _globalTextScale;
+
+  static TextStyle _sutonnyRegular({
+    required double fontSize,
+    required FontWeight fontWeight,
+    required Color color,
+    double? letterSpacing,
+    double? height,
+  }) {
+    return TextStyle(
+      fontFamily: 'SutonnyMJ',
+      fontFamilyFallback: const ['Hind Siliguri', 'Noto Sans Bengali'],
+      fontSize: _scaled(fontSize),
+      fontWeight: fontWeight,
+      color: color,
+      letterSpacing: letterSpacing,
+      height: height,
+    );
+  }
+
   // Bengali font (Hind Siliguri) styles
   static TextStyle hindSiliguri({
     required double fontSize,
@@ -11,8 +33,18 @@ class AppTextStyles {
     double? letterSpacing,
     double? height,
   }) {
+    if (fontWeight.value <= FontWeight.w500.value) {
+      return _sutonnyRegular(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: color,
+        letterSpacing: letterSpacing,
+        height: height,
+      );
+    }
+
     return GoogleFonts.hindSiliguri(
-      fontSize: fontSize,
+      fontSize: _scaled(fontSize),
       fontWeight: fontWeight,
       color: color,
       letterSpacing: letterSpacing,
@@ -29,7 +61,7 @@ class AppTextStyles {
     double? height,
   }) {
     return GoogleFonts.poppins(
-      fontSize: fontSize,
+      fontSize: _scaled(fontSize),
       fontWeight: fontWeight,
       color: color,
       letterSpacing: letterSpacing,
@@ -76,7 +108,7 @@ class AppTextStyles {
       );
 
   static TextStyle get bodySmall => hindSiliguri(
-        fontSize: 10,
+      fontSize: 11,
         fontWeight: FontWeight.normal,
         color: AppColors.textSecondary,
       );
@@ -88,7 +120,7 @@ class AppTextStyles {
       );
 
   static TextStyle get labelMuted => hindSiliguri(
-        fontSize: 9,
+      fontSize: 10,
         fontWeight: FontWeight.normal,
         color: AppColors.textMuted,
       );
