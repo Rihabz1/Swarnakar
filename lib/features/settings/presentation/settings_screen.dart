@@ -139,118 +139,121 @@ class SettingsScreen extends ConsumerWidget {
             // Profile Card
             Padding(
               padding: const EdgeInsets.all(14),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppColors.gold.withValues(alpha: 0.18),
-                    width: 1,
+              child: GestureDetector(
+                onTap: () => context.push('/profile'),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.gold.withValues(alpha: 0.18),
+                      width: 1,
+                    ),
                   ),
-                ),
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.gold,
-                          width: 2,
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.gold,
+                            width: 2,
+                          ),
+                        ),
+                        child: ClipOval(
+                          child: photoUrl != null && photoUrl.isNotEmpty
+                              ? Image.network(
+                                  photoUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Text(
+                                        _initials(name, email),
+                                        style: AppTextStyles.hindSiliguri(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.gold,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Center(
+                                  child: Text(
+                                    _initials(name, email),
+                                    style: AppTextStyles.hindSiliguri(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.gold,
+                                    ),
+                                  ),
+                                ),
                         ),
                       ),
-                      child: ClipOval(
-                        child: photoUrl != null && photoUrl.isNotEmpty
-                            ? Image.network(
-                                photoUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Center(
-                                    child: Text(
-                                      _initials(name, email),
-                                      style: AppTextStyles.hindSiliguri(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.gold,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              )
-                            : Center(
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              style: AppTextStyles.hindSiliguri(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.white,
+                              ),
+                            ),
+                            Text(
+                              email,
+                              style: AppTextStyles.hindSiliguri(
+                                fontSize: 11,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            if (isSubscribed)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.gold.withValues(alpha: 0.1),
+                                  border: Border.all(
+                                    color: AppColors.gold.withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
                                 child: Text(
-                                  _initials(name, email),
+                                  AppStrings.premiumMember,
                                   style: AppTextStyles.hindSiliguri(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 9,
                                     color: AppColors.gold,
                                   ),
                                 ),
                               ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            name,
-                            style: AppTextStyles.hindSiliguri(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.white,
-                            ),
-                          ),
-                          Text(
-                            email,
-                            style: AppTextStyles.hindSiliguri(
-                              fontSize: 11,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          if (isSubscribed)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.gold.withValues(alpha: 0.1),
-                                border: Border.all(
-                                  color: AppColors.gold.withValues(alpha: 0.3),
-                                  width: 1,
-                                ),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                AppStrings.premiumMember,
-                                style: AppTextStyles.hindSiliguri(
-                                  fontSize: 9,
-                                  color: AppColors.gold,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: AppColors.gold.withValues(alpha: 0.2),
-                          width: 1,
+                          ],
                         ),
-                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
-                        Icons.edit_outlined,
-                        color: AppColors.gold,
-                        size: 16,
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: AppColors.gold.withValues(alpha: 0.2),
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.edit_outlined,
+                          color: AppColors.gold,
+                          size: 16,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

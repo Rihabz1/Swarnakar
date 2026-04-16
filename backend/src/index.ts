@@ -3,6 +3,7 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { prettyJSON } from 'hono/pretty-json'
 import { authRoutes } from './routes/auth.ts'
+import { profileRoutes } from './routes/profile.ts'
 
 const app = new Hono()
 
@@ -25,6 +26,7 @@ app.use('*', cors({
 // Routes
 app.route('/api/auth', authRoutes)
 app.route('/auth', authRoutes)
+app.route('/api/profile', profileRoutes)
 
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }))
