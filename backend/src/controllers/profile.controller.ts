@@ -6,8 +6,12 @@ const profileService = new ProfileService();
 export class ProfileController {
   async getProfile(c: Context) {
     try {
-      const userId = c.get('userId'); // From auth middleware
-      const profile = await profileService.getUserProfile(userId);
+      const firebaseId = c.get('userId'); // From auth middleware (Firebase ID from JWT 'sub' claim)
+      const profile = await profileService.getUserProfile(firebaseId, {
+        name: c.get('userName'),
+        email: c.get('userEmail'),
+        profileImage: c.get('userPicture'),
+      });
 
       return c.json({
         success: true,
@@ -21,10 +25,10 @@ export class ProfileController {
 
   async updateProfile(c: Context) {
     try {
-      const userId = c.get('userId');
+      const firebaseId = c.get('userId');
       const updateData = await c.req.json();
 
-      const result = await profileService.updateUserProfile(userId, updateData);
+      const result = await profileService.updateUserProfile(firebaseId, updateData);
 
       return c.json({
         success: true,
@@ -38,10 +42,10 @@ export class ProfileController {
 
   async changePassword(c: Context) {
     try {
-      const userId = c.get('userId');
+      const firebaseId = c.get('userId');
       const { currentPassword, newPassword } = await c.req.json();
 
-      const result = await profileService.changePassword(userId, currentPassword, newPassword);
+      const result = await profileService.changePassword(firebaseId, currentPassword, newPassword);
 
       return c.json({
         success: true,
@@ -55,8 +59,8 @@ export class ProfileController {
 
   async deleteAccount(c: Context) {
     try {
-      const userId = c.get('userId');
-      const result = await profileService.deleteAccount(userId);
+      const firebaseId = c.get('userId');
+      const result = await profileService.deleteAccount(firebaseId);
 
       return c.json({
         success: true,
@@ -70,8 +74,8 @@ export class ProfileController {
 
   async getUserStats(c: Context) {
     try {
-      const userId = c.get('userId');
-      const stats = await profileService.getUserStats(userId);
+      const firebaseId = c.get('userId');
+      const stats = await profileService.getUserStats(firebaseId);
 
       return c.json({
         success: true,

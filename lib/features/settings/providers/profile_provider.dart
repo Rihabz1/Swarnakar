@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:swarnakar/core/services/profile_service.dart';
 import 'package:swarnakar/features/auth/providers/auth_provider.dart';
 
@@ -50,6 +51,12 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
   ProfileNotifier(this._profileService, this._ref) : super(ProfileState());
 
+  Future<String?> _getToken() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return null;
+    return await currentUser.getIdToken();
+  }
+
   Future<void> loadProfile() async {
     state = state.copyWith(isLoading: true, error: null);
 
@@ -63,8 +70,14 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         return;
       }
 
-      // In production, get token from auth state
-      final token = 'mock-token';
+      final token = await _getToken();
+      if (token == null) {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Failed to get authentication token',
+        );
+        return;
+      }
 
       final profile = await _profileService.getProfile(token);
       final stats = await _profileService.getUserStats(token);
@@ -86,7 +99,15 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final token = 'mock-token';
+      final token = await _getToken();
+      if (token == null) {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Failed to get authentication token',
+        );
+        return;
+      }
+
       final updatedProfile = await _profileService.updateProfile(token, data);
 
       state = state.copyWith(
@@ -109,7 +130,15 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final token = 'mock-token';
+      final token = await _getToken();
+      if (token == null) {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Failed to get authentication token',
+        );
+        return;
+      }
+
       await _profileService.changePassword(
         token,
         currentPassword: currentPassword,
@@ -129,7 +158,15 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final token = 'mock-token';
+      final token = await _getToken();
+      if (token == null) {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Failed to get authentication token',
+        );
+        return;
+      }
+
       await _profileService.deleteAccount(token);
       state = state.copyWith(isLoading: false);
     } catch (e) {
