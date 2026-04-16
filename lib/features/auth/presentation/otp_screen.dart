@@ -11,8 +11,13 @@ import 'dart:async';
 
 class OtpScreen extends ConsumerStatefulWidget {
   final String email;
+  final String flow;
 
-  const OtpScreen({super.key, required this.email});
+  const OtpScreen({
+    super.key,
+    required this.email,
+    this.flow = 'signup',
+  });
 
   @override
   ConsumerState<OtpScreen> createState() => _OtpScreenState();
