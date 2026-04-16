@@ -20,6 +20,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late TextEditingController _addressController;
+  late TextEditingController _currentPasswordController;
+  late TextEditingController _newPasswordController;
+  late TextEditingController _confirmPasswordController;
 
   @override
   void initState() {
@@ -28,6 +31,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _emailController = TextEditingController();
     _phoneController = TextEditingController();
     _addressController = TextEditingController();
+    _currentPasswordController = TextEditingController();
+    _newPasswordController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
     
     // Load profile data on first build
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -41,6 +47,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -141,6 +150,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       _buildStatsGrid(profileState.stats),
                       const SizedBox(height: 24),
                       _buildProfileForm(profileState, profileNotifier),
+                      const SizedBox(height: 24),
+                      _buildChangePasswordSection(context, profileNotifier, profileState),
                       const SizedBox(height: 24),
                       _buildDangerZone(context, authNotifier, profileNotifier),
                       const SizedBox(height: 32),
@@ -418,6 +429,219 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  Widget _buildChangePasswordSection(
+    BuildContext context,
+    ProfileNotifier notifier,
+    ProfileState state,
+  ) {
+    return FadeInUp(
+      delay: const Duration(milliseconds: 300),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.gold.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'পাসওয়ার্ড নিরাপত্তা',
+              style: AppTextStyles.hindSiliguri(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.gold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'আপনার অ্যাকাউন্টের নিরাপত্তার জন্য নিয়মিত পাসওয়ার্ড পরিবর্তন করুন।',
+              style: AppTextStyles.hindSiliguri(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            GoldenButton(
+              text: 'পাসওয়ার্ড পরিবর্তন করুন',
+              onPressed: () => _showChangePasswordDialog(context, notifier, state),
+              isLoading: state.isLoading,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog(
+    BuildContext context,
+    ProfileNotifier notifier,
+    ProfileState state,
+  ) {
+    _currentPasswordController.clear();
+    _newPasswordController.clear();
+    _confirmPasswordController.clear();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text(
+          'পাসওয়ার্ড পরিবর্তন করুন',
+          style: AppTextStyles.hindSiliguri(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.gold,
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildPasswordField(
+                controller: _currentPasswordController,
+                label: 'বর্তমান পাসওয়ার্ড',
+                hint: 'আপনার বর্তমান পাসওয়ার্ড দিন',
+              ),
+              const SizedBox(height: 16),
+              _buildPasswordField(
+                controller: _newPasswordController,
+                label: 'নতুন পাসওয়ার্ড',
+                hint: 'নতুন পাসওয়ার্ড দিন (কমপক্ষে ৬ অক্ষর)',
+              ),
+              const SizedBox(height: 16),
+              _buildPasswordField(
+                controller: _confirmPasswordController,
+                label: 'পাসওয়ার্ড নিশ্চিত করুন',
+                hint: 'পাসওয়ার্ড আবার দিন',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'বাতিল',
+              style: AppTextStyles.hindSiliguri(
+                fontSize: 14,
+                color: AppColors.gold,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (_validatePasswordChange()) {
+                await notifier.changePassword(
+                  currentPassword: _currentPasswordController.text,
+                  newPassword: _newPasswordController.text,
+                );
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('পাসওয়ার্ড সফলভাবে পরিবর্তিত হয়েছে'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              }
+            },
+            child: Text(
+              'সংরক্ষণ করুন',
+              style: AppTextStyles.hindSiliguri(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.gold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPasswordField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: true,
+      style: AppTextStyles.hindSiliguri(
+        fontSize: 14,
+        color: Colors.white,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        labelStyle: AppTextStyles.hindSiliguri(
+          fontSize: 12,
+          color: AppColors.textSecondary,
+        ),
+        hintStyle: AppTextStyles.hindSiliguri(
+          fontSize: 12,
+          color: Colors.white24,
+        ),
+        prefixIcon: const Icon(Icons.lock_outline, color: AppColors.gold, size: 20),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppColors.gold),
+        ),
+        fillColor: AppColors.background.withValues(alpha: 0.5),
+        filled: true,
+      ),
+    );
+  }
+
+  bool _validatePasswordChange() {
+    final current = _currentPasswordController.text.trim();
+    final newPass = _newPasswordController.text.trim();
+    final confirm = _confirmPasswordController.text.trim();
+
+    if (current.isEmpty) {
+      _showPasswordError('বর্তমান পাসওয়ার্ড দিন।');
+      return false;
+    }
+
+    if (newPass.isEmpty) {
+      _showPasswordError('নতুন পাসওয়ার্ড দিন।');
+      return false;
+    }
+
+    if (newPass.length < 6) {
+      _showPasswordError('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
+      return false;
+    }
+
+    if (newPass != confirm) {
+      _showPasswordError('পাসওয়ার্ড মিলছে না।');
+      return false;
+    }
+
+    if (current == newPass) {
+      _showPasswordError('নতুন পাসওয়ার্ড আগেরটির মতো হতে পারে না।');
+      return false;
+    }
+
+    return true;
+  }
+
+  void _showPasswordError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
   Widget _buildDangerZone(
     BuildContext context,
     AuthNotifier authNotifier,
@@ -490,7 +714,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'বাতিল',
-              style: AppTextStyles.hindSiliguri(color: AppColors.gold),
+              style: AppTextStyles.hindSiliguri(
+                fontSize: 14,
+                color: AppColors.gold,
+              ),
             ),
           ),
           TextButton(
@@ -505,6 +732,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: Text(
               'ডিলিট',
               style: AppTextStyles.hindSiliguri(
+                fontSize: 14,
                 color: Colors.red,
                 fontWeight: FontWeight.bold,
               ),
