@@ -53,6 +53,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
     final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+    final whitespaceRegex = RegExp(r'\s');
 
     if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       _showError('সবগুলো তথ্য দিন।');
@@ -60,6 +61,14 @@ class _SignupScreenState extends State<SignupScreen> {
     }
     if (!emailRegex.hasMatch(email)) {
       _showError('সঠিক ইমেইল ফরম্যাট দিন (example@email.com)।');
+      return false;
+    }
+    if (whitespaceRegex.hasMatch(email)) {
+      _showError('ইমেইলে স্পেস ব্যবহার করা যাবে না।');
+      return false;
+    }
+    if (whitespaceRegex.hasMatch(password) || whitespaceRegex.hasMatch(confirmPassword)) {
+      _showError('পাসওয়ার্ডে স্পেস ব্যবহার করা যাবে না।');
       return false;
     }
     if (password.length < 8) {
@@ -76,17 +85,9 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.backgroundSecondary,
-              AppColors.background,
-            ],
-          ),
-        ),
+        color: AppColors.background,
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
@@ -183,7 +184,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               text: AppStrings.createAccount,
                               onPressed: () {
                                 if (!_validateSignup()) return;
-                                final email = _emailController.text;
+                                final email = _emailController.text.trim();
                                 context.go('/otp?email=$email');
                               },
                             ),

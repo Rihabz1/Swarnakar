@@ -52,16 +52,7 @@ class ReportsScreen extends ConsumerWidget {
         centerTitle: true,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.backgroundSecondary,
-              AppColors.background,
-            ],
-          ),
-        ),
+        color: AppColors.background,
         child: Column(
           children: [
             SingleChildScrollView(

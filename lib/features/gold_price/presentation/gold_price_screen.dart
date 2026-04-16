@@ -45,7 +45,7 @@ class GoldPriceScreen extends ConsumerWidget {
         title: Text(
           AppStrings.goldMarket,
           style: AppTextStyles.hindSiliguri(
-            fontSize: 24,
+            fontSize: 22,
             fontWeight: FontWeight.w700,
             color: AppColors.gold,
           ),
@@ -53,11 +53,11 @@ class GoldPriceScreen extends ConsumerWidget {
         centerTitle: true,
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 14),
+            padding: const EdgeInsets.only(right: 10),
             child: Row(
               children: [
                 _buildTabChip(AppStrings.gold, true, context),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 _buildTabChip(AppStrings.silver, false, context),
               ],
             ),
@@ -65,16 +65,7 @@ class GoldPriceScreen extends ConsumerWidget {
         ],
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.backgroundSecondary,
-              AppColors.background,
-            ],
-          ),
-        ),
+        color: AppColors.background,
         child: SingleChildScrollView(
           child: Column(
             children: [
@@ -87,8 +78,6 @@ class GoldPriceScreen extends ConsumerWidget {
                       isCentered: true,
                     ),
                     GoldPriceCard(
-                      isLocked: !isSubscribed,
-                      onLockedTap: () => context.go('/paywall'),
                       children: entry.value.map((price) {
                         return PriceRowWidget(
                           label: price.label,
@@ -128,7 +117,7 @@ class GoldPriceScreen extends ConsumerWidget {
         }
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: isActive ? AppColors.gold.withValues(alpha: 0.14) : Colors.transparent,
           border: Border.all(

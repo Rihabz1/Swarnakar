@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
@@ -12,11 +13,23 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late final AnimationController _loaderController;
+
   @override
   void initState() {
     super.initState();
+    _loaderController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
     _navigateToLogin();
+  }
+
+  @override
+  void dispose() {
+    _loaderController.dispose();
+    super.dispose();
   }
 
   void _navigateToLogin() {
@@ -34,35 +47,7 @@ class _SplashScreenState extends State<SplashScreen> {
         children: [
           Positioned.fill(
             child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFF09121E),
-                    AppColors.background,
-                    AppColors.background,
-                  ],
-                  stops: [0.0, 0.42, 1.0],
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(0, -1.05),
-                    radius: 1.0,
-                    colors: [
-                      AppColors.gold.withValues(alpha: 0.1),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.75],
-                  ),
-                ),
-              ),
+              color: AppColors.background,
             ),
           ),
           SafeArea(
@@ -102,7 +87,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                   ),
                   const SizedBox(height: 54),
-                  _buildAnimatedDots(),
+                  _buildPremiumLoader(),
                 ],
               ),
             ),
@@ -155,40 +140,35 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 
-  Widget _buildAnimatedDots() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildDot(0),
-        const SizedBox(width: 10),
-        _buildDot(1, isActive: true),
-        const SizedBox(width: 10),
-        _buildDot(2),
-      ],
-    );
-  }
-
-  Widget _buildDot(int index, {bool isActive = false}) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0, end: 1),
-      duration: Duration(milliseconds: 600 + (index * 220)),
-      curve: Curves.easeInOut,
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: isActive ? 1 + (0.14 * value) : 1,
-          child: Opacity(
-            opacity: isActive ? 1.0 : 0.35,
-            child: Container(
-              width: 7,
-              height: 7,
-              decoration: const BoxDecoration(
-                color: AppColors.gold,
-                shape: BoxShape.circle,
+  Widget _buildPremiumLoader() {
+    return SizedBox(
+      width: 42,
+      height: 42,
+      child: AnimatedBuilder(
+        animation: _loaderController,
+        builder: (context, child) {
+          return Transform.rotate(
+            angle: _loaderController.value * 2 * math.pi,
+            child: ShaderMask(
+              shaderCallback: (rect) {
+                return const SweepGradient(
+                  colors: [
+                    AppColors.goldDark,
+                    AppColors.vividGold,
+                    AppColors.goldLight,
+                    AppColors.goldDark,
+                  ],
+                  stops: [0.0, 0.42, 0.78, 1.0],
+                ).createShader(rect);
+              },
+              child: const CircularProgressIndicator(
+                strokeWidth: 3,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

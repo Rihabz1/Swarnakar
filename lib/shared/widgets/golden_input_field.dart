@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 
@@ -12,6 +13,7 @@ class GoldenInputField extends StatefulWidget {
   final int maxLines;
   final int? maxLength;
   final VoidCallback? onIconTap;
+  final bool isGlassmorphic;
 
   const GoldenInputField({
     super.key,
@@ -24,6 +26,7 @@ class GoldenInputField extends StatefulWidget {
     this.maxLines = 1,
     this.maxLength,
     this.onIconTap,
+    this.isGlassmorphic = false,
   });
 
   @override
@@ -58,13 +61,15 @@ class _GoldenInputFieldState extends State<GoldenInputField> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final inputContent = Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: widget.isGlassmorphic
+            ? AppColors.surface.withValues(alpha: 0.42)
+            : AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
+            color: Colors.black.withValues(alpha: widget.isGlassmorphic ? 0.12 : 0.18),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -83,7 +88,9 @@ class _GoldenInputFieldState extends State<GoldenInputField> {
               padding: const EdgeInsets.only(left: 14, right: 10),
               child: Icon(
                 widget.icon,
-                color: AppColors.gold,
+                color: widget.isGlassmorphic
+                    ? AppColors.vividGold.withValues(alpha: 0.9)
+                    : AppColors.gold,
                 size: 20,
               ),
             ),
@@ -134,12 +141,26 @@ class _GoldenInputFieldState extends State<GoldenInputField> {
                 padding: const EdgeInsets.only(right: 14),
                 child: Icon(
                   _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                  color: AppColors.gold,
+                  color: widget.isGlassmorphic
+                      ? AppColors.vividGold.withValues(alpha: 0.9)
+                      : AppColors.gold,
                   size: 20,
                 ),
               ),
             ),
         ],
+      ),
+    );
+
+    if (!widget.isGlassmorphic) {
+      return inputContent;
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: inputContent,
       ),
     );
   }
