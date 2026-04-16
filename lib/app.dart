@@ -8,7 +8,7 @@ class SwarnakarApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Swarnakar',
+      title: 'স্বর্ণকার',
       theme: AppTheme.darkTheme,
       routerConfig: appRouter,
       localizationsDelegates: const [

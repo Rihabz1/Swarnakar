@@ -9,6 +9,7 @@ class GoldenInputField extends StatefulWidget {
   final TextInputType keyboardType;
   final bool obscureText;
   final TextEditingController? controller;
+  final ValueChanged<String>? onChanged;
   final String? Function(String?)? validator;
   final int maxLines;
   final int? maxLength;
@@ -22,6 +23,7 @@ class GoldenInputField extends StatefulWidget {
     this.keyboardType = TextInputType.text,
     this.obscureText = false,
     this.controller,
+    this.onChanged,
     this.validator,
     this.maxLines = 1,
     this.maxLength,
@@ -99,6 +101,7 @@ class _GoldenInputFieldState extends State<GoldenInputField> {
               controller: widget.controller,
               focusNode: _focusNode,
               keyboardType: widget.keyboardType,
+              onChanged: widget.onChanged,
               obscureText: _obscureText && widget.obscureText,
               validator: widget.validator,
               maxLines: _obscureText && widget.obscureText ? 1 : widget.maxLines,

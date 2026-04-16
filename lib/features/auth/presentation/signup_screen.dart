@@ -24,6 +24,20 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   late TextEditingController _passwordController;
   late TextEditingController _confirmPasswordController;
 
+  void _forceEmailLowercase(String value) {
+    final lowered = value.toLowerCase();
+    if (_emailController.text == lowered) return;
+    final currentSelection = _emailController.selection.baseOffset;
+    final nextOffset = currentSelection < 0
+        ? lowered.length
+        : currentSelection.clamp(0, lowered.length);
+    _emailController.value = _emailController.value.copyWith(
+      text: lowered,
+      selection: TextSelection.collapsed(offset: nextOffset),
+      composing: TextRange.empty,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -185,6 +199,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                               icon: Icons.email_outlined,
                               keyboardType: TextInputType.emailAddress,
                               controller: _emailController,
+                              onChanged: _forceEmailLowercase,
                             ),
                           ),
                           const SizedBox(height: 12),
