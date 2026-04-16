@@ -14,6 +14,7 @@ import 'package:swarnakar/features/subscription/presentation/paywall_screen.dart
 import 'package:swarnakar/features/converter/presentation/converter_screen.dart';
 import 'package:swarnakar/features/price_history/presentation/price_history_screen.dart';
 import 'package:swarnakar/features/settings/presentation/settings_screen.dart';
+import 'package:swarnakar/features/settings/presentation/profile_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
@@ -99,6 +100,11 @@ final GoRouter appRouter = GoRouter(
       path: '/settings',
       name: 'settings',
       builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: '/profile',
+      name: 'profile',
+      builder: (context, state) => const ProfileScreen(),
     ),
   ],
 );
