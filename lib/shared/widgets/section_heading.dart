@@ -6,24 +6,27 @@ import 'package:swarnakar/core/constants/app_strings.dart';
 class SectionHeading extends StatelessWidget {
   final String title;
   final String? subtitle;
+  final bool isCentered;
 
   const SectionHeading({
     super.key,
     required this.title,
     this.subtitle = AppStrings.lastUpdate,
+    this.isCentered = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: isCentered ? CrossAxisAlignment.center : CrossAxisAlignment.start,
         children: [
           Text(
             title,
+            textAlign: isCentered ? TextAlign.center : TextAlign.start,
             style: AppTextStyles.hindSiliguri(
-              fontSize: 13,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
               color: AppColors.white,
             ),
@@ -33,9 +36,10 @@ class SectionHeading extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 subtitle!,
+                textAlign: isCentered ? TextAlign.center : TextAlign.start,
                 style: AppTextStyles.hindSiliguri(
-                  fontSize: 9,
-                  color: AppColors.textMuted,
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
                 ),
               ),
             ),

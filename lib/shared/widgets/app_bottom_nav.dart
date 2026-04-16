@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
-import 'package:swarnakar/core/theme/app_text_styles.dart';
-import 'package:swarnakar/core/constants/app_strings.dart';
 
 class AppBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -17,21 +15,29 @@ class AppBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const items = [
-      (AppStrings.home, Icons.home_outlined, '/dashboard'),
-      (AppStrings.goldMarket, Icons.diamond_outlined, '/gold-price'),
-      (AppStrings.silverMarket, Icons.circle_outlined, '/silver-price'),
-      (AppStrings.calculator, Icons.calculate_outlined, '/calculator'),
-      (AppStrings.profile, Icons.person_outlined, '/settings'),
+      ('হোম', Icons.home_outlined, '/dashboard'),
+      ('স্বর্ণ', Icons.diamond_outlined, '/gold-price'),
+      ('রৌপ্য', Icons.circle_outlined, '/silver-price'),
+      ('ক্যালকুলেটর', Icons.calculate_outlined, '/calculator'),
+      ('প্রোফাইল', Icons.person_outlined, '/settings'),
     ];
 
     return Container(
       decoration: BoxDecoration(
+        color: AppColors.backgroundSecondary,
         border: Border(
           top: BorderSide(
-            color: AppColors.gold.withOpacity(0.1),
+            color: AppColors.gold.withValues(alpha: 0.16),
             width: 1,
           ),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, -8),
+          ),
+        ],
       ),
       child: BottomNavigationBar(
         currentIndex: currentIndex,
@@ -39,17 +45,21 @@ class AppBottomNav extends StatelessWidget {
           final route = items[index].$3;
           context.go(route);
         },
-        backgroundColor: const Color(0xFF0D0D18),
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        iconSize: 22,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.gold,
         unselectedItemColor: AppColors.textMuted,
-        selectedLabelStyle: AppTextStyles.hindSiliguri(
-          fontSize: 8.5,
+        selectedLabelStyle: const TextStyle(
+          fontFamily: 'SutonnyMJ',
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
           color: AppColors.gold,
         ),
-        unselectedLabelStyle: AppTextStyles.hindSiliguri(
-          fontSize: 8.5,
+        unselectedLabelStyle: const TextStyle(
+          fontFamily: 'SutonnyMJ',
+          fontSize: 11,
           color: AppColors.textMuted,
         ),
         items: items

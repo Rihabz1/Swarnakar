@@ -66,111 +66,137 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: GestureDetector(
-          onTap: () => context.pop(),
-          child: const Icon(
-            Icons.arrow_back_ios_new,
-            color: AppColors.gold,
-            size: 18,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.backgroundSecondary,
+              AppColors.background,
+            ],
           ),
         ),
-        title: Text(
-          AppStrings.verifyOtp,
-          style: AppTextStyles.heading2,
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-          child: Column(
-            children: [
-              FadeInDown(
-                child: Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.gold.withOpacity(0.3),
-                      width: 1.5,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/login');
+                        }
+                      },
+                      child: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: AppColors.gold,
+                        size: 18,
+                      ),
                     ),
-                  ),
-                  child: const Icon(
-                    Icons.mail_outline,
-                    color: AppColors.gold,
-                    size: 24,
-                  ),
+                    const SizedBox(height: 20),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(18, 24, 18, 18),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface.withValues(alpha: 0.92),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: AppColors.gold.withValues(alpha: 0.24)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            blurRadius: 28,
+                            offset: const Offset(0, 14),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          FadeInDown(
+                            child: Container(
+                              width: 70,
+                              height: 70,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.gold.withValues(alpha: 0.36),
+                                  width: 1.5,
+                                ),
+                                color: AppColors.background.withValues(alpha: 0.35),
+                              ),
+                              child: const Icon(
+                                Icons.badge_outlined,
+                                color: AppColors.gold,
+                                size: 30,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 180),
+                            child: Text(
+                              AppStrings.verifyOtpTitle,
+                              style: AppTextStyles.hindSiliguri(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.white,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 260),
+                            child: Text(
+                              _maskEmail(widget.email),
+                              style: AppTextStyles.hindSiliguri(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          _buildOtpBoxes(),
+                          const SizedBox(height: 20),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 520),
+                            child: GoldenButton(
+                              text: AppStrings.verify,
+                              onPressed: () {
+                                context.go('/login');
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 620),
+                            child: _buildResendRow(),
+                          ),
+                          const SizedBox(height: 14),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 700),
+                            child: Text(
+                              AppStrings.termsAccept,
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.hindSiliguri(
+                                fontSize: 10,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 14),
-              FadeInUp(
-                delay: const Duration(milliseconds: 200),
-                child: Text(
-                  AppStrings.verifyOtpTitle,
-                  style: AppTextStyles.hindSiliguri(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.white,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              FadeInUp(
-                delay: const Duration(milliseconds: 300),
-                child: Text(
-                  AppStrings.sixDigitCode,
-                  style: AppTextStyles.hindSiliguri(
-                    fontSize: 10,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ),
-              FadeInUp(
-                delay: const Duration(milliseconds: 400),
-                child: Text(
-                  _maskEmail(widget.email),
-                  style: AppTextStyles.hindSiliguri(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.gold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildOtpBoxes(),
-              const SizedBox(height: 20),
-              FadeInUp(
-                delay: const Duration(milliseconds: 800),
-                child: GoldenButton(
-                  text: AppStrings.verify,
-                  onPressed: () {
-                    context.go('/login');
-                  },
-                ),
-              ),
-              const SizedBox(height: 14),
-              FadeInUp(
-                delay: const Duration(milliseconds: 900),
-                child: _buildResendRow(),
-              ),
-              const Spacer(),
-              FadeInUp(
-                delay: const Duration(milliseconds: 1000),
-                child: Text(
-                  AppStrings.termsAccept,
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.hindSiliguri(
-                    fontSize: 8.5,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -185,16 +211,16 @@ class _OtpScreenState extends State<OtpScreen> {
         (index) => Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: SizedBox(
-            width: 38,
-            height: 46,
+            width: 44,
+            height: 54,
             child: FadeInUp(
               delay: Duration(milliseconds: 500 + (index * 100)),
               child: Container(
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppColors.gold.withOpacity(0.2),
+                    color: AppColors.gold.withValues(alpha: 0.26),
                     width: 1,
                   ),
                 ),
@@ -211,7 +237,7 @@ class _OtpScreenState extends State<OtpScreen> {
                       contentPadding: EdgeInsets.zero,
                     ),
                     style: AppTextStyles.hindSiliguri(
-                      fontSize: 16,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: AppColors.gold,
                     ),
@@ -237,7 +263,7 @@ class _OtpScreenState extends State<OtpScreen> {
         Text(
           AppStrings.didntReceiveCode,
           style: AppTextStyles.hindSiliguri(
-            fontSize: 10,
+            fontSize: 11,
             color: AppColors.textMuted,
           ),
         ),
@@ -245,7 +271,7 @@ class _OtpScreenState extends State<OtpScreen> {
             ? Text(
                 '${AppStrings.resendCode} ($_secondsRemaining:${(_secondsRemaining % 60).toString().padLeft(2, '0')})',
                 style: AppTextStyles.hindSiliguri(
-                  fontSize: 10,
+                  fontSize: 11,
                   color: AppColors.gold,
                 ),
               )
@@ -259,7 +285,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 child: Text(
                   AppStrings.resendCode,
                   style: AppTextStyles.hindSiliguri(
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
                     color: AppColors.gold,
                   ),

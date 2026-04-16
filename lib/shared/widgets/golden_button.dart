@@ -28,8 +28,10 @@ class GoldenButton extends StatelessWidget {
         backgroundColor: AppColors.gold,
         disabledBackgroundColor: AppColors.goldDark,
         padding: EdgeInsets.zero,
+        elevation: 0,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
         ),
         minimumSize: Size(
           width ?? (isFullWidth ? double.infinity : 120),

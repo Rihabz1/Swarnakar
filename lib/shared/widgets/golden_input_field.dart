@@ -61,11 +61,18 @@ class _GoldenInputFieldState extends State<GoldenInputField> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
         border: Border.all(
           color: _isFocused
-              ? AppColors.gold.withOpacity(0.5)
-              : AppColors.gold.withOpacity(0.18),
+              ? AppColors.gold.withValues(alpha: 0.65)
+              : AppColors.gold.withValues(alpha: 0.2),
           width: _isFocused ? 1.5 : 1,
         ),
       ),
@@ -73,11 +80,11 @@ class _GoldenInputFieldState extends State<GoldenInputField> {
         children: [
           if (widget.icon != null)
             Padding(
-              padding: const EdgeInsets.only(left: 14, right: 8),
+              padding: const EdgeInsets.only(left: 14, right: 10),
               child: Icon(
                 widget.icon,
                 color: AppColors.gold,
-                size: 16,
+                size: 20,
               ),
             ),
           Expanded(
@@ -90,19 +97,27 @@ class _GoldenInputFieldState extends State<GoldenInputField> {
               maxLines: _obscureText && widget.obscureText ? 1 : widget.maxLines,
               maxLength: widget.maxLength,
               style: AppTextStyles.hindSiliguri(
-                fontSize: 12,
+                fontSize: 14,
                 color: AppColors.textPrimary,
               ),
               decoration: InputDecoration(
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                filled: false,
+                fillColor: Colors.transparent,
+                isDense: true,
                 contentPadding: EdgeInsets.symmetric(
-                  horizontal: widget.icon == null ? 14 : 0,
-                  vertical: 12,
+                  horizontal: widget.icon == null ? 16 : 0,
+                  vertical: 16,
                 ),
                 hintText: widget.hint,
                 hintStyle: AppTextStyles.hindSiliguri(
-                  fontSize: 10,
-                  color: AppColors.textMuted,
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
                 ),
                 counterText: '',
               ),
@@ -120,7 +135,7 @@ class _GoldenInputFieldState extends State<GoldenInputField> {
                 child: Icon(
                   _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                   color: AppColors.gold,
-                  size: 16,
+                  size: 20,
                 ),
               ),
             ),

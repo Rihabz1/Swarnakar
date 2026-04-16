@@ -25,10 +25,16 @@ class ReportsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: GestureDetector(
-          onTap: () => context.pop(),
+          onTap: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/dashboard');
+            }
+          },
           child: const Icon(
             Icons.arrow_back_ios_new,
             color: AppColors.gold,
@@ -37,119 +43,132 @@ class ReportsScreen extends ConsumerWidget {
         ),
         title: Text(
           AppStrings.reportsTitle,
-          style: AppTextStyles.heading2,
+          style: AppTextStyles.hindSiliguri(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: AppColors.gold,
+          ),
         ),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Row(
-                children: filterTags.map((tag) {
-                  final isActive = filter == tag;
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.backgroundSecondary,
+              AppColors.background,
+            ],
+          ),
+        ),
+        child: Column(
+          children: [
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: Row(
+                  children: filterTags.map((tag) {
+                    final isActive = filter == tag;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () {
+                          ref.read(activeReportFilterProvider.notifier).state = tag;
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: isActive ? AppColors.gold.withValues(alpha: 0.14) : Colors.transparent,
+                            border: Border.all(
+                              color: isActive ? AppColors.gold.withValues(alpha: 0.45) : AppColors.gold.withValues(alpha: 0.2),
+                              width: 1,
+                            ),
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          child: Text(
+                            tag,
+                            style: AppTextStyles.hindSiliguri(
+                              fontSize: 11,
+                              color: isActive ? AppColors.gold : AppColors.textMuted,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                itemCount: reports.length,
+                itemBuilder: (context, index) {
+                  final report = reports[index];
                   return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () {
-                        ref.read(activeReportFilterProvider.notifier).state = tag;
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: isActive ? AppColors.gold.withOpacity(0.12) : Colors.transparent,
-                          border: Border.all(
-                            color: isActive ? AppColors.gold.withOpacity(0.4) : AppColors.gold.withOpacity(0.2),
-                            width: 1,
-                          ),
-                          borderRadius: BorderRadius.circular(20),
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: AppColors.gold.withValues(alpha: 0.16),
                         ),
-                        child: Text(
-                          tag,
-                          style: AppTextStyles.hindSiliguri(
-                            fontSize: 9.5,
-                            color: isActive ? AppColors.gold : AppColors.textMuted,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  report.type,
+                                  style: AppTextStyles.hindSiliguri(
+                                    fontSize: 10,
+                                    color: AppColors.gold,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  report.item,
+                                  style: AppTextStyles.hindSiliguri(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  report.date,
+                                  style: AppTextStyles.hindSiliguri(
+                                    fontSize: 10,
+                                    color: AppColors.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                          Text(
+                            report.value,
+                            style: AppTextStyles.hindSiliguri(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.gold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
-                }).toList(),
+                },
               ),
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              itemCount: reports.length,
-              itemBuilder: (context, index) {
-                final report = reports[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(10),
-                      border: const Border(
-                        left: BorderSide(
-                          color: AppColors.gold,
-                          width: 3,
-                        ),
-                      ),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                report.type,
-                                style: AppTextStyles.hindSiliguri(
-                                  fontSize: 9,
-                                  color: AppColors.gold,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                report.item,
-                                style: AppTextStyles.hindSiliguri(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                report.date,
-                                style: AppTextStyles.hindSiliguri(
-                                  fontSize: 9,
-                                  color: AppColors.textMuted,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          report.value,
-                          style: AppTextStyles.hindSiliguri(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.gold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: AppBottomNav(
         currentIndex: AppBottomNav.getIndexFromRoute('/reports'),

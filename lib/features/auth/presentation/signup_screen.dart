@@ -6,6 +6,7 @@ import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -38,94 +39,174 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+  }
+
+  bool _validateSignup() {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      _showError('সবগুলো তথ্য দিন।');
+      return false;
+    }
+    if (!emailRegex.hasMatch(email)) {
+      _showError('সঠিক ইমেইল ফরম্যাট দিন (example@email.com)।');
+      return false;
+    }
+    if (password.length < 8) {
+      _showError('পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।');
+      return false;
+    }
+    if (password != confirmPassword) {
+      _showError('পাসওয়ার্ড মিলছে না।');
+      return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: GestureDetector(
-          onTap: () => context.pop(),
-          child: const Icon(
-            Icons.arrow_back_ios_new,
-            color: AppColors.gold,
-            size: 18,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.backgroundSecondary,
+              AppColors.background,
+            ],
           ),
         ),
-        title: Text(
-          AppStrings.signUp,
-          style: AppTextStyles.heading2,
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Column(
-            children: [
-              FadeInUp(
-                delay: const Duration(milliseconds: 200),
-                child: GoldenInputField(
-                  hint: AppStrings.fullName,
-                  icon: Icons.person_outline,
-                  controller: _nameController,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/login');
+                        }
+                      },
+                      child: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: AppColors.gold,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'Sign Up',
+                      style: AppTextStyles.poppins(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.gold,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                          color: AppColors.gold.withValues(alpha: 0.24),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            blurRadius: 28,
+                            offset: const Offset(0, 14),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 180),
+                            child: GoldenInputField(
+                              hint: AppStrings.fullName,
+                              icon: Icons.person_outline,
+                              controller: _nameController,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 280),
+                            child: GoldenInputField(
+                              hint: AppStrings.email,
+                              icon: Icons.email_outlined,
+                              keyboardType: TextInputType.emailAddress,
+                              controller: _emailController,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 380),
+                            child: GoldenInputField(
+                              hint: AppStrings.password,
+                              icon: Icons.lock_outline,
+                              obscureText: true,
+                              controller: _passwordController,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 470),
+                            child: GoldenInputField(
+                              hint: AppStrings.confirmPassword,
+                              icon: Icons.lock_outline,
+                              obscureText: true,
+                              controller: _confirmPasswordController,
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 560),
+                            child: GoldenButton(
+                              text: AppStrings.createAccount,
+                              onPressed: () {
+                                if (!_validateSignup()) return;
+                                final email = _emailController.text;
+                                context.go('/otp?email=$email');
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildDivider(),
+                          const SizedBox(height: 12),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 660),
+                            child: _buildGoogleSignUp(),
+                          ),
+                          const SizedBox(height: 20),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 760),
+                            child: _buildLoginLink(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              FadeInUp(
-                delay: const Duration(milliseconds: 400),
-                child: GoldenInputField(
-                  hint: AppStrings.email,
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                  controller: _emailController,
-                ),
-              ),
-              const SizedBox(height: 12),
-              FadeInUp(
-                delay: const Duration(milliseconds: 600),
-                child: GoldenInputField(
-                  hint: AppStrings.password,
-                  icon: Icons.lock_outline,
-                  obscureText: true,
-                  controller: _passwordController,
-                ),
-              ),
-              const SizedBox(height: 12),
-              FadeInUp(
-                delay: const Duration(milliseconds: 800),
-                child: GoldenInputField(
-                  hint: AppStrings.confirmPassword,
-                  icon: Icons.lock_outline,
-                  obscureText: true,
-                  controller: _confirmPasswordController,
-                ),
-              ),
-              const SizedBox(height: 20),
-              FadeInUp(
-                delay: const Duration(milliseconds: 1000),
-                child: GoldenButton(
-                  text: AppStrings.createAccount,
-                  onPressed: () {
-                    final email = _emailController.text;
-                    context.go('/otp?email=$email');
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildDivider(),
-              const SizedBox(height: 12),
-              FadeInUp(
-                delay: const Duration(milliseconds: 1200),
-                child: _buildGoogleSignUp(),
-              ),
-              const SizedBox(height: 24),
-              FadeInUp(
-                delay: const Duration(milliseconds: 1400),
-                child: _buildLoginLink(),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -137,7 +218,7 @@ class _SignupScreenState extends State<SignupScreen> {
       children: [
         Expanded(
           child: Divider(
-            color: AppColors.textMuted.withOpacity(0.2),
+            color: AppColors.textMuted.withValues(alpha: 0.2),
             thickness: 1,
           ),
         ),
@@ -146,14 +227,14 @@ class _SignupScreenState extends State<SignupScreen> {
           child: Text(
             AppStrings.or,
             style: AppTextStyles.hindSiliguri(
-              fontSize: 10,
+              fontSize: 11,
               color: AppColors.textMuted,
             ),
           ),
         ),
         Expanded(
           child: Divider(
-            color: AppColors.textMuted.withOpacity(0.2),
+            color: AppColors.textMuted.withValues(alpha: 0.2),
             thickness: 1,
           ),
         ),
@@ -162,33 +243,31 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildGoogleSignUp() {
-    return Container(
-      height: 46,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-          width: 1,
+    return OutlinedButton.icon(
+      onPressed: () {},
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(double.infinity, 50),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
         ),
-        borderRadius: BorderRadius.circular(9),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.g_mobiledata,
-            color: Color(0xFF4285F4),
-            size: 18,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            AppStrings.signUpWithGoogle,
-            style: AppTextStyles.hindSiliguri(
-              fontSize: 11,
-              color: Colors.white.withOpacity(0.75),
-            ),
-          ),
-        ],
+      icon: SvgPicture.network(
+        'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+        width: 18,
+        height: 18,
+        placeholderBuilder: (context) => const SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 1.4),
+        ),
+      ),
+      label: Text(
+        AppStrings.signUpWithGoogle,
+        style: AppTextStyles.hindSiliguri(
+          fontSize: 12,
+          color: Colors.white.withValues(alpha: 0.8),
+        ),
       ),
     );
   }
@@ -200,7 +279,7 @@ class _SignupScreenState extends State<SignupScreen> {
         Text(
           AppStrings.haveAccount,
           style: AppTextStyles.hindSiliguri(
-            fontSize: 11,
+            fontSize: 12,
             color: AppColors.textMuted,
           ),
         ),
@@ -209,7 +288,7 @@ class _SignupScreenState extends State<SignupScreen> {
           child: Text(
             AppStrings.signInHere,
             style: AppTextStyles.hindSiliguri(
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: FontWeight.bold,
               color: AppColors.gold,
             ),
