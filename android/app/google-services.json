@@ -12,7 +12,20 @@
           "package_name": "com.swarnakar.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "676014314142-ushsdum6fad8t8kl8aafmsfckgr5ffcg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.swarnakar.app",
+            "certificate_hash": "4efcf54a302553420c72ebf0fc68f7a5f0b690ad"
+          }
+        },
+        {
+          "client_id": "676014314142-c4juik93mtgg0j1f8bcsn7gu5qra6fp1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC3g662w0OCkacqqlzaUd18k7unbvDeiNA"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "676014314142-c4juik93mtgg0j1f8bcsn7gu5qra6fp1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

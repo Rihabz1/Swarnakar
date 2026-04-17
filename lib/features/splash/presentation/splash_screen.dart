@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
@@ -35,7 +37,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   void _navigateToLogin() {
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
-        context.go('/login');
+        final user = Firebase.apps.isNotEmpty ? FirebaseAuth.instance.currentUser : null;
+        final canEnterDashboard = user != null && user.emailVerified;
+        context.go(canEnterDashboard ? '/dashboard' : '/login');
       }
     });
   }

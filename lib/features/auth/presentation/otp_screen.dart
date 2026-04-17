@@ -29,6 +29,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   late Timer _timer;
   int _secondsRemaining = 42;
   bool _isVerifying = false;
+  bool _hasRequestedResetOtp = false;
 
   @override
   void initState() {
@@ -36,6 +37,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     _otpControllers = List.generate(6, (_) => TextEditingController());
     _otpFocusNodes = List.generate(6, (_) => FocusNode());
     _startTimer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _requestResetOtpIfNeeded();
+      }
+    });
   }
 
   @override
@@ -103,10 +109,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
     try {
       final authNotifier = ref.read(authProvider.notifier);
-      await authNotifier.verifySignupOtp(email: widget.email, code: otp);
+      final resetToken = await authNotifier.verifyResetOtp(email: widget.email, code: otp);
       _showSuccess('OTP ভেরিফিকেশন সফল!');
       if (mounted) {
-        context.go('/dashboard');
+        context.go(
+          '/reset-password?email=${Uri.encodeComponent(widget.email)}&token=${Uri.encodeComponent(resetToken)}',
+        );
       }
     } catch (e) {
       _showError(e.toString());
@@ -122,7 +130,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   Future<void> _resendOtp() async {
     try {
       final authNotifier = ref.read(authProvider.notifier);
-      await authNotifier.sendSignupOtp(widget.email);
+      await authNotifier.sendResetOtp(widget.email);
       if (!mounted) {
         return;
       }
@@ -131,6 +139,25 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       });
       _startTimer();
       _showSuccess('OTP আবার পাঠানো হয়েছে।');
+    } catch (e) {
+      _showError(e.toString());
+    }
+  }
+
+  Future<void> _requestResetOtpIfNeeded() async {
+    if (_hasRequestedResetOtp) {
+      return;
+    }
+
+    _hasRequestedResetOtp = true;
+
+    try {
+      final authNotifier = ref.read(authProvider.notifier);
+      await authNotifier.sendResetOtp(widget.email);
+      if (!mounted) {
+        return;
+      }
+      _showSuccess('রিসেট OTP ইমেইলে পাঠানো হয়েছে।');
     } catch (e) {
       _showError(e.toString());
     }

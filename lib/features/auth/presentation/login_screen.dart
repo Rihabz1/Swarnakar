@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -133,78 +134,125 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ],
                   ),
-                  child: Column(
-                    children: [
-                      _buildHeader(),
-                      const SizedBox(height: 26),
-                      FadeInUp(
-                        delay: const Duration(milliseconds: 200),
-                        child: GoldenInputField(
-                          hint: AppStrings.email,
-                          icon: Icons.email_outlined,
-                          keyboardType: TextInputType.emailAddress,
-                          controller: _emailController,
-                          isGlassmorphic: true,
+                  child: AutofillGroup(
+                    child: Column(
+                      children: [
+                        _buildHeader(),
+                        const SizedBox(height: 26),
+                        FadeInUp(
+                          delay: const Duration(milliseconds: 200),
+                          child: GoldenInputField(
+                            hint: AppStrings.email,
+                            icon: Icons.email_outlined,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.email],
+                            textInputAction: TextInputAction.next,
+                            controller: _emailController,
+                            isGlassmorphic: true,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      FadeInUp(
-                        delay: const Duration(milliseconds: 320),
-                        child: GoldenInputField(
-                          hint: AppStrings.passwordHint,
-                          icon: Icons.lock_outline,
-                          obscureText: true,
-                          controller: _passwordController,
-                          isGlassmorphic: true,
+                        const SizedBox(height: 12),
+                        FadeInUp(
+                          delay: const Duration(milliseconds: 320),
+                          child: GoldenInputField(
+                            hint: AppStrings.passwordHint,
+                            icon: Icons.lock_outline,
+                            obscureText: true,
+                            keyboardType: TextInputType.visiblePassword,
+                            autofillHints: const [AutofillHints.password],
+                            enableSuggestions: false,
+                            autocorrect: false,
+                            controller: _passwordController,
+                            isGlassmorphic: true,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      FadeInUp(
-                        delay: const Duration(milliseconds: 430),
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: GestureDetector(
-                            onTap: () {
-                              _showForgotPasswordDialog();
-                            },
-                            child: Text(
-                              AppStrings.forgotPassword,
-                              style: AppTextStyles.hindSiliguri(
-                                fontSize: 11,
-                                color: AppColors.gold.withValues(alpha: 0.72),
+                        const SizedBox(height: 10),
+                        FadeInUp(
+                          delay: const Duration(milliseconds: 430),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: GestureDetector(
+                              onTap: () {
+                                _showForgotPasswordDialog();
+                              },
+                              child: Text(
+                                AppStrings.forgotPassword,
+                                style: AppTextStyles.hindSiliguri(
+                                  fontSize: 11,
+                                  color: AppColors.gold.withValues(alpha: 0.72),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      FadeInUp(
-                        delay: const Duration(milliseconds: 530),
-                        child: GoldenButton(
-                          text: AppStrings.signIn,
-                          isLoading: authState.isLoading,
-                          onPressed: () async {
-                            if (!_validateLogin()) return;
-                            await authNotifier.signIn(
-                              email: _emailController.text.trim(),
-                              password: _passwordController.text,
-                            );
-                          },
+                        const SizedBox(height: 16),
+                        FadeInUp(
+                          delay: const Duration(milliseconds: 530),
+                          child: GoldenButton(
+                            text: AppStrings.signIn,
+                            isLoading: authState.isLoading,
+                            onPressed: () async {
+                              if (!_validateLogin()) return;
+                              final user = await authNotifier.signIn(
+                                email: _emailController.text.trim(),
+                                password: _passwordController.text,
+                              );
+                              if (user != null) {
+                                TextInput.finishAutofillContext(shouldSave: true);
+                              }
+                            },
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 18),
-                      _buildDivider(),
-                      const SizedBox(height: 14),
-                      FadeInUp(
-                        delay: const Duration(milliseconds: 650),
-                        child: _buildGoogleSignIn(authNotifier, authState.isLoading),
-                      ),
-                      const SizedBox(height: 24),
-                      FadeInUp(
-                        delay: const Duration(milliseconds: 760),
-                        child: _buildSignupLink(),
-                      ),
-                    ],
+                        const SizedBox(height: 10),
+                        FadeInUp(
+                          delay: const Duration(milliseconds: 580),
+                          child: TextButton(
+                          onPressed: authState.isLoading
+                              ? null
+                              : () async {
+                                  final email = _emailController.text.trim().toLowerCase();
+                                  final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+                                  if (!emailRegex.hasMatch(email)) {
+                                    _showError('সঠিক ইমেইল ফরম্যাট দিন (example@email.com)।');
+                                    return;
+                                  }
+
+                                  try {
+                                    await ref
+                                        .read(firebaseServiceProvider)
+                                        .sendSignInLinkToEmail(email);
+                                    if (!mounted) {
+                                      return;
+                                    }
+                                    _showSuccess('ইমেইলে সাইন-ইন লিংক পাঠানো হয়েছে।');
+                                  } catch (e) {
+                                    _showError(e.toString());
+                                  }
+                                },
+                          child: Text(
+                            'ইমেইল লিংক দিয়ে সাইন ইন',
+                            style: AppTextStyles.hindSiliguri(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.gold.withValues(alpha: 0.9),
+                            ),
+                          ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        _buildDivider(),
+                        const SizedBox(height: 14),
+                        FadeInUp(
+                          delay: const Duration(milliseconds: 650),
+                          child: _buildGoogleSignIn(authNotifier, authState.isLoading),
+                        ),
+                        const SizedBox(height: 24),
+                        FadeInUp(
+                          delay: const Duration(milliseconds: 760),
+                          child: _buildSignupLink(),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

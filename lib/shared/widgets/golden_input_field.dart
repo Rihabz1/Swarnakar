@@ -15,6 +15,10 @@ class GoldenInputField extends StatefulWidget {
   final int? maxLength;
   final VoidCallback? onIconTap;
   final bool isGlassmorphic;
+  final List<String>? autofillHints;
+  final TextInputAction? textInputAction;
+  final bool enableSuggestions;
+  final bool autocorrect;
 
   const GoldenInputField({
     super.key,
@@ -29,6 +33,10 @@ class GoldenInputField extends StatefulWidget {
     this.maxLength,
     this.onIconTap,
     this.isGlassmorphic = false,
+    this.autofillHints,
+    this.textInputAction,
+    this.enableSuggestions = true,
+    this.autocorrect = true,
   });
 
   @override
@@ -101,6 +109,10 @@ class _GoldenInputFieldState extends State<GoldenInputField> {
               controller: widget.controller,
               focusNode: _focusNode,
               keyboardType: widget.keyboardType,
+              autofillHints: widget.autofillHints,
+              textInputAction: widget.textInputAction,
+              enableSuggestions: widget.enableSuggestions,
+              autocorrect: widget.autocorrect,
               onChanged: widget.onChanged,
               obscureText: _obscureText && widget.obscureText,
               validator: widget.validator,

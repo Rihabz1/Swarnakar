@@ -11,8 +11,7 @@ import 'package:swarnakar/features/silver_price/presentation/silver_price_screen
 import 'package:swarnakar/features/calculator/presentation/calculator_screen.dart';
 import 'package:swarnakar/features/zakat/presentation/zakat_screen.dart';
 import 'package:swarnakar/features/subscription/presentation/paywall_screen.dart';
-import 'package:swarnakar/features/converter/presentation/converter_screen.dart';
-import 'package:swarnakar/features/price_history/presentation/price_history_screen.dart';
+import 'package:swarnakar/features/reports/presentation/reports_screen.dart';
 import 'package:swarnakar/features/settings/presentation/settings_screen.dart';
 import 'package:swarnakar/features/settings/presentation/profile_screen.dart';
 
@@ -30,6 +29,11 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const LoginScreen(),
     ),
     GoRoute(
+      path: '/finishSignIn',
+      name: 'finish-signin',
+      builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
       path: '/signup',
       name: 'signup',
       builder: (context, state) => const SignupScreen(),
@@ -43,17 +47,18 @@ final GoRouter appRouter = GoRouter(
       path: '/otp',
       name: 'otp',
       builder: (context, state) {
-        final phone = state.uri.queryParameters['phone'] ?? state.uri.queryParameters['email'] ?? '';
+        final email = state.uri.queryParameters['email'] ?? '';
         final flow = state.uri.queryParameters['flow'] ?? 'signup';
-        return OtpScreen(phone: phone, flow: flow);
+        return OtpScreen(email: email, flow: flow);
       },
     ),
     GoRoute(
       path: '/reset-password',
       name: 'reset-password',
       builder: (context, state) {
-        final phone = state.uri.queryParameters['phone'] ?? state.uri.queryParameters['email'] ?? '';
-        return ResetPasswordScreen(phone: phone);
+        final email = state.uri.queryParameters['email'] ?? '';
+        final token = state.uri.queryParameters['token'] ?? '';
+        return ResetPasswordScreen(email: email, resetToken: token);
       },
     ),
     GoRoute(
@@ -87,14 +92,9 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const PaywallScreen(),
     ),
     GoRoute(
-      path: '/converter',
-      name: 'converter',
-      builder: (context, state) => const ConverterScreen(),
-    ),
-    GoRoute(
-      path: '/price-history',
-      name: 'price-history',
-      builder: (context, state) => const PriceHistoryScreen(),
+      path: '/reports',
+      name: 'reports',
+      builder: (context, state) => const ReportsScreen(),
     ),
     GoRoute(
       path: '/settings',

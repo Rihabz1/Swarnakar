@@ -1,15 +1,17 @@
 import bcrypt from 'bcryptjs';
-import jwt, { type SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
+import jwt, { type SignOptions } from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import type {
   LoginVerifyBody,
   OtpPurpose,
   OtpSendBody,
   OtpVerifyBody,
-  SignupVerifyBody,
+  ResetPasswordBody,
+  ResetVerifyBody,
   UserRecord,
 } from '../types';
+import { getAuth, getFirestore } from '../config/firebase';
 import { generateOtpCode, isValidEmail, maskEmail, normalizeEmail } from '../utils/helpers';
 
 type OtpRecord = {
@@ -28,10 +30,28 @@ type OtpSendResult = {
   debugOtp?: string;
 };
 
+type ResetTokenRecord = {
+  email: string;
+  expiresAt: number;
+  createdAt: number;
+};
+
+type ResetVerifyResult = {
+  resetToken: string;
+  maskedEmail: string;
+  expiresInSeconds: number;
+};
+
+type ResetPasswordResult = {
+  success: true;
+  email: string;
+};
+
 const OTP_EXPIRY_MINUTES = Number(process.env.OTP_EXPIRY_MINUTES ?? 10);
 const OTP_MAX_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS ?? 5);
 const OTP_RESEND_COOLDOWN_SECONDS = Number(process.env.OTP_RESEND_COOLDOWN_SECONDS ?? 45);
 const OTP_RATE_LIMIT_PER_HOUR = Number(process.env.OTP_RATE_LIMIT_PER_HOUR ?? 10);
+const RESET_TOKEN_EXPIRY_MINUTES = Number(process.env.RESET_TOKEN_EXPIRY_MINUTES ?? 15);
 
 const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-jwt-secret-change-me';
 const JWT_EXPIRES_IN: SignOptions['expiresIn'] =
@@ -60,6 +80,7 @@ const transporter =
 const otpStore = new Map<string, OtpRecord>();
 const requestWindowStore = new Map<string, number[]>();
 const userStore = new Map<string, UserRecord>();
+const resetTokenStore = new Map<string, ResetTokenRecord>();
 
 const otpKey = (email: string, purpose: OtpPurpose) => `${purpose}:${email}`;
 
@@ -130,9 +151,46 @@ const ensureLoginAllowed = (email: string) => {
   }
 };
 
+const ensureResetAllowed = async (email: string) => {
+  const auth = await getAuth();
+
+  try {
+    await auth.getUserByEmail(email);
+  } catch (error) {
+    throw new Error('No account found with this email. Sign up first.');
+  }
+};
+
+const createResetToken = (email: string): string => {
+  const resetToken = crypto.randomUUID();
+  const now = Date.now();
+
+  resetTokenStore.set(resetToken, {
+    email,
+    createdAt: now,
+    expiresAt: now + RESET_TOKEN_EXPIRY_MINUTES * 60 * 1000,
+  });
+
+  return resetToken;
+};
+
+const consumeResetToken = (resetToken: string): ResetTokenRecord => {
+  const record = resetTokenStore.get(resetToken);
+  if (!record) {
+    throw new Error('Reset link expired or invalid. Please request a new OTP.');
+  }
+
+  if (Date.now() > record.expiresAt) {
+    resetTokenStore.delete(resetToken);
+    throw new Error('Reset link expired or invalid. Please request a new OTP.');
+  }
+
+  return record;
+};
+
 const sendOtpEmail = async (email: string, purpose: OtpPurpose, code: string): Promise<void> => {
-  const verb = purpose === 'signup' ? 'sign up' : 'log in';
-  const subject = `Swarnakar OTP for ${verb}`;
+  const verb = purpose === 'login' ? 'log in' : 'reset your password';
+  const subject = purpose === 'reset' ? 'Swarnakar OTP for password reset' : `Swarnakar OTP for ${verb}`;
   const text = `Your Swarnakar OTP is ${code}. It expires in ${OTP_EXPIRY_MINUTES} minutes.`;
   const html = `
     <div style="font-family: Arial, sans-serif; line-height: 1.5;">
@@ -165,10 +223,10 @@ const issueOtp = async ({ email, purpose }: OtpSendBody): Promise<OtpSendResult>
 
   const normalizedEmail = normalizeEmail(email);
 
-  if (purpose === 'signup') {
-    ensureSignupAllowed(normalizedEmail);
-  } else {
+  if (purpose === 'login') {
     ensureLoginAllowed(normalizedEmail);
+  } else {
+    await ensureResetAllowed(normalizedEmail);
   }
 
   assertRateLimit(normalizedEmail);
@@ -233,35 +291,6 @@ const consumeOtp = ({ email, purpose, code }: OtpVerifyBody): void => {
   otpStore.delete(key);
 };
 
-const signupWithOtp = async ({ name, email, password, otp }: SignupVerifyBody) => {
-  if (!name?.trim() || !password) {
-    throw new Error('Name and password are required.');
-  }
-
-  const normalizedEmail = normalizeEmail(email);
-  ensureSignupAllowed(normalizedEmail);
-
-  consumeOtp({ email: normalizedEmail, code: otp, purpose: 'signup' });
-
-  const passwordHash = await bcrypt.hash(password, 10);
-  const user: UserRecord = {
-    id: crypto.randomUUID(),
-    name: name.trim(),
-    email: normalizedEmail,
-    passwordHash,
-    isEmailVerified: true,
-    createdAt: new Date().toISOString(),
-    lastLoginAt: new Date().toISOString(),
-  };
-
-  userStore.set(normalizedEmail, user);
-
-  return {
-    token: createJwt(user),
-    user: pickPublicUser(user),
-  };
-};
-
 const loginWithOtp = ({ email, otp }: LoginVerifyBody) => {
   const normalizedEmail = normalizeEmail(email);
   const user = userStore.get(normalizedEmail);
@@ -281,14 +310,62 @@ const loginWithOtp = ({ email, otp }: LoginVerifyBody) => {
   };
 };
 
-const verifyOtpOnly = ({ email, code, purpose }: OtpVerifyBody) => {
+const verifyOtpOnly = ({ email, code, purpose }: OtpVerifyBody): void => {
   consumeOtp({ email: normalizeEmail(email), code, purpose });
+};
+
+const verifyResetWithOtp = async ({ email, otp }: ResetVerifyBody): Promise<ResetVerifyResult> => {
+  const normalizedEmail = normalizeEmail(email);
+  await ensureResetAllowed(normalizedEmail);
+
+  consumeOtp({ email: normalizedEmail, code: otp, purpose: 'reset' });
+
+  return {
+    resetToken: createResetToken(normalizedEmail),
+    maskedEmail: maskEmail(normalizedEmail),
+    expiresInSeconds: RESET_TOKEN_EXPIRY_MINUTES * 60,
+  };
+};
+
+const resetPasswordWithToken = async ({ resetToken, newPassword }: ResetPasswordBody): Promise<ResetPasswordResult> => {
+  if (!newPassword || newPassword.trim().length < 8) {
+    throw new Error('Password must be at least 8 characters long.');
+  }
+
+  const record = consumeResetToken(resetToken);
+  const normalizedEmail = normalizeEmail(record.email);
+
+  const auth = await getAuth();
+  const userRecord = await auth.getUserByEmail(normalizedEmail);
+
+  await auth.updateUser(userRecord.uid, {
+    password: newPassword,
+  });
+
+  const db = await getFirestore();
+  await db.collection('users').doc(userRecord.uid).set(
+    {
+      email: normalizedEmail,
+      updatedAt: new Date(),
+      passwordResetAt: new Date(),
+      isEmailVerified: true,
+    },
+    { merge: true },
+  );
+
+  resetTokenStore.delete(resetToken);
+
+  return {
+    success: true,
+    email: normalizedEmail,
+  };
 };
 
 export class AuthService {
   requestOtp = issueOtp;
   resendOtp = issueOtp;
-  verifySignupWithOtp = signupWithOtp;
   verifyLoginWithOtp = loginWithOtp;
   verifyOtpOnly = verifyOtpOnly;
+  verifyResetWithOtp = verifyResetWithOtp;
+  resetPasswordWithToken = resetPasswordWithToken;
 }

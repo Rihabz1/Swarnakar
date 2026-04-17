@@ -1,366 +1,138 @@
 # Swarnakar
 
-Swarnakar is a Flutter application for jewellery businesses in Bangladesh. It focuses on daily price tracking, business calculations, customer/account flows, and a premium-style UI built around gold-accented visuals.
-
-This repository contains:
-
-- A **Flutter client app** with complete authentication (email/password + Google), OTP verification, and Firebase integration.
-- A **Bun/TypeScript backend** with production-grade OTP service, user management, and REST API endpoints.
-
-## What The App Does
-
-The Flutter app is designed to help with the everyday workflows of a jewellery business:
-
-- View gold and silver price screens.
-- Run quick jewellery-related calculations.
-- Estimate zakat-related values.
-- Browse filtered reports.
-- Sign up, log in, and verify OTP-based access.
-- Manage your profile and subscription.
-- Move through the app with a dashboard and bottom navigation.
-- Support a premium or paywall-style experience.
-
-## Quick Start
-
-### Prerequisites
-
-- **Flutter** 3.0+ ([install](https://flutter.dev/docs/get-started/install))
-- **Bun** (for backend, [install](https://bun.sh))
-- **Firebase** project configured with Auth and Firestore enabled
-
-### Frontend (Flutter)
-
-```bash
-flutter pub get       # Install dependencies
-flutter run -d chrome # Run on web (or -d android, -d ios)
-```
-
-### Backend (Bun)
-
-```bash
-cd backend
-bun install
-bun run start         # Server runs on http://localhost:8787
-```
-
-The app will auto-detect the backend on localhost:8787 (web) or 10.0.2.2:8787 (Android emulator).
-
-## Project Layout
-
-The app follows a feature-first structure:
-
-- `lib/main.dart` bootstraps Flutter, initializes Bangla date formatting, and starts the app inside `ProviderScope`.
-- `lib/app.dart` creates the `MaterialApp.router` shell.
-- `lib/core/` holds app-wide constants, router setup, theme, providers, and utilities.
-- `lib/features/` contains the product screens grouped by domain.
-- `lib/shared/` contains reusable models and widgets.
-- `assets/` stores images, SVGs, Rive files, and fonts.
-
-## App Entry Points
-
-### Startup
-
-- [lib/main.dart](lib/main.dart) initializes Flutter bindings, sets up `bn_BD` date formatting, and launches the app.
-- [lib/app.dart](lib/app.dart) applies the dark theme and connects routing.
-
-### Routing
-
-The router lives in [lib/core/router/app_router.dart](lib/core/router/app_router.dart) and uses GoRouter.
-
-Available routes:
-
-- `/` — Splash screen.
-- `/login` — Login with email/password or Google.
-- `/signup` — Sign up with email/password or Google.
-- `/otp?email=...&flow=signup|reset` — OTP verification screen (supports signup and password reset flows).
-- `/forgot-password` — Forgot password screen to request OTP.
-- `/reset-password?email=...` — Reset password screen to set new password.
-- `/dashboard` — Main dashboard (home screen).
-- `/gold-price` — Gold price tracking.
-- `/silver-price` — Silver price tracking.
-- `/calculator` — Jewellery calculations.
-- `/zakat` — Zakat estimator.
-- `/paywall` — Subscription/premium screen.
-- `/reports` — Filtered reports.
-- `/settings` — User profile and app settings.
-
-## Main Features
-
-### Authentication
-
-The auth system supports three methods:
-
-1. **Email + Password**: Firebase Auth with OTP verification via backend service.
-2. **Google Sign-In**: Firebase Auth with account policy enforcement (signup rejects existing accounts; login rejects new accounts).
-3. **OTP Verification**: 6-digit codes sent via SMTP, with 15-minute expiry, 60-second resend cooldown, and 3-attempt max per code.
-
-**Auth Flow**:
-- Signup validates email format, password strength, and prevents duplicate accounts.
-- OTP codes are generated server-side, hashed with bcrypt, and verified against rate limits (5 per hour per email).
-- Login requires email verification (isEmailVerified flag in Firestore).
-- User profile is synced to Firestore `users` collection with fields: uid, name, email, isSubscribed, subscriptionExpiry, isEmailVerified, createdAt, updatedAt.
-
-**Key Files**:
-
-- [lib/features/auth/presentation/login_screen.dart](lib/features/auth/presentation/login_screen.dart)
-- [lib/features/auth/presentation/signup_screen.dart](lib/features/auth/presentation/signup_screen.dart)
-- [lib/features/auth/presentation/otp_screen.dart](lib/features/auth/presentation/otp_screen.dart)
-- [lib/core/services/firebase_service.dart](lib/core/services/firebase_service.dart)
-- [lib/core/services/otp_service.dart](lib/core/services/otp_service.dart)
-- [lib/features/auth/providers/auth_provider.dart](lib/features/auth/providers/auth_provider.dart)
-
-**Backend OTP Service**:
-
-- [backend/src/services/auth.service.ts](backend/src/services/auth.service.ts) — Canonical OTP logic with hashing, expiry, rate limiting.
-- [backend/src/controllers/auth.controller.ts](backend/src/controllers/auth.controller.ts) — HTTP request handling.
-- [backend/src/routes/auth.ts](backend/src/routes/auth.ts) — Dual-mount endpoints at `/api/auth/*` and `/auth/*`.
-- Endpoints: POST `/send-otp`, `/verify-signup`, `/verify-login` (flow-agnostic verification with JWT issuance).
-
-### Market Prices
-
-Gold and silver have dedicated screens and supporting data/provider folders. The app is arranged to show market information in a structured, reusable way.
-
-Key files and folders:
-
-- [lib/features/gold_price/](lib/features/gold_price/)
-- [lib/features/silver_price/](lib/features/silver_price/)
-- [lib/shared/widgets/gold_price_card.dart](lib/shared/widgets/gold_price_card.dart)
-- [lib/shared/widgets/price_row_widget.dart](lib/shared/widgets/price_row_widget.dart)
-
-### Business Tools
-
-The app includes utility screens for day-to-day jewellery calculations, zakat support, and filtered reports.
-
-Key files:
-
-- [lib/features/calculator/presentation/calculator_screen.dart](lib/features/calculator/presentation/calculator_screen.dart)
-- [lib/features/zakat/presentation/zakat_screen.dart](lib/features/zakat/presentation/zakat_screen.dart)
-- [lib/features/reports/presentation/reports_screen.dart](lib/features/reports/presentation/reports_screen.dart)
-
-### Dashboard And Navigation
-
-The dashboard acts as the main hub after the user enters the app. Navigation is handled through GoRouter, with a custom bottom navigation widget used across the app.
-
-Key files:
-
-- [lib/features/dashboard/presentation/dashboard_screen.dart](lib/features/dashboard/presentation/dashboard_screen.dart)
-- [lib/shared/widgets/app_bottom_nav.dart](lib/shared/widgets/app_bottom_nav.dart)
-- [lib/core/router/app_router.dart](lib/core/router/app_router.dart)
-
-### Subscription And Settings
-
-The app includes a paywall screen and a settings screen for app-level controls. A global subscription state is exposed through core providers.
-
-Key files:
-
-- [lib/features/subscription/presentation/paywall_screen.dart](lib/features/subscription/presentation/paywall_screen.dart)
-- [lib/features/settings/presentation/settings_screen.dart](lib/features/settings/presentation/settings_screen.dart)
-- [lib/core/providers/core_providers.dart](lib/core/providers/core_providers.dart)
-
-## UI System
-
-The visual layer is intentionally consistent:
-
-- Gold-focused colors and a dark premium theme.
-- Shared text styles and theme configuration.
-- Reusable input and button widgets for form screens.
-- Card, banner, and overlay widgets for price and premium UI.
-- Motion support through `animate_do` and `rive`.
-- SVG, raster image, and cached network image support.
-
-Important files:
-
-- [lib/core/theme/app_theme.dart](lib/core/theme/app_theme.dart)
-- [lib/core/theme/app_colors.dart](lib/core/theme/app_colors.dart)
-- [lib/core/theme/app_text_styles.dart](lib/core/theme/app_text_styles.dart)
-- [lib/shared/widgets/golden_button.dart](lib/shared/widgets/golden_button.dart)
-- [lib/shared/widgets/golden_input_field.dart](lib/shared/widgets/golden_input_field.dart)
-
-## State And Data Flow
-
-The app uses Riverpod for state management. The structure is designed so global app state and feature-level providers stay separated.
-
-Common state and model locations:
-
-- [lib/core/providers/](lib/core/providers/)
-- [lib/features/*/providers/](lib/features)
-- [lib/shared/models/](lib/shared/models/)
-
-## Localization
-
-The app is prepared for Bangla and English:
-
-- `bn_BD`
-- `en_US`
-
-Bangla date formatting is initialized in `main.dart`, and Flutter localization support is enabled in `app.dart`.
-
-## Firebase Integration
-
-The app uses **Firebase Auth** and **Cloud Firestore** for authentication and data storage.
-
-### Setup
-
-1. Create a Firebase project at [firebase.google.com](https://firebase.google.com).
-2. Enable **Firebase Authentication** (Email/Password and Google Sign-In).
-3. Enable **Cloud Firestore** and create a `users` collection.
-4. Download your Firebase config and update the credentials in the app if needed.
-
-### Firestore Schema
-
-**Collection: `users`**
-
-Document fields (auto-created on signup):
-
-```json
-{
-  "uid": "firebase-auth-uid",
-  "name": "User Name",
-  "email": "user@example.com",
-  "isSubscribed": false,
-  "subscriptionExpiry": null,
-  "isEmailVerified": false,
-  "createdAt": "2026-04-16T...",
-  "updatedAt": "2026-04-16T..."
-}
-```
-
-The settings screen pulls real user data from this collection, with fallbacks to Firebase Auth display name and email if needed.
-
-## Technology Stack
-
-**Frontend (Flutter)**:
-
-- Flutter 3.0+
-- Dart 3.0+
-- Riverpod (state management)
-- GoRouter (navigation)
-- Firebase Auth (authentication)
-- Cloud Firestore (data storage)
-- Google Sign-In
-- animate_do (animations)
-- Rive (advanced animations)
-- intl (localization)
-- connectivity_plus (network detection)
-- flutter_secure_storage (secure storage)
-- google_fonts, flutter_svg, cached_network_image, shimmer
-
-**Backend (Bun/TypeScript)**:
-
-- Bun (fast JavaScript runtime)
-- TypeScript (type-safe server code)
-- Elysia framework (HTTP routing)
-- bcryptjs (password/OTP hashing)
-- jsonwebtoken (JWT issuance)
-- nodemailer (SMTP email delivery)
-- Drizzle ORM (for future database migration)
-
-## Backend Setup
-
-The backend runs on **Bun** (a fast JavaScript runtime) on port **8787**.
-
-### Running the Backend
-
-```bash
-cd backend
-bun install        # Install dependencies
-bun run start      # Start the server on http://localhost:8787
-```
-
-### Backend Services
-
-1. **OTP Auth Service** (`src/services/auth.service.ts`):
-   - Generate 6-digit OTP codes (bcrypt hashed, 15-min expiry).
-   - Verify codes with rate limiting (5 per hour per email) and attempt limiting (3 attempts per code).
-   - Resend cooldown (60 seconds between requests).
-   - SMTP delivery (falls back to console.log if unconfigured).
-   - Issue JWT tokens on successful signup/login.
-
-2. **User Persistence** (Currently in-memory):
-   - Can migrate to Firestore or Postgres later.
-   - Tracks OTP state, user sessions, and rate limits.
-
-Flutter client:
-
-- Flutter
-- Dart
-- Riverpod
-- GoRouter
-- animate_do
-- Rive
-- intl
-- connectivity_plus
-- flutter_secure_storage
-- google_fonts
-- flutter_svg
-- cached_network_image
-- shimmer
-
-Backend scaffold:
-
-- Node.js
-- Express-style TypeScript layout
-- Drizzle ORM configuration files are present
-
-### Environment Variables
-
-Create `backend/.env`:
-
-```env
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-SMTP_FROM=noreply@swarnakar.app
-
-JWT_SECRET=your-jwt-secret-key
-JWT_EXPIRY=7d
-```
-
-### API Endpoints
-
-All endpoints are available at both `/api/auth/*` and `/auth/*`:
-
-- `POST /auth/otp/send` — Send OTP to email.
-- `POST /auth/otp/verify` — Verify OTP and return JWT.
-- `POST /auth/otp/resend` — Resend OTP with cooldown checks.
-
-Request body example:
-
-```json
-{
-  "email": "user@example.com",
-  "code": "123456"
-}
-```
-
-Response example (on success):
-
-```json
-{
-  "success": true,
-  "message": "OTP verified successfully",
-  "jwt": "eyJhbGc...",
-  "user": {
-    "uid": "firebase-uid",
-    "email": "user@example.com"
-  }
-}
-```
-
-## Backend Status (Legacy)
-
-The [backend/](backend/) folder includes TypeScript configuration and Drizzle ORM setup for future database migration. Current implementation is production-ready for OTP auth but uses in-memory storage.
-
-## Repository Structure
+Swarnakar is a full-stack jewellery business application built with Flutter (client) and Bun + Hono (backend).
+It is designed for Bangladeshi jewellery workflows with a Bangla-first UI, premium-themed product experience, account management, Firebase email verification, profile management, price viewing, calculator tools, and zakat/report modules.
+
+This document explains the entire project in detail: architecture, folder structure, feature behavior, API contracts, setup, environment configuration, and current implementation status.
+
+---
+
+## 1) Project Overview
+
+### What this repository contains
+
+- Flutter app (multi-platform scaffold: Android, iOS, Web, Desktop)
+- Bun/Hono backend API in `backend/`
+- Firebase configuration for Auth + Firestore
+- Firestore rules and index configuration
+- Asset packs (images, svg, rive)
+- Feature-first Flutter codebase organization
+
+### Primary goals of the app
+
+- Jewellery market visibility (gold/silver price screens)
+- Business utility tools (calculator and zakat)
+- Authentication with Firebase email verification and reset-password OTP
+- Profile and subscription-style flows
+- Premium UI/UX and Bangla language experience
+
+### Current product maturity snapshot
+
+- Core Flutter UI and navigation are implemented and usable.
+- Signup and login are implemented with Firebase Auth.
+- Signup verification is now done through Firebase verification email links.
+- Password reset flow is implemented with backend OTP + short-lived reset token.
+- Email link sign-in is implemented for web/android deep-link flow.
+- Profile API is implemented in backend and consumed by Flutter profile provider.
+- Several backend modules exist as scaffold files and are not yet wired to routes.
+- Many app data screens currently use local mock data providers.
+
+---
+
+## 2) High-Level Architecture
+
+### Client architecture (Flutter)
+
+- Entry: `lib/main.dart` -> `lib/app.dart`
+- Routing: GoRouter in `lib/core/router/app_router.dart`
+- State management: Riverpod + StateNotifier
+- Services: Firebase auth/firestore services, OTP service, profile service
+- Features: domain-oriented folders under `lib/features/`
+- Shared UI/models: reusable components under `lib/shared/`
+
+### Backend architecture (Bun + Hono)
+
+- Runtime/framework: Bun + Hono
+- Entry: `backend/src/index.ts`
+- Active route groups:
+  - `/api/auth` and `/auth` (OTP/auth endpoints)
+  - `/api/profile` (authenticated profile endpoints)
+- Persistence:
+  - Auth OTP and temporary user store: in-memory maps in auth service
+  - Profile data: Firestore via Firebase Admin SDK
+- Middleware:
+  - CORS + logger + pretty JSON
+  - JWT decode-based auth middleware for profile routes
+
+### External services
+
+- Firebase Auth (client-side user auth)
+- Firestore (user records, profile fields)
+- SMTP (backend OTP email delivery for reset/login OTP purposes when configured)
+
+---
+
+## 3) Repository Structure
+
+Top-level highlights:
+
+- `lib/`: Flutter app source
+- `backend/`: Bun/Hono server source
+- `assets/`: fonts/images/rive/svg assets
+- `android/`, `ios/`, `web/`, `linux/`, `macos/`, `windows/`: Flutter platform projects
+- `firebase.json`, `firestore.rules`, `firestore.indexes.json`: Firebase setup files
+- `pubspec.yaml`: Flutter package config
+
+### Flutter folder map
+
+- `lib/main.dart`: app bootstrap, Firebase init (web/android), date formatting init
+- `lib/app.dart`: `MaterialApp.router`, theme, locale declarations
+- `lib/core/`
+  - `constants/`: static strings and shared labels
+  - `providers/`: global app-level state providers
+  - `router/`: GoRouter route map
+  - `services/`: Firebase, OTP, Profile API integrations
+  - `theme/`: color, text style, and theme definitions
+  - `utils/`: formatters/utilities
+- `lib/features/`
+  - `auth/`: login/signup/otp/forgot/reset screens + auth provider
+  - `dashboard/`: home hub and quick entry cards
+  - `gold_price/`, `silver_price/`: market screens and mock data providers
+  - `calculator/`: jewellery value calculator
+  - `zakat/`: zakat calculator logic
+  - `reports/`: filtered mock report feed
+  - `settings/`: settings and profile management screens
+  - `subscription/`: premium/paywall screen
+  - `splash/`: startup splash flow
+- `lib/shared/`
+  - `models/`: `UserModel`, `PriceModel`, `ReportModel`
+  - `widgets/`: common controls/cards/bottom nav
+
+### Backend folder map
+
+- `backend/src/index.ts`: app startup, middleware registration, active route mounting
+- `backend/src/config/firebase.ts`: Firebase Admin initialization
+- `backend/src/routes/`
+  - Active: `auth.ts`, `profile.ts`
+  - Scaffold/empty: `calculator.ts`, `gold-price.ts`, `silver-price.ts`, `reports.ts`, `subscription.ts`, `zakat.ts`
+- `backend/src/controllers/`
+  - Active: `auth.controller.ts`, `profile.controller.ts`
+  - Scaffold/empty: several domain controllers
+- `backend/src/services/`
+  - Active: `auth.service.ts`, `profile.service.ts`
+  - Scaffold/empty: price/report/calculator/subscription/zakat services
+- `backend/src/middleware/auth.middleware.ts`: bearer token parsing and context injection
+- `backend/src/types/index.ts`: OTP/auth and API type definitions
+- `backend/src/utils/helpers.ts`: email validation, OTP generation/masking helpers
+- `backend/src/db/`: Drizzle/Postgres schema and migration scaffolding
+
+### Complete project architecture and file structure (workspace view)
+
+The following structure represents the full project layout used by this workspace.
+It includes all product code and platform folders. Build/cache/dependency folders can be very large, so this section focuses on the canonical project structure used for development.
 
 ```text
 Swarnakar/
-├── .firebaserc
-├── .gitignore
-├── .metadata
-├── .vscode/
-│   └── settings.json
 ├── analysis_options.yaml
 ├── firebase.json
 ├── firestore.indexes.json
@@ -369,77 +141,25 @@ Swarnakar/
 ├── pubspec.lock
 ├── README.md
 ├── swarnakar.iml
-├── android/
-│   ├── build.gradle.kts
-│   ├── gradle.properties
-│   ├── local.properties
-│   ├── settings.gradle.kts
-│   ├── app/
-│       ├── build.gradle.kts
-│       └── src/
-│           ├── debug/
-│           ├── main/
-│           └── profile/
-│   └── gradle/
-│       └── wrapper/
-│           └── gradle-wrapper.properties
+├── .firebaserc
+├── .gitignore
+├── .metadata
+├── .flutter-plugins-dependencies
+├── .vscode/
+│   └── settings.json
+├── test/
+│   └── widget_test.dart
 ├── assets/
 │   ├── fonts/
 │   ├── images/
+│   │   ├── swarnakar.png
+│   │   └── swarnakar-nobg.png
 │   ├── rive/
 │   └── svg/
-├── backend/
-│   ├── .env
-│   ├── drizzle.config.ts
-│   ├── package.json
-│   ├── README.md
-│   ├── tsconfig.json
-│   └── src/
-│       ├── index.ts
-│       ├── controllers/
-│       │   ├── auth.controller.ts
-│       │   ├── calculator.controller.ts
-│       │   ├── price.controller.ts
-│       │   ├── reports.controller.ts
-│       │   ├── subscription.controller.ts
-│       │   └── zakat.controller.ts
-│       ├── db/
-│       │   ├── index.ts
-│       │   ├── migrate.ts
-│       │   ├── schema.ts
-│       │   └── migrations/
-│       ├── middleware/
-│       │   ├── auth.middleware.ts
-│       │   └── error.middleware.ts
-│       ├── routes/
-│       │   ├── auth.ts
-│       │   ├── calculator.ts
-│       │   ├── gold-price.ts
-│       │   ├── reports.ts
-│       │   ├── silver-price.ts
-│       │   ├── subscription.ts
-│       │   └── zakat.ts
-│       ├── services/
-│       │   ├── auth.service.ts
-│       │   ├── calculator.service.ts
-│       │   ├── price.service.ts
-│       │   ├── reports.service.ts
-│       │   ├── subscription.service.ts
-│       │   └── zakat.service.ts
-│       ├── types/
-│       │   └── index.ts
-│       └── utils/
-│           └── helpers.ts
-├── .idea/
-│   ├── libraries/
-│   ├── modules.xml
-│   ├── runConfigurations/
-│   └── workspace.xml
-├── build/
-│   └── ... generated Flutter build output omitted ...
 ├── lib/
-│   ├── app.dart
 │   ├── main.dart
+│   ├── app.dart
+│   ├── firebase_options.dart
 │   ├── core/
 │   │   ├── constants/
 │   │   │   ├── app_assets.dart
@@ -448,6 +168,10 @@ Swarnakar/
 │   │   │   └── core_providers.dart
 │   │   ├── router/
 │   │   │   └── app_router.dart
+│   │   ├── services/
+│   │   │   ├── firebase_service.dart
+│   │   │   ├── otp_service.dart
+│   │   │   └── profile_service.dart
 │   │   ├── theme/
 │   │   │   ├── app_colors.dart
 │   │   │   ├── app_text_styles.dart
@@ -457,108 +181,700 @@ Swarnakar/
 │   │       └── currency_formatter.dart
 │   ├── features/
 │   │   ├── auth/
-│   │   │   └── presentation/
-│   │   ├── calculator/
 │   │   │   ├── presentation/
+│   │   │   │   ├── login_screen.dart
+│   │   │   │   ├── signup_screen.dart
+│   │   │   │   ├── otp_screen.dart
+│   │   │   │   ├── forgot_password_screen.dart
+│   │   │   │   └── reset_password_screen.dart
 │   │   │   └── providers/
-│   │   ├── dashboard/
-│   │   │   ├── presentation/
-│   │   │   └── providers/
-│   │   ├── gold_price/
-│   │   │   ├── data/
-│   │   │   ├── presentation/
-│   │   │   └── providers/
-│   │   ├── reports/
-│   │   │   ├── data/
-│   │   │   ├── presentation/
-│   │   │   └── providers/
-│   │   ├── settings/
-│   │   │   └── presentation/
-│   │   ├── silver_price/
-│   │   │   ├── data/
-│   │   │   ├── presentation/
-│   │   │   └── providers/
+│   │   │       └── auth_provider.dart
 │   │   ├── splash/
 │   │   │   └── presentation/
+│   │   │       └── splash_screen.dart
+│   │   ├── dashboard/
+│   │   │   ├── presentation/
+│   │   │   │   └── dashboard_screen.dart
+│   │   │   └── providers/
+│   │   │       └── dashboard_provider.dart
+│   │   ├── gold_price/
+│   │   │   ├── data/
+│   │   │   │   └── gold_price_mock.dart
+│   │   │   ├── presentation/
+│   │   │   │   └── gold_price_screen.dart
+│   │   │   └── providers/
+│   │   │       └── gold_price_provider.dart
+│   │   ├── silver_price/
+│   │   │   ├── data/
+│   │   │   │   └── silver_price_mock.dart
+│   │   │   ├── presentation/
+│   │   │   │   └── silver_price_screen.dart
+│   │   │   └── providers/
+│   │   │       └── silver_price_provider.dart
+│   │   ├── calculator/
+│   │   │   ├── presentation/
+│   │   │   │   └── calculator_screen.dart
+│   │   │   └── providers/
+│   │   │       └── calculator_provider.dart
+│   │   ├── zakat/
+│   │   │   ├── presentation/
+│   │   │   │   └── zakat_screen.dart
+│   │   │   └── providers/
+│   │   │       └── zakat_provider.dart
+│   │   ├── reports/
+│   │   │   ├── data/
+│   │   │   │   └── reports_mock.dart
+│   │   │   ├── presentation/
+│   │   │   │   └── reports_screen.dart
+│   │   │   └── providers/
+│   │   │       └── reports_provider.dart
 │   │   ├── subscription/
 │   │   │   └── presentation/
-│   │   └── zakat/
+│   │   │       └── paywall_screen.dart
+│   │   └── settings/
 │   │       ├── presentation/
+│   │       │   ├── settings_screen.dart
+│   │       │   └── profile_screen.dart
 │   │       └── providers/
+│   │           └── profile_provider.dart
 │   └── shared/
 │       ├── models/
+│       │   ├── user_model.dart
+│       │   ├── price_model.dart
+│       │   └── report_model.dart
 │       └── widgets/
+│           ├── app_bottom_nav.dart
+│           ├── blur_price_overlay.dart
+│           ├── golden_button.dart
+│           ├── golden_input_field.dart
+│           ├── gold_price_card.dart
+│           ├── price_row_widget.dart
+│           ├── section_heading.dart
+│           └── subscribe_banner.dart
+├── backend/
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── bun.lock
+│   ├── tsconfig.json
+│   ├── drizzle.config.ts
+│   ├── README.md
+│   ├── .env
+│   ├── swarnakar-79e57-firebase-adminsdk-fbsvc-1f11cecb42.json
+│   └── src/
+│       ├── index.ts
+│       ├── config/
+│       │   └── firebase.ts
+│       ├── controllers/
+│       │   ├── auth.controller.ts
+│       │   ├── profile.controller.ts
+│       │   ├── calculator.controller.ts
+│       │   ├── price.controller.ts
+│       │   ├── reports.controller.ts
+│       │   ├── subscription.controller.ts
+│       │   └── zakat.controller.ts
+│       ├── routes/
+│       │   ├── auth.ts
+│       │   ├── profile.ts
+│       │   ├── calculator.ts
+│       │   ├── gold-price.ts
+│       │   ├── silver-price.ts
+│       │   ├── reports.ts
+│       │   ├── subscription.ts
+│       │   └── zakat.ts
+│       ├── services/
+│       │   ├── auth.service.ts
+│       │   ├── profile.service.ts
+│       │   ├── calculator.service.ts
+│       │   ├── price.service.ts
+│       │   ├── reports.service.ts
+│       │   ├── subscription.service.ts
+│       │   └── zakat.service.ts
+│       ├── middleware/
+│       │   ├── auth.middleware.ts
+│       │   └── error.middleware.ts
+│       ├── db/
+│       │   ├── index.ts
+│       │   ├── migrate.ts
+│       │   └── schema.ts
+│       ├── types/
+│       │   └── index.ts
+│       └── utils/
+│           └── helpers.ts
+├── android/
+│   ├── build.gradle.kts
+│   ├── gradle.properties
+│   ├── gradlew
+│   ├── gradlew.bat
+│   ├── local.properties
+│   ├── settings.gradle.kts
+│   ├── swarnakar_android.iml
+│   ├── app/
+│   │   ├── build.gradle.kts
+│   │   ├── google-services.json
+│   │   └── src/
+│   └── gradle/
+│       └── wrapper/
+│           ├── gradle-wrapper.jar
+│           └── gradle-wrapper.properties
+├── ios/
+│   ├── Flutter/
+│   ├── Runner/
+│   ├── Runner.xcodeproj/
+│   ├── Runner.xcworkspace/
+│   └── RunnerTests/
+├── macos/
+│   ├── Flutter/
+│   ├── Runner/
+│   ├── Runner.xcodeproj/
+│   ├── Runner.xcworkspace/
+│   └── RunnerTests/
 ├── linux/
 │   ├── CMakeLists.txt
 │   ├── flutter/
-│   │   ├── CMakeLists.txt
-│   │   ├── generated_plugin_registrant.cc
-│   │   ├── generated_plugin_registrant.h
-│   │   ├── generated_plugins.cmake
-│   │   └── ephemeral/
 │   └── runner/
-│       ├── CMakeLists.txt
-│       ├── main.cc
-│       ├── my_application.cc
-│       └── my_application.h
-└── test/
-    └── widget_test.dart
+├── windows/
+│   ├── CMakeLists.txt
+│   ├── flutter/
+│   └── runner/
+└── web/
+  ├── index.html
+  ├── manifest.json
+  ├── favicon.png
+  └── icons/
 ```
 
-The build directory is generated by Flutter and not meant to be edited directly, so only a summarized build entry is shown above.
+If you want a raw, fully exhaustive tree including generated folders (`build/`, `.dart_tool/`, `backend/node_modules/`, platform `ephemeral/` outputs), keep this command in your maintenance notes:
 
-## Getting Started
+```bash
+find . -maxdepth 6 | sort
+```
 
-### Prerequisites
+---
 
-- Flutter SDK 3.x
-- Android Studio or VS Code with Flutter and Dart extensions
-- Android toolchain or Linux desktop toolchain, depending on your target platform
+## 4) Frontend Runtime and Routing
 
-### Install Dependencies
+## App startup sequence
+
+1. Flutter bindings initialized.
+2. Firebase initialized only for web/android based on current guard in `main.dart`.
+3. Bangla locale date symbols initialized (`bn_BD`).
+4. App starts in Riverpod `ProviderScope`.
+5. Router initial path is `/` (splash screen).
+
+## Route table
+
+Defined in `lib/core/router/app_router.dart`:
+
+- `/` -> Splash
+- `/login` -> Login
+- `/signup` -> Signup
+- `/forgot-password` -> Forgot Password
+- `/finishSignIn` -> Firebase email-link completion handoff
+- `/otp?email=...&flow=...` -> OTP screen (currently used for reset flow)
+- `/reset-password?email=...&token=...` -> Reset Password
+- `/dashboard` -> Dashboard
+- `/gold-price` -> Gold market screen
+- `/silver-price` -> Silver market screen
+- `/calculator` -> Calculator
+- `/zakat` -> Zakat
+- `/paywall` -> Premium/paywall
+- `/reports` -> Reports
+- `/settings` -> Settings
+- `/profile` -> Profile details/edit screen
+
+---
+
+## 5) Frontend Feature-by-Feature Explanation
+
+## 5.1 Splash
+
+- Visual intro with animation and brand logo.
+- Automatically navigates to `/login` after ~3 seconds.
+
+## 5.2 Authentication
+
+### Implemented flows
+
+- Email/password signup via Firebase Auth
+- Email/password sign-in via Firebase Auth
+- Google sign-in (platform-guarded)
+- Firebase verification email send after signup
+- Email link sign-in (Firebase action link)
+- Firestore user document creation on signup
+- Firebase `emailVerified` enforcement on login
+- Reset-password flow via backend OTP + reset token
+
+### Main files
+
+- `lib/features/auth/presentation/login_screen.dart`
+- `lib/features/auth/presentation/signup_screen.dart`
+- `lib/features/auth/presentation/otp_screen.dart`
+- `lib/features/auth/presentation/forgot_password_screen.dart`
+- `lib/features/auth/presentation/reset_password_screen.dart`
+- `lib/features/auth/providers/auth_provider.dart`
+- `lib/core/services/firebase_service.dart`
+- `lib/core/services/otp_service.dart`
+
+### Important behavior notes
+
+- Signup creates Firebase user + Firestore profile with `isEmailVerified: false` and sends Firebase verification email.
+- Signup flow signs user out after sending verification email and routes back to login.
+- Sign-in blocks non-verified users by checking Firebase Auth `emailVerified`.
+- On first verified login, Firestore `isEmailVerified` is synchronized to `true`.
+- Google sign-in has account policy controls (`allowNewUser`, `allowExistingUser`).
+
+## 5.3 Dashboard
+
+- Shows top-level gold and silver headline values from mock providers.
+- Price visibility is blurred/locked when subscription provider is false.
+- Grid links into all major modules.
+
+## 5.4 Gold/Silver Price Modules
+
+- Data source is currently local mock lists:
+  - `gold_price/data/gold_price_mock.dart`
+  - `silver_price/data/silver_price_mock.dart`
+- Providers group entries into display sections.
+- Subscription state controls blur lock + subscribe banner visibility.
+
+## 5.5 Calculator
+
+- User inputs quantity, market rate, labor.
+- Converts input unit to bhori and calculates:
+  - metal value
+  - labor
+  - total value
+- Result is computed in Riverpod provider and displayed in UI.
+
+## 5.6 Zakat
+
+- Inputs: gold, silver, cash, business goods, receivable, debts.
+- Provider calculates total zakatable assets and 2.5% if eligible.
+- Uses local constants for rates/nisab threshold in current implementation.
+
+## 5.7 Reports
+
+- Uses local mock reports list.
+- Client-side filter tabs: all, gold, silver, zakat.
+
+## 5.8 Subscription/Paywall
+
+- Paywall UI with monthly/yearly visuals.
+- Tapping subscribe currently flips local app provider state to subscribed.
+- No payment gateway integration yet.
+
+## 5.9 Settings + Profile
+
+- Settings resolves name/email from auth state + Firestore fallback + Firebase user.
+- Profile screen uses backend profile API for:
+  - get profile
+  - update profile
+  - change password event
+  - delete account
+  - get stats
+
+---
+
+## 6) Frontend State Management
+
+Major state patterns:
+
+- Riverpod providers for simple app states (`isSubscribed`, auth loading/errors, etc.)
+- `AuthNotifier` (StateNotifier) for auth workflows
+- Feature providers for dashboard, calculator, zakat, reports, prices
+- `ProfileNotifier` handles backend profile API communication and editing lifecycle
+
+Data classification in current code:
+
+- Mock/local data: prices, reports, parts of dashboard numbers
+- Firebase-backed: user auth identity + user documents
+- Backend-backed: reset OTP/password endpoints and profile endpoints
+
+---
+
+## 7) Backend API Deep Dive
+
+## 7.1 Entry and middleware
+
+In `backend/src/index.ts`:
+
+- Logger middleware enabled
+- Pretty JSON response formatter enabled
+- CORS configured for localhost-style origins
+- Health endpoint: `GET /health`
+
+Active route mounting:
+
+- `app.route('/api/auth', authRoutes)`
+- `app.route('/auth', authRoutes)`
+- `app.route('/api/profile', profileRoutes)`
+
+## 7.2 Auth/OTP routes
+
+Defined in `backend/src/routes/auth.ts`.
+
+Canonical endpoints:
+
+- `POST /auth/send-otp`
+- `POST /auth/resend-otp`
+- `POST /auth/verify-login`
+- `POST /auth/verify-reset`
+- `POST /auth/reset-password`
+
+Compatibility endpoints for Flutter:
+
+- `POST /auth/otp/send`
+- `POST /auth/otp/resend`
+- `POST /auth/otp/verify`
+- `POST /auth/otp/verify-reset`
+- `POST /auth/password/reset`
+
+Also available under `/api/auth/*` because of dual mount.
+
+## 7.3 OTP/auth service behavior
+
+In `backend/src/services/auth.service.ts`:
+
+- OTP format: 6 digits
+- Default OTP expiry: 10 minutes
+- Default max attempts: 5
+- Default resend cooldown: 45 seconds
+- Default per-email hourly rate limit: 10
+- OTP hash: SHA-256 over email + purpose + code
+- Reset token issuance after successful reset OTP verify
+- Password reset via Firebase Admin `updateUser` using reset token
+
+Storage in current implementation:
+
+- OTP records: in-memory `Map`
+- Request windows/rate limit counters: in-memory `Map`
+- Reset tokens: in-memory `Map`
+
+Important implication:
+
+- Backend auth-memory state resets when server restarts.
+
+## 7.4 Profile routes
+
+Mounted under `/api/profile` and protected by auth middleware.
+
+- `GET /api/profile`
+- `PUT /api/profile/update`
+- `POST /api/profile/change-password`
+- `DELETE /api/profile/delete-account`
+- `GET /api/profile/stats`
+
+Profile service uses Firebase Admin Firestore and looks in both collections:
+
+- `users`
+- `Users`
+
+## 7.5 Auth middleware note
+
+Current middleware in `backend/src/middleware/auth.middleware.ts` decodes JWT payload to extract user identity but does not cryptographically verify Firebase token signature in production-grade way.
+
+This is acceptable for local/dev experimentation but should be upgraded for hardened production security.
+
+## 7.6 Scaffold modules not yet active
+
+These files currently exist but are empty and not route-mounted in `index.ts`:
+
+- price/gold/silver routes
+- calculator route
+- reports route
+- subscription route
+- zakat route
+- related controllers/services
+
+---
+
+## 8) Data and Model Notes
+
+### Flutter models
+
+- `UserModel`: uid, name, email, subscription state
+- `PriceModel`: label, numeric price, unit, update text
+- `ReportModel`: report metadata for list rendering
+
+### Firestore document shape (client-side expectation)
+
+Typical user doc keys used by app/backend include:
+
+- `uid` or `firebaseId`
+- `name`
+- `email`
+- `phone` (optional)
+- `address` (optional)
+- `profileImage` (optional)
+- `isSubscribed`
+- `subscriptionExpiry`
+- `isEmailVerified`
+- `totalCalculations`, `savedReports`, `favoritePrices`
+- `preferences`
+- timestamps (`createdAt`, `updatedAt`, etc.)
+
+### Drizzle/Postgres scaffold
+
+`backend/src/db/schema.ts` defines SQL-style schema for future migration, but current active backend profile persistence is Firestore.
+
+---
+
+## 9) Environment Configuration
+
+## 9.1 Backend `.env`
+
+Create `backend/.env` with at least:
+
+```env
+PORT=8787
+FIREBASE_PROJECT_ID=swarnakar-79e57
+GOOGLE_APPLICATION_CREDENTIALS=./firebase-service-account.json
+
+JWT_SECRET=change-this-in-production
+JWT_EXPIRES_IN=7d
+
+OTP_EXPIRY_MINUTES=10
+OTP_MAX_ATTEMPTS=5
+OTP_RESEND_COOLDOWN_SECONDS=45
+OTP_RATE_LIMIT_PER_HOUR=10
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@example.com
+SMTP_PASS=your-app-password
+OTP_FROM_EMAIL=no-reply@swarnakar.app
+```
+
+Notes:
+
+- If SMTP is not configured, backend logs OTP in server console (development fallback).
+- Signup verification email does not use backend SMTP now; it uses Firebase Auth email verification.
+- Keep service-account credentials private and never expose them publicly.
+
+## 9.2 Flutter backend URL behavior
+
+OTP service base URL:
+
+- Web: `http://localhost:8787`
+- Android emulator: `http://10.0.2.2:8787`
+- Optional compile-time override: `--dart-define=OTP_API_BASE_URL=...`
+
+Profile service base URL:
+
+- Web: `http://localhost:8787`
+- Android emulator: `http://10.0.2.2:8787`
+
+---
+
+## 10) Local Development Setup
+
+## 10.1 Prerequisites
+
+- Flutter SDK 3.x and Dart 3.x
+- Bun runtime
+- Firebase project configured
+- Android Studio/Xcode/Chrome depending on target platform
+
+## 10.2 Install dependencies
+
+### Flutter app
 
 ```bash
 flutter pub get
 ```
 
-### Run The App
+### Backend
 
 ```bash
-flutter run
+cd backend
+bun install
 ```
 
-Run on a specific device:
+## 10.3 Run backend
 
 ```bash
-flutter devices
-flutter run -d <device-id>
+cd backend
+bun run dev
 ```
 
-### Run Tests
+or
 
 ```bash
+cd backend
+bun run start
+```
+
+Backend listens on `http://localhost:8787` by default.
+
+## 10.4 Run Flutter app
+
+```bash
+flutter run -d chrome
+```
+
+or choose another target device.
+
+---
+
+## 11) End-to-End Flow (Typical)
+
+1. Start backend (`bun run dev`).
+2. Start Flutter app.
+3. Sign up with email/password.
+4. Open verification email and click the Firebase verification link.
+5. Log in and navigate dashboard/features.
+6. Use forgot-password to test reset OTP -> reset token -> password update flow.
+7. Open settings/profile to test profile API calls.
+
+---
+
+## 12) Build and Deployment Notes
+
+### Flutter builds
+
+- Android release: `flutter build apk --release` or `flutter build appbundle --release`
+- Web release: `flutter build web`
+- iOS/macOS/windows/linux builds follow standard Flutter platform commands
+
+### Backend deployment
+
+- Can run on any Bun-capable server/runtime.
+- Ensure env vars and Firebase service account path are correctly configured.
+- Replace dev/default JWT secret and tighten CORS/auth verification for production.
+
+### Firebase configuration files in repo
+
+- `firebase.json`
+- `firestore.rules`
+- `firestore.indexes.json`
+
+Deploy Firebase resources using Firebase CLI in your own secure environment.
+
+---
+
+## 13) Known Gaps and Important Implementation Notes
+
+These are important for anyone extending or productizing this codebase.
+
+1. `main.dart` currently initializes Firebase only for web/android.
+2. Firestore creation/deploy in this project requires billing enabled (Firebase CLI returns HTTP 403 without billing).
+3. Many market/report values are currently mock data rather than live backend data.
+4. Backend auth middleware decodes JWT but does not fully verify token signature using Firebase public keys.
+5. Multiple backend domain modules are scaffolded and still empty.
+6. Backend reset OTP/reset-token state is in-memory and resets on process restart.
+
+---
+
+## 14) Suggested Next Milestones
+
+1. Add resend-verification UX on login screen to reduce signup friction.
+2. Replace mock market/report datasets with persistent API-backed data.
+3. Implement and mount remaining backend modules (prices, reports, subscription, calculator, zakat).
+4. Upgrade JWT verification in middleware to full Firebase token verification.
+5. Introduce persistent DB backing for reset OTP/token state if required for production continuity.
+6. Integrate real payment/subscription management.
+
+---
+
+## 18) Recent Implementation Updates (Current Session)
+
+This section summarizes the most important updates that were implemented after the initial README expansion.
+
+### Authentication updates
+
+- Signup verification moved from backend OTP to Firebase email verification links.
+- Signup flow sends verification email and signs out user before returning to login.
+- Login enforces Firebase `emailVerified` and synchronizes Firestore verification flag.
+- Email link sign-in completion route `/finishSignIn` is active.
+- Forgot password flow now uses backend reset OTP + reset token + Firebase Admin password update.
+
+### Password-manager and UX updates
+
+- Added autofill hints for email/password/new-password fields.
+- Added `AutofillGroup` and `TextInput.finishAutofillContext(...)` on auth screens.
+- Added in-app "Generate strong password" fallback on signup and reset screens.
+
+### Backend/auth API updates
+
+- Removed signup OTP verification path from active app flow.
+- Kept reset OTP/password reset endpoints active.
+- Reset eligibility checks now validate against Firebase Admin user lookup.
+
+### Firestore and deployment setup updates
+
+- Firestore rules/index deploy command was attempted with Firebase CLI.
+- Current blocker encountered: Firestore database creation returns HTTP 403 until billing is enabled for project `swarnakar-79e57`.
+- Resolution path: enable billing in Google Cloud Console for the Firebase project, then redeploy:
+
+```bash
+firebase deploy --only firestore:rules,firestore:indexes
+```
+
+---
+
+## 15) Key Commands Cheat Sheet
+
+```bash
+# Flutter
+flutter pub get
+flutter run -d chrome
+flutter analyze
 flutter test
+
+# Backend
+cd backend
+bun install
+bun run dev
+bun run start
+
+# Optional Drizzle scaffolding commands (backend/package.json)
+bun run db:generate
+bun run db:migrate
+bun run db:studio
 ```
 
-### Linux Desktop Notes
+---
 
-If Linux desktop packaging fails with a permission error while copying into `/usr/local`, update `linux/CMakeLists.txt` to install into `${PROJECT_BINARY_DIR}/bundle`, then run `flutter clean` before launching again with `flutter run -d linux`.
+## 16) Technology Stack
 
-## Notes For Contributors
+### Client
 
-- Keep feature code inside `lib/features/`.
-- Reuse shared widgets from `lib/shared/widgets/` before creating new UI components.
-- Add new app-wide constants, router changes, and theme updates under `lib/core/`.
-- Document backend behavior in this README only after the backend files contain real implementation.
+- Flutter
+- Dart
+- flutter_riverpod
+- go_router
+- firebase_core
+- firebase_auth
+- cloud_firestore
+- google_sign_in
+- animate_do
+- rive
+- intl
+- connectivity_plus
+- flutter_secure_storage
+- flutter_svg
+- cached_network_image
+- shimmer
 
-## Development Notes
+### Server
 
-- Current price and report sources are mock-data driven for fast UI iteration.
-- App-level providers are centralized in `lib/core/providers/core_providers.dart`.
-- Keep feature changes scoped inside each feature module to preserve maintainability.
+- Bun
+- TypeScript
+- Hono
+- firebase-admin
+- bcryptjs
+- jsonwebtoken
+- nodemailer
+- node-cron
+- axios
+- drizzle-kit (scaffold)
 
-## Version
+---
 
-Current app version from `pubspec.yaml`:
+## 17) Final Notes
 
-- `2.1.0+1`
+Swarnakar already provides a strong product-oriented foundation with modern Flutter architecture and practical backend integration.
+The fastest path to production quality is to finish backend module wiring, replace mock data sources with APIs, and harden auth/security edges.
+
+If you want, the next README update can include architecture diagrams, API request/response payload tables for every endpoint, and a full contributor onboarding checklist.
