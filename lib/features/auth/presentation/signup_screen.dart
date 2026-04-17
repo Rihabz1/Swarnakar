@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'dart:math';
 import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,6 +25,36 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
   late TextEditingController _confirmPasswordController;
+
+  String _generateStrongPassword({int length = 16}) {
+    const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijkmnopqrstuvwxyz';
+    const digits = '23456789';
+    const symbols = '@#%+=!?4&*()-_';
+    const allChars = '$uppercase$lowercase$digits$symbols';
+    final random = Random.secure();
+
+    final chars = <String>[
+      uppercase[random.nextInt(uppercase.length)],
+      lowercase[random.nextInt(lowercase.length)],
+      digits[random.nextInt(digits.length)],
+      symbols[random.nextInt(symbols.length)],
+    ];
+
+    for (var i = chars.length; i < length; i++) {
+      chars.add(allChars[random.nextInt(allChars.length)]);
+    }
+
+    chars.shuffle(random);
+    return chars.join();
+  }
+
+  void _useGeneratedPassword() {
+    final generated = _generateStrongPassword();
+    _passwordController.text = generated;
+    _confirmPasswordController.text = generated;
+    _showSuccess('শক্তিশালী পাসওয়ার্ড তৈরি করা হয়েছে।');
+  }
 
   void _forceEmailLowercase(String value) {
     final lowered = value.toLowerCase();
@@ -181,96 +213,122 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           ),
                         ],
                       ),
-                      child: Column(
-                        children: [
-                          FadeInUp(
-                            delay: const Duration(milliseconds: 180),
-                            child: GoldenInputField(
-                              hint: AppStrings.fullName,
-                              icon: Icons.person_outline,
-                              controller: _nameController,
+                      child: AutofillGroup(
+                        child: Column(
+                          children: [
+                            FadeInUp(
+                              delay: const Duration(milliseconds: 180),
+                              child: GoldenInputField(
+                                hint: AppStrings.fullName,
+                                icon: Icons.person_outline,
+                                controller: _nameController,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          FadeInUp(
-                            delay: const Duration(milliseconds: 280),
-                            child: GoldenInputField(
-                              hint: AppStrings.email,
-                              icon: Icons.email_outlined,
-                              keyboardType: TextInputType.emailAddress,
-                              controller: _emailController,
-                              onChanged: _forceEmailLowercase,
+                            const SizedBox(height: 12),
+                            FadeInUp(
+                              delay: const Duration(milliseconds: 280),
+                              child: GoldenInputField(
+                                hint: AppStrings.email,
+                                icon: Icons.email_outlined,
+                                keyboardType: TextInputType.emailAddress,
+                                autofillHints: const [AutofillHints.email],
+                                textInputAction: TextInputAction.next,
+                                controller: _emailController,
+                                onChanged: _forceEmailLowercase,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          FadeInUp(
-                            delay: const Duration(milliseconds: 380),
-                            child: GoldenInputField(
-                              hint: AppStrings.password,
-                              icon: Icons.lock_outline,
-                              obscureText: true,
-                              controller: _passwordController,
+                            const SizedBox(height: 12),
+                            FadeInUp(
+                              delay: const Duration(milliseconds: 380),
+                              child: GoldenInputField(
+                                hint: AppStrings.password,
+                                icon: Icons.lock_outline,
+                                obscureText: true,
+                                keyboardType: TextInputType.visiblePassword,
+                                autofillHints: const [AutofillHints.newPassword],
+                                enableSuggestions: false,
+                                autocorrect: false,
+                                controller: _passwordController,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          FadeInUp(
-                            delay: const Duration(milliseconds: 470),
-                            child: GoldenInputField(
-                              hint: AppStrings.confirmPassword,
-                              icon: Icons.lock_outline,
-                              obscureText: true,
-                              controller: _confirmPasswordController,
+                            const SizedBox(height: 12),
+                            FadeInUp(
+                              delay: const Duration(milliseconds: 470),
+                              child: GoldenInputField(
+                                hint: AppStrings.confirmPassword,
+                                icon: Icons.lock_outline,
+                                obscureText: true,
+                                keyboardType: TextInputType.visiblePassword,
+                                autofillHints: const [AutofillHints.newPassword],
+                                enableSuggestions: false,
+                                autocorrect: false,
+                                controller: _confirmPasswordController,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 18),
-                          FadeInUp(
-                            delay: const Duration(milliseconds: 560),
-                            child: GoldenButton(
-                              text: AppStrings.createAccount,
-                              isLoading: authState.isLoading,
-                              onPressed: () async {
-                                if (!_validateSignup()) return;
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton.icon(
+                                onPressed: _useGeneratedPassword,
+                                icon: const Icon(Icons.password_rounded, size: 16),
+                                label: const Text('Generate strong password'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.gold.withValues(alpha: 0.9),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            FadeInUp(
+                              delay: const Duration(milliseconds: 560),
+                              child: GoldenButton(
+                                text: AppStrings.createAccount,
+                                isLoading: authState.isLoading,
+                                onPressed: () async {
+                                  if (!_validateSignup()) return;
                                   final router = GoRouter.of(context);
-                                final createdUser = await authNotifier.signUp(
-                                  name: _nameController.text.trim(),
-                                  email: _emailController.text.trim(),
-                                  password: _passwordController.text,
-                                );
-                                if (createdUser == null || !mounted) {
-                                  return;
-                                }
-
-                                try {
-                                  await authNotifier.sendSignupOtp(_emailController.text.trim());
-                                } catch (_) {
-                                  if (!mounted) {
+                                  final createdUser = await authNotifier.signUp(
+                                    name: _nameController.text.trim(),
+                                    email: _emailController.text.trim(),
+                                    password: _passwordController.text,
+                                  );
+                                  if (createdUser == null || !mounted) {
                                     return;
                                   }
-                                  _showError('OTP পাঠানো যায়নি। আবার চেষ্টা করুন।');
-                                  return;
-                                }
 
-                                _showSuccess(
-                                  'অ্যাকাউন্ট তৈরি হয়েছে। ইমেইলে ৬ সংখ্যার OTP পাঠানো হয়েছে।',
-                                );
-                                  final email = _emailController.text.trim();
-                                  router.go('/otp?email=$email');
-                              },
+                                  TextInput.finishAutofillContext(shouldSave: true);
+
+                                  try {
+                                    await ref.read(firebaseServiceProvider).resendVerificationEmail();
+                                    await authNotifier.signOut();
+                                  } catch (_) {
+                                    if (!mounted) {
+                                      return;
+                                    }
+                                    _showError('ভেরিফিকেশন ইমেইল পাঠানো যায়নি। আবার চেষ্টা করুন।');
+                                    return;
+                                  }
+
+                                  _showSuccess(
+                                    'অ্যাকাউন্ট তৈরি হয়েছে। ইমেইলে ভেরিফিকেশন লিংক পাঠানো হয়েছে।',
+                                  );
+                                  router.go('/login');
+                                },
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildDivider(),
-                          const SizedBox(height: 12),
-                          FadeInUp(
-                            delay: const Duration(milliseconds: 660),
-                            child: _buildGoogleSignUp(authNotifier, authState.isLoading),
-                          ),
-                          const SizedBox(height: 20),
-                          FadeInUp(
-                            delay: const Duration(milliseconds: 760),
-                            child: _buildLoginLink(),
-                          ),
-                        ],
+                            const SizedBox(height: 16),
+                            _buildDivider(),
+                            const SizedBox(height: 12),
+                            FadeInUp(
+                              delay: const Duration(milliseconds: 660),
+                              child: _buildGoogleSignUp(authNotifier, authState.isLoading),
+                            ),
+                            const SizedBox(height: 20),
+                            FadeInUp(
+                              delay: const Duration(milliseconds: 760),
+                              child: _buildLoginLink(),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],

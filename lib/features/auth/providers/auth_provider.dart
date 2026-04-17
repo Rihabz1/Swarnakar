@@ -164,10 +164,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> sendSignupOtp(String email) async {
+  Future<void> sendResetOtp(String email) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      await _otpService.sendOtp(email: email, purpose: 'signup');
+      await _otpService.sendOtp(email: email, purpose: 'reset');
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: _formatError(e));
@@ -175,11 +175,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> verifySignupOtp({required String email, required String code}) async {
+  Future<String> verifyResetOtp({required String email, required String code}) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      await _otpService.verifyOtp(email: email, code: code, purpose: 'signup');
-      await _firebaseService.markCurrentUserEmailVerifiedInDb();
+      final resetToken = await _otpService.verifyResetOtp(email: email, code: code);
+      state = state.copyWith(isLoading: false);
+      return resetToken;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: _formatError(e));
+      rethrow;
+    }
+  }
+
+  Future<void> resetPassword({required String resetToken, required String newPassword}) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _otpService.resetPassword(resetToken: resetToken, newPassword: newPassword);
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: _formatError(e));

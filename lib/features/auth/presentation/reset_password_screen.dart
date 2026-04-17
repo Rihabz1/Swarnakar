@@ -1,23 +1,58 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:math';
 import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
+import 'package:swarnakar/features/auth/providers/auth_provider.dart';
 
-class ResetPasswordScreen extends StatefulWidget {
+class ResetPasswordScreen extends ConsumerStatefulWidget {
   final String email;
+  final String resetToken;
 
-  const ResetPasswordScreen({super.key, required this.email});
+  const ResetPasswordScreen({super.key, required this.email, required this.resetToken});
 
   @override
-  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   late final TextEditingController _passwordController;
   late final TextEditingController _confirmPasswordController;
+
+  String _generateStrongPassword({int length = 16}) {
+    const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijkmnopqrstuvwxyz';
+    const digits = '23456789';
+    const symbols = '@#%+=!?\$&*()-_';
+    const allChars = '$uppercase$lowercase$digits$symbols';
+    final random = Random.secure();
+
+    final chars = <String>[
+      uppercase[random.nextInt(uppercase.length)],
+      lowercase[random.nextInt(lowercase.length)],
+      digits[random.nextInt(digits.length)],
+      symbols[random.nextInt(symbols.length)],
+    ];
+
+    for (var i = chars.length; i < length; i++) {
+      chars.add(allChars[random.nextInt(allChars.length)]);
+    }
+
+    chars.shuffle(random);
+    return chars.join();
+  }
+
+  void _useGeneratedPassword() {
+    final generated = _generateStrongPassword();
+    _passwordController.text = generated;
+    _confirmPasswordController.text = generated;
+    _showMessage('শক্তিশালী পাসওয়ার্ড তৈরি করা হয়েছে।');
+  }
 
   @override
   void initState() {
@@ -39,31 +74,42 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  bool _validateAndSubmit() {
+  Future<void> _validateAndSubmit() async {
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
     final whitespaceRegex = RegExp(r'\s');
 
     if (password.isEmpty || confirmPassword.isEmpty) {
       _showMessage('নতুন পাসওয়ার্ড ও কনফার্ম পাসওয়ার্ড দিন।');
-      return false;
+      return;
     }
     if (whitespaceRegex.hasMatch(password) || whitespaceRegex.hasMatch(confirmPassword)) {
       _showMessage('পাসওয়ার্ডে স্পেস ব্যবহার করা যাবে না।');
-      return false;
+      return;
     }
     if (password.length < 8) {
       _showMessage('পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।');
-      return false;
+      return;
     }
     if (password != confirmPassword) {
       _showMessage('পাসওয়ার্ড মিলছে না।');
-      return false;
+      return;
     }
 
-    _showMessage('পাসওয়ার্ড সফলভাবে আপডেট হয়েছে।');
-    context.go('/login');
-    return true;
+    try {
+      final authNotifier = ref.read(authProvider.notifier);
+      await authNotifier.resetPassword(
+        resetToken: widget.resetToken,
+        newPassword: password,
+      );
+      TextInput.finishAutofillContext(shouldSave: true);
+      _showMessage('পাসওয়ার্ড সফলভাবে আপডেট হয়েছে।');
+      if (mounted) {
+        context.go('/login');
+      }
+    } catch (e) {
+      _showMessage(e.toString());
+    }
   }
 
   @override
@@ -92,8 +138,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                   ],
                 ),
-                child: Column(
-                  children: [
+                child: AutofillGroup(
+                  child: Column(
+                    children: [
                     FadeInDown(
                       child: Text(
                         'নতুন পাসওয়ার্ড সেট করুন',
@@ -123,6 +170,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         hint: 'নতুন পাসওয়ার্ড',
                         icon: Icons.lock_outline,
                         obscureText: true,
+                        keyboardType: TextInputType.visiblePassword,
+                        autofillHints: const [AutofillHints.newPassword],
+                        enableSuggestions: false,
+                        autocorrect: false,
                         controller: _passwordController,
                         isGlassmorphic: true,
                       ),
@@ -134,8 +185,24 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         hint: 'পাসওয়ার্ড নিশ্চিত করুন',
                         icon: Icons.lock_outline,
                         obscureText: true,
+                        keyboardType: TextInputType.visiblePassword,
+                        autofillHints: const [AutofillHints.newPassword],
+                        enableSuggestions: false,
+                        autocorrect: false,
                         controller: _confirmPasswordController,
                         isGlassmorphic: true,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: _useGeneratedPassword,
+                        icon: const Icon(Icons.password_rounded, size: 16),
+                        label: const Text('Generate strong password'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.gold.withValues(alpha: 0.9),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -157,7 +224,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                       ),
                     ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

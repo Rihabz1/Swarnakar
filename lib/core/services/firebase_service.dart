@@ -3,9 +3,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:async';
 
 class FirebaseService {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  static const String _emailLinkStorageKey = 'email_for_signin_link';
+  static const Duration _firestoreOpTimeout = Duration(seconds: 8);
 
   bool get _isFirebaseAuthPlatformSupported {
     return kIsWeb ||
@@ -58,16 +63,22 @@ class FirebaseService {
       await userCredential.user?.updateDisplayName(name);
       await userCredential.user?.reload();
 
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'uid': userCredential.user!.uid,
-        'name': name,
-        'email': email,
-        'isSubscribed': false,
-        'subscriptionExpiry': null,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-        'isEmailVerified': false,
-      });
+      try {
+        await _firestore.collection('users').doc(userCredential.user!.uid).set({
+          'uid': userCredential.user!.uid,
+          'name': name,
+          'email': email,
+          'isSubscribed': false,
+          'subscriptionExpiry': null,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'isEmailVerified': false,
+        }).timeout(_firestoreOpTimeout);
+      } catch (e) {
+        if (!_isFirestoreUnavailable(e) && e is! TimeoutException) {
+          throw _handleFirebaseError(e);
+        }
+      }
 
       return userCredential;
     } catch (e) {
@@ -86,17 +97,37 @@ class FirebaseService {
         password: password,
       );
 
-      final userDoc = await _firestore.collection('users').doc(userCredential.user!.uid).get();
-      final isEmailVerified = userDoc.data()?['isEmailVerified'] == true;
+      await userCredential.user?.reload();
+      final refreshedUser = _auth.currentUser;
+      final isEmailVerified = refreshedUser?.emailVerified ?? false;
 
       if (!isEmailVerified) {
         await _auth.signOut();
-        throw Exception('Please verify your email with OTP before signing in');
+        throw Exception('Please verify your email from the verification link before signing in');
       }
 
-      await _firestore.collection('users').doc(userCredential.user!.uid).update({
-        'lastLoginAt': FieldValue.serverTimestamp(),
-      });
+      try {
+        final userDoc = await _firestore
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .get()
+            .timeout(_firestoreOpTimeout);
+
+        if (userDoc.exists && userDoc.data()?['isEmailVerified'] != true) {
+          await _firestore.collection('users').doc(userCredential.user!.uid).update({
+            'isEmailVerified': true,
+            'updatedAt': FieldValue.serverTimestamp(),
+          }).timeout(_firestoreOpTimeout);
+        }
+
+        await _firestore.collection('users').doc(userCredential.user!.uid).update({
+          'lastLoginAt': FieldValue.serverTimestamp(),
+        }).timeout(_firestoreOpTimeout);
+      } catch (e) {
+        if (!_isFirestoreUnavailable(e) && e is! TimeoutException) {
+          throw _handleFirebaseError(e);
+        }
+      }
 
       return userCredential;
     } catch (e) {
@@ -173,6 +204,68 @@ class FirebaseService {
     }
   }
 
+  Future<void> sendSignInLinkToEmail(String email) async {
+    try {
+      final trimmedEmail = email.trim().toLowerCase();
+
+      final actionCodeSettings = ActionCodeSettings(
+        url: 'https://swarnakar-79e57.web.app/finishSignIn',
+        handleCodeInApp: true,
+        androidPackageName: 'com.example.swarnakar',
+        androidInstallApp: true,
+        androidMinimumVersion: '1',
+      );
+
+      await _auth.sendSignInLinkToEmail(
+        email: trimmedEmail,
+        actionCodeSettings: actionCodeSettings,
+      );
+
+      await _secureStorage.write(
+        key: _emailLinkStorageKey,
+        value: trimmedEmail,
+      );
+    } catch (e) {
+      throw _handleFirebaseError(e);
+    }
+  }
+
+  Future<UserCredential?> completeSignInWithEmailLink(
+    String emailLink, {
+    String? fallbackEmail,
+  }) async {
+    try {
+      if (!_auth.isSignInWithEmailLink(emailLink)) {
+        return null;
+      }
+
+      final storedEmail = await _secureStorage.read(key: _emailLinkStorageKey);
+      final email = (storedEmail ?? fallbackEmail)?.trim().toLowerCase();
+      if (email == null || email.isEmpty) {
+        throw Exception(
+          'Email not found on this device. Please enter your email to finish sign in.',
+        );
+      }
+
+      final userCredential = await _auth.signInWithEmailLink(
+        email: email,
+        emailLink: emailLink,
+      );
+
+      await _secureStorage.delete(key: _emailLinkStorageKey);
+      await _syncUserDocumentBestEffort(userCredential);
+      await _firestore.collection('users').doc(userCredential.user!.uid).update({
+        'isEmailVerified': true,
+        'lastLoginAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      return userCredential;
+    } catch (e) {
+      throw _handleFirebaseError(e);
+    }
+  }
+
   Future<void> markCurrentUserEmailVerifiedInDb() async {
     try {
       final user = _auth.currentUser;
@@ -219,10 +312,14 @@ class FirebaseService {
   // Get user data from Firestore
   Future<Map<String, dynamic>?> getUserData(String uid) async {
     try {
-      final doc = await _firestore.collection('users').doc(uid).get();
+      final doc = await _firestore
+          .collection('users')
+          .doc(uid)
+          .get()
+          .timeout(_firestoreOpTimeout);
       return doc.data();
     } catch (e) {
-      if (_isFirestoreUnavailable(e)) {
+      if (_isFirestoreUnavailable(e) || e is TimeoutException) {
         return null;
       }
       throw _handleFirebaseError(e);

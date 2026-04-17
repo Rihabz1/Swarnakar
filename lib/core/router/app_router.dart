@@ -29,6 +29,11 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const LoginScreen(),
     ),
     GoRoute(
+      path: '/finishSignIn',
+      name: 'finish-signin',
+      builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
       path: '/signup',
       name: 'signup',
       builder: (context, state) => const SignupScreen(),
@@ -52,7 +57,8 @@ final GoRouter appRouter = GoRouter(
       name: 'reset-password',
       builder: (context, state) {
         final email = state.uri.queryParameters['email'] ?? '';
-        return ResetPasswordScreen(email: email);
+        final token = state.uri.queryParameters['token'] ?? '';
+        return ResetPasswordScreen(email: email, resetToken: token);
       },
     ),
     GoRoute(

@@ -1,6 +1,12 @@
 import { Context } from 'hono';
 import { AuthService } from '../services/auth.service';
-import type { LoginVerifyBody, OtpSendBody, OtpVerifyBody, SignupVerifyBody } from '../types';
+import type {
+  LoginVerifyBody,
+  OtpSendBody,
+  OtpVerifyBody,
+  ResetPasswordBody,
+  ResetVerifyBody,
+} from '../types';
 
 const authService = new AuthService();
 
@@ -75,27 +81,25 @@ export class AuthController {
     }
   }
 
-  async verifySignup(c: Context) {
+  async verifyResetOtp(c: Context) {
     try {
-      const body = (await c.req.json()) as Partial<SignupVerifyBody>;
-      if (!body?.name || !body?.email || !body?.password || !body?.otp) {
-        return badRequest(c, 'Name, email, password, and otp are required.');
+      const body = (await c.req.json()) as Partial<ResetVerifyBody>;
+      if (!body?.email || !body?.otp) {
+        return badRequest(c, 'Email and otp are required.');
       }
 
-      const data = await authService.verifySignupWithOtp({
-        name: body.name,
+      const data = await authService.verifyResetWithOtp({
         email: body.email,
-        password: body.password,
         otp: body.otp,
       });
 
       return c.json({
         success: true,
-        message: 'Signup verified successfully.',
+        message: 'Reset OTP verified successfully.',
         data,
       });
     } catch (error) {
-      return badRequest(c, error instanceof Error ? error.message : 'Failed to verify signup OTP.');
+      return badRequest(c, error instanceof Error ? error.message : 'Failed to verify reset OTP.');
     }
   }
 
@@ -118,6 +122,28 @@ export class AuthController {
       });
     } catch (error) {
       return badRequest(c, error instanceof Error ? error.message : 'Failed to verify login OTP.');
+    }
+  }
+
+  async resetPassword(c: Context) {
+    try {
+      const body = (await c.req.json()) as Partial<ResetPasswordBody>;
+      if (!body?.resetToken || !body?.newPassword) {
+        return badRequest(c, 'Reset token and new password are required.');
+      }
+
+      const data = await authService.resetPasswordWithToken({
+        resetToken: body.resetToken,
+        newPassword: body.newPassword,
+      });
+
+      return c.json({
+        success: true,
+        message: 'Password reset successfully.',
+        data,
+      });
+    } catch (error) {
+      return badRequest(c, error instanceof Error ? error.message : 'Failed to reset password.');
     }
   }
 }
