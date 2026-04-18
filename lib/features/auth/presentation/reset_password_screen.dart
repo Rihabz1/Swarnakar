@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:math';
 import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,36 +22,6 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   late final TextEditingController _passwordController;
   late final TextEditingController _confirmPasswordController;
-
-  String _generateStrongPassword({int length = 16}) {
-    const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-    const lowercase = 'abcdefghijkmnopqrstuvwxyz';
-    const digits = '23456789';
-    const symbols = '@#%+=!?\$&*()-_';
-    const allChars = '$uppercase$lowercase$digits$symbols';
-    final random = Random.secure();
-
-    final chars = <String>[
-      uppercase[random.nextInt(uppercase.length)],
-      lowercase[random.nextInt(lowercase.length)],
-      digits[random.nextInt(digits.length)],
-      symbols[random.nextInt(symbols.length)],
-    ];
-
-    for (var i = chars.length; i < length; i++) {
-      chars.add(allChars[random.nextInt(allChars.length)]);
-    }
-
-    chars.shuffle(random);
-    return chars.join();
-  }
-
-  void _useGeneratedPassword() {
-    final generated = _generateStrongPassword();
-    _passwordController.text = generated;
-    _confirmPasswordController.text = generated;
-    _showMessage('শক্তিশালী পাসওয়ার্ড তৈরি করা হয়েছে।');
-  }
 
   @override
   void initState() {
@@ -168,8 +137,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       delay: const Duration(milliseconds: 220),
                       child: GoldenInputField(
                         hint: 'নতুন পাসওয়ার্ড',
-                        icon: Icons.lock_outline,
                         obscureText: true,
+                        icon: Icons.lock_outline,
                         keyboardType: TextInputType.visiblePassword,
                         autofillHints: const [AutofillHints.newPassword],
                         enableSuggestions: false,
@@ -191,18 +160,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         autocorrect: false,
                         controller: _confirmPasswordController,
                         isGlassmorphic: true,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton.icon(
-                        onPressed: _useGeneratedPassword,
-                        icon: const Icon(Icons.password_rounded, size: 16),
-                        label: const Text('Generate strong password'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.gold.withValues(alpha: 0.9),
-                        ),
                       ),
                     ),
                     const SizedBox(height: 18),

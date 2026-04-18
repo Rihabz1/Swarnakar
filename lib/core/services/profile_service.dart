@@ -3,20 +3,12 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class ProfileService {
-  static const String _baseUrl = 'http://localhost:8787';
-
   String get baseUrl {
     if (kIsWeb) {
       return 'http://localhost:8787';
     }
     // For Android emulator
     return 'http://10.0.2.2:8787';
-  }
-
-  Future<String?> _getToken() async {
-    // In production, retrieve from secure storage
-    // For now, return null - auth token should be passed from auth provider
-    return null;
   }
 
   Future<Map<String, String>> _getHeaders(String? token) async {
