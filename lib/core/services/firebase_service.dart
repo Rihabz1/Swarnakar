@@ -3,13 +3,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:async';
 
 class FirebaseService {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
-  static const String _emailLinkStorageKey = 'email_for_signin_link';
   static const Duration _firestoreOpTimeout = Duration(seconds: 8);
 
   bool get _isFirebaseAuthPlatformSupported {
@@ -190,77 +187,6 @@ class FirebaseService {
         await _googleSignIn.signOut();
       }
       await _auth.signOut();
-    } catch (e) {
-      throw _handleFirebaseError(e);
-    }
-  }
-
-  // Send password reset email
-  Future<void> sendPasswordResetEmail(String email) async {
-    try {
-      await _auth.sendPasswordResetEmail(email: email);
-    } catch (e) {
-      throw _handleFirebaseError(e);
-    }
-  }
-
-  Future<void> sendSignInLinkToEmail(String email) async {
-    try {
-      final trimmedEmail = email.trim().toLowerCase();
-
-      final actionCodeSettings = ActionCodeSettings(
-        url: 'https://swarnakar-79e57.web.app/finishSignIn',
-        handleCodeInApp: true,
-        androidPackageName: 'com.example.swarnakar',
-        androidInstallApp: true,
-        androidMinimumVersion: '1',
-      );
-
-      await _auth.sendSignInLinkToEmail(
-        email: trimmedEmail,
-        actionCodeSettings: actionCodeSettings,
-      );
-
-      await _secureStorage.write(
-        key: _emailLinkStorageKey,
-        value: trimmedEmail,
-      );
-    } catch (e) {
-      throw _handleFirebaseError(e);
-    }
-  }
-
-  Future<UserCredential?> completeSignInWithEmailLink(
-    String emailLink, {
-    String? fallbackEmail,
-  }) async {
-    try {
-      if (!_auth.isSignInWithEmailLink(emailLink)) {
-        return null;
-      }
-
-      final storedEmail = await _secureStorage.read(key: _emailLinkStorageKey);
-      final email = (storedEmail ?? fallbackEmail)?.trim().toLowerCase();
-      if (email == null || email.isEmpty) {
-        throw Exception(
-          'Email not found on this device. Please enter your email to finish sign in.',
-        );
-      }
-
-      final userCredential = await _auth.signInWithEmailLink(
-        email: email,
-        emailLink: emailLink,
-      );
-
-      await _secureStorage.delete(key: _emailLinkStorageKey);
-      await _syncUserDocumentBestEffort(userCredential);
-      await _firestore.collection('users').doc(userCredential.user!.uid).update({
-        'isEmailVerified': true,
-        'lastLoginAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-
-      return userCredential;
     } catch (e) {
       throw _handleFirebaseError(e);
     }

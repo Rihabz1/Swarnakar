@@ -203,8 +203,9 @@ const sendOtpEmail = async (email: string, purpose: OtpPurpose, code: string): P
   `;
 
   if (!transporter) {
-    console.log(`[OTP][DEV] ${email} (${purpose}) => ${code}`);
-    return;
+    throw new Error(
+      'SMTP is not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS, and OTP_FROM_EMAIL in backend/.env to send OTP emails.',
+    );
   }
 
   await transporter.sendMail({
