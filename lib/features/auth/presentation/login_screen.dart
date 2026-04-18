@@ -172,9 +172,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: Align(
                             alignment: Alignment.centerRight,
                             child: GestureDetector(
-                              onTap: () {
-                                _showForgotPasswordDialog();
-                              },
+                              onTap: () => context.go('/forgot-password'),
                               child: Text(
                                 AppStrings.forgotPassword,
                                 style: AppTextStyles.hindSiliguri(
@@ -203,42 +201,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             },
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        FadeInUp(
-                          delay: const Duration(milliseconds: 580),
-                          child: TextButton(
-                          onPressed: authState.isLoading
-                              ? null
-                              : () async {
-                                  final email = _emailController.text.trim().toLowerCase();
-                                  final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
-                                  if (!emailRegex.hasMatch(email)) {
-                                    _showError('সঠিক ইমেইল ফরম্যাট দিন (example@email.com)।');
-                                    return;
-                                  }
-
-                                  try {
-                                    await ref
-                                        .read(firebaseServiceProvider)
-                                        .sendSignInLinkToEmail(email);
-                                    if (!mounted) {
-                                      return;
-                                    }
-                                    _showSuccess('ইমেইলে সাইন-ইন লিংক পাঠানো হয়েছে।');
-                                  } catch (e) {
-                                    _showError(e.toString());
-                                  }
-                                },
-                          child: Text(
-                            'ইমেইল লিংক দিয়ে সাইন ইন',
-                            style: AppTextStyles.hindSiliguri(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.gold.withValues(alpha: 0.9),
-                            ),
-                          ),
-                          ),
-                        ),
                         const SizedBox(height: 18),
                         _buildDivider(),
                         const SizedBox(height: 14),
@@ -259,65 +221,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  void _showForgotPasswordDialog() {
-    final emailController = TextEditingController();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(
-          'পাসওয়ার্ড রিসেট',
-          style: AppTextStyles.hindSiliguri(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.gold,
-          ),
-        ),
-        content: GoldenInputField(
-          hint: 'আপনার ইমেইল দিন',
-          icon: Icons.email_outlined,
-          controller: emailController,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'বাতিল',
-              style: AppTextStyles.hindSiliguri(
-                fontSize: 14,
-                color: Colors.white70,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              final email = emailController.text.trim();
-              if (email.isNotEmpty) {
-                final firebaseService = ref.read(firebaseServiceProvider);
-                await firebaseService.sendPasswordResetEmail(email);
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  _showSuccess('পাসওয়ার্ড রিসেট লিংক ইমেইলে পাঠানো হয়েছে');
-                }
-              } else {
-                _showError('দয়া করে ইমেইল দিন');
-              }
-            },
-            child: Text(
-              'রিসেট লিংক পাঠান',
-              style: AppTextStyles.hindSiliguri(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: AppColors.gold,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

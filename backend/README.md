@@ -35,6 +35,12 @@ Create a `.env` file in the backend folder:
 FIREBASE_PROJECT_ID=swarnakar-79e57
 GOOGLE_APPLICATION_CREDENTIALS=./firebase-service-account.json
 PORT=8787
+SMTP_HOST=smtp.your-provider.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-smtp-user
+SMTP_PASS=your-smtp-password
+OTP_FROM_EMAIL=no-reply@swarnakar.app
 ```
 
 Or copy from the example:
@@ -80,6 +86,10 @@ bun run start
 ```
 
 The server will start at `http://localhost:8787`
+
+## OTP Email Delivery
+
+Password reset and login OTPs are only delivered by email when SMTP is configured. If the SMTP values are empty, the backend now returns a configuration error instead of silently logging the OTP to the console.
 
 ## API Endpoints
 

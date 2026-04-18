@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'dart:math';
 import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,36 +24,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
   late TextEditingController _confirmPasswordController;
-
-  String _generateStrongPassword({int length = 16}) {
-    const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-    const lowercase = 'abcdefghijkmnopqrstuvwxyz';
-    const digits = '23456789';
-    const symbols = '@#%+=!?4&*()-_';
-    const allChars = '$uppercase$lowercase$digits$symbols';
-    final random = Random.secure();
-
-    final chars = <String>[
-      uppercase[random.nextInt(uppercase.length)],
-      lowercase[random.nextInt(lowercase.length)],
-      digits[random.nextInt(digits.length)],
-      symbols[random.nextInt(symbols.length)],
-    ];
-
-    for (var i = chars.length; i < length; i++) {
-      chars.add(allChars[random.nextInt(allChars.length)]);
-    }
-
-    chars.shuffle(random);
-    return chars.join();
-  }
-
-  void _useGeneratedPassword() {
-    final generated = _generateStrongPassword();
-    _passwordController.text = generated;
-    _confirmPasswordController.text = generated;
-    _showSuccess('শক্তিশালী পাসওয়ার্ড তৈরি করা হয়েছে।');
-  }
 
   void _forceEmailLowercase(String value) {
     final lowered = value.toLowerCase();
@@ -263,18 +232,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                 enableSuggestions: false,
                                 autocorrect: false,
                                 controller: _confirmPasswordController,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton.icon(
-                                onPressed: _useGeneratedPassword,
-                                icon: const Icon(Icons.password_rounded, size: 16),
-                                label: const Text('Generate strong password'),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: AppColors.gold.withValues(alpha: 0.9),
-                                ),
                               ),
                             ),
                             const SizedBox(height: 18),
