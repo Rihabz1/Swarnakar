@@ -8,6 +8,7 @@ import 'package:swarnakar/core/constants/app_assets.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -21,6 +22,7 @@ class _SignupScreenState extends State<SignupScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _passwordController;
   late TextEditingController _confirmPasswordController;
+  bool _isGoogleLoading = false;
 
   void _sanitizePhoneInput(String value) {
     final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
@@ -106,6 +108,26 @@ class _SignupScreenState extends State<SignupScreen> {
       return false;
     }
     return true;
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isGoogleLoading = true);
+    try {
+      final user = await FirebaseAuthService.instance.signInWithGoogle();
+      if (!mounted) return;
+      if (user == null) {
+        _showError('Google সাইন-ইন বাতিল হয়েছে।');
+        return;
+      }
+      context.go('/dashboard');
+    } catch (_) {
+      if (!mounted) return;
+      _showError('Google সাইন-ইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
+    } finally {
+      if (mounted) {
+        setState(() => _isGoogleLoading = false);
+      }
+    }
   }
 
   @override
@@ -273,7 +295,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Widget _buildGoogleSignUp() {
     return OutlinedButton.icon(
-      onPressed: () {},
+      onPressed: _isGoogleLoading ? null : _handleGoogleSignIn,
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(double.infinity, 50),
         side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),

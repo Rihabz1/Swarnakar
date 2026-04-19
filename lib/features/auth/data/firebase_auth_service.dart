@@ -45,7 +45,10 @@ class FirebaseAuthService {
       verificationCompleted: (PhoneAuthCredential credential) async {
         try {
           final credentialResult = await _auth.signInWithCredential(credential);
-          await _saveUserProfile(credentialResult.user, phone: credentialResult.user?.phoneNumber);
+          await _saveUserProfileSafely(
+            credentialResult.user,
+            phone: credentialResult.user?.phoneNumber,
+          );
           onAutoVerified?.call();
         } catch (_) {
           // Ignore auto-verification errors and allow manual OTP fallback.
@@ -84,7 +87,7 @@ class FirebaseAuthService {
       smsCode: otp,
     );
     final result = await _auth.signInWithCredential(credential);
-    await _saveUserProfile(result.user, name: name, phone: phone);
+    await _saveUserProfileSafely(result.user, name: name, phone: phone);
     return result.user;
   }
 
@@ -101,8 +104,17 @@ class FirebaseAuthService {
     );
 
     final result = await _auth.signInWithCredential(credential);
-    await _saveUserProfile(result.user);
+    await _saveUserProfileSafely(result.user);
     return result.user;
+  }
+
+  Future<void> _saveUserProfileSafely(User? user, {String? name, String? phone}) async {
+    try {
+      await _saveUserProfile(user, name: name, phone: phone)
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // Best-effort profile sync; auth should not fail if Firestore is unavailable.
+    }
   }
 
   Future<void> _saveUserProfile(User? user, {String? name, String? phone}) async {

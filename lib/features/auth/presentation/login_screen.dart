@@ -10,6 +10,7 @@ import 'package:swarnakar/shared/widgets/golden_button.dart';
 import 'package:swarnakar/core/providers/core_providers.dart';
 import 'package:swarnakar/core/constants/app_assets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -100,6 +101,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return false;
     }
     return true;
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    ref.read(isLoadingProvider.notifier).state = true;
+    try {
+      final user = await FirebaseAuthService.instance.signInWithGoogle();
+      if (!mounted) return;
+      if (user == null) {
+        _showError('Google সাইন-ইন বাতিল হয়েছে।');
+        return;
+      }
+      context.go('/dashboard');
+    } catch (_) {
+      if (!mounted) return;
+      _showError('Google সাইন-ইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
+    } finally {
+      if (mounted) {
+        ref.read(isLoadingProvider.notifier).state = false;
+      }
+    }
   }
 
   @override
@@ -296,7 +317,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Widget _buildGoogleSignIn() {
     return OutlinedButton.icon(
-      onPressed: () {},
+      onPressed: _handleGoogleSignIn,
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(double.infinity, 50),
         side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
