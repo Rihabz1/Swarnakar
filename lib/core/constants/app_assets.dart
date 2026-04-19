@@ -4,7 +4,7 @@ class AppAssets {
 
   // Images
   static const String logoImg = 'assets/images/logo.png';
-  static const String googleLogo = 'assets/images/google_logo.png';
+  static const String googleLogo = 'assets/svg/google_logo.svg';
 
   // SVG assets
   static const String goldIcon = 'assets/svg/gold_icon.svg';

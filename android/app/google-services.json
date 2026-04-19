@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "501545869556",
+    "project_id": "swarnakar-59dd6",
+    "storage_bucket": "swarnakar-59dd6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:501545869556:android:73a1832a137d3b84d57ea1",
+        "android_client_info": {
+          "package_name": "com.example.swarnakar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJIiddBhORepGJ8yKOzejB1nqqD7KgpdA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

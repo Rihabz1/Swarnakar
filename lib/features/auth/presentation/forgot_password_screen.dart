@@ -14,32 +14,48 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  late final TextEditingController _emailController;
+  late final TextEditingController _phoneController;
 
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController();
+    _phoneController = TextEditingController();
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
-  void _forceEmailLowercase(String value) {
-    final lowered = value.toLowerCase();
-    if (_emailController.text == lowered) return;
-    final currentSelection = _emailController.selection.baseOffset;
+  void _sanitizePhoneInput(String value) {
+    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+    final cleaned = digits.length > 13 ? digits.substring(0, 13) : digits;
+    if (_phoneController.text == cleaned) return;
+    final currentSelection = _phoneController.selection.baseOffset;
     final nextOffset = currentSelection < 0
-        ? lowered.length
-        : currentSelection.clamp(0, lowered.length);
-    _emailController.value = _emailController.value.copyWith(
-      text: lowered,
+        ? cleaned.length
+        : currentSelection.clamp(0, cleaned.length);
+    _phoneController.value = _phoneController.value.copyWith(
+      text: cleaned,
       selection: TextSelection.collapsed(offset: nextOffset),
       composing: TextRange.empty,
     );
+  }
+
+  String _normalizePhone(String value) {
+    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.startsWith('880') && digits.length == 13) {
+      return digits.substring(2);
+    }
+    if (digits.startsWith('88') && digits.length == 13) {
+      return digits.substring(2);
+    }
+    return digits;
+  }
+
+  bool _isValidBdMobile(String phone) {
+    return RegExp(r'^01[3-9]\d{8}$').hasMatch(phone);
   }
 
   void _showMessage(String message) {
@@ -49,15 +65,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   void _sendOtp() {
-    final email = _emailController.text.trim().toLowerCase();
-    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+    final phone = _normalizePhone(_phoneController.text.trim());
 
-    if (email.isEmpty || !emailRegex.hasMatch(email)) {
-      _showMessage('সঠিক ইমেইল দিন।');
+    if (phone.isEmpty || !_isValidBdMobile(phone)) {
+      _showMessage('সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন (01XXXXXXXXX)।');
       return;
     }
 
-    context.go('/otp?email=$email&flow=reset');
+    context.go('/otp?phone=$phone&flow=reset');
   }
 
   @override
@@ -103,7 +118,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     FadeInUp(
                       delay: const Duration(milliseconds: 120),
                       child: Text(
-                        'ইমেইল দিন, আমরা OTP পাঠাবো',
+                        'মোবাইল নম্বর দিন, আমরা OTP পাঠাবো',
                         style: AppTextStyles.hindSiliguri(
                           fontSize: 12,
                           color: AppColors.white.withValues(alpha: 0.88),
@@ -114,11 +129,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     FadeInUp(
                       delay: const Duration(milliseconds: 220),
                       child: GoldenInputField(
-                        hint: 'ইমেইল ঠিকানা',
-                        icon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
-                        controller: _emailController,
-                        onChanged: _forceEmailLowercase,
+                        hint: 'মোবাইল নম্বর',
+                        icon: Icons.phone_outlined,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 13,
+                        controller: _phoneController,
+                        onChanged: _sanitizePhoneInput,
                         isGlassmorphic: true,
                       ),
                     ),

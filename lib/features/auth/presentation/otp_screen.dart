@@ -8,12 +8,12 @@ import 'package:swarnakar/shared/widgets/golden_button.dart';
 import 'dart:async';
 
 class OtpScreen extends StatefulWidget {
-  final String email;
+  final String phone;
   final String flow;
 
   const OtpScreen({
     super.key,
-    required this.email,
+    required this.phone,
     this.flow = 'signup',
   });
 
@@ -62,13 +62,11 @@ class _OtpScreenState extends State<OtpScreen> {
     });
   }
 
-  String _maskEmail(String email) {
-    if (email.length < 3) return email;
-    final parts = email.split('@');
-    if (parts.length != 2) return email;
-    final username = parts[0];
-    final masked = username[0] + '*' * (username.length - 2) + username[username.length - 1];
-    return '$masked@${parts[1]}';
+  String _maskPhone(String phone) {
+    if (phone.length < 7) return phone;
+    final start = phone.substring(0, 3);
+    final end = phone.substring(phone.length - 2);
+    return '$start*****$end';
   }
 
   String _otpCode() {
@@ -118,7 +116,7 @@ class _OtpScreenState extends State<OtpScreen> {
     }
 
     if (widget.flow == 'reset') {
-      context.go('/reset-password?email=${widget.email}');
+      context.go('/reset-password?phone=${widget.phone}');
       return;
     }
 
@@ -207,7 +205,7 @@ class _OtpScreenState extends State<OtpScreen> {
                           FadeInUp(
                             delay: const Duration(milliseconds: 260),
                             child: Text(
-                              _maskEmail(widget.email),
+                              _maskPhone(widget.phone),
                               style: AppTextStyles.hindSiliguri(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,

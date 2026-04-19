@@ -7,9 +7,9 @@ import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
-  final String email;
+  final String phone;
 
-  const ResetPasswordScreen({super.key, required this.email});
+  const ResetPasswordScreen({super.key, required this.phone});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -109,7 +109,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     FadeInUp(
                       delay: const Duration(milliseconds: 120),
                       child: Text(
-                        widget.email,
+                        widget.phone,
                         style: AppTextStyles.hindSiliguri(
                           fontSize: 12,
                           color: AppColors.white.withValues(alpha: 0.88),

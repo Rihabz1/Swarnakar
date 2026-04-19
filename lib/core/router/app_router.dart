@@ -41,17 +41,17 @@ final GoRouter appRouter = GoRouter(
       path: '/otp',
       name: 'otp',
       builder: (context, state) {
-        final email = state.uri.queryParameters['email'] ?? '';
+        final phone = state.uri.queryParameters['phone'] ?? state.uri.queryParameters['email'] ?? '';
         final flow = state.uri.queryParameters['flow'] ?? 'signup';
-        return OtpScreen(email: email, flow: flow);
+        return OtpScreen(phone: phone, flow: flow);
       },
     ),
     GoRoute(
       path: '/reset-password',
       name: 'reset-password',
       builder: (context, state) {
-        final email = state.uri.queryParameters['email'] ?? '';
-        return ResetPasswordScreen(email: email);
+        final phone = state.uri.queryParameters['phone'] ?? state.uri.queryParameters['email'] ?? '';
+        return ResetPasswordScreen(phone: phone);
       },
     ),
     GoRoute(

@@ -8,6 +8,7 @@ import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
 import 'package:swarnakar/core/providers/core_providers.dart';
+import 'package:swarnakar/core/constants/app_assets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -18,21 +19,37 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  late TextEditingController _emailController;
+  late TextEditingController _phoneController;
   late TextEditingController _passwordController;
 
-  void _forceEmailLowercase(String value) {
-    final lowered = value.toLowerCase();
-    if (_emailController.text == lowered) return;
-    final currentSelection = _emailController.selection.baseOffset;
+  void _sanitizePhoneInput(String value) {
+    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+    final cleaned = digits.length > 13 ? digits.substring(0, 13) : digits;
+    if (_phoneController.text == cleaned) return;
+    final currentSelection = _phoneController.selection.baseOffset;
     final nextOffset = currentSelection < 0
-        ? lowered.length
-        : currentSelection.clamp(0, lowered.length);
-    _emailController.value = _emailController.value.copyWith(
-      text: lowered,
+        ? cleaned.length
+        : currentSelection.clamp(0, cleaned.length);
+    _phoneController.value = _phoneController.value.copyWith(
+      text: cleaned,
       selection: TextSelection.collapsed(offset: nextOffset),
       composing: TextRange.empty,
     );
+  }
+
+  String _normalizePhone(String value) {
+    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.startsWith('880') && digits.length == 13) {
+      return digits.substring(2);
+    }
+    if (digits.startsWith('88') && digits.length == 13) {
+      return digits.substring(2);
+    }
+    return digits;
+  }
+
+  bool _isValidBdMobile(String phone) {
+    return RegExp(r'^01[3-9]\d{8}$').hasMatch(phone);
   }
 
   void _handleForgotPassword() {
@@ -42,13 +59,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController();
+    _phoneController = TextEditingController();
     _passwordController = TextEditingController();
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -62,21 +79,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   bool _validateLogin() {
-    final email = _emailController.text.trim();
+    final phone = _normalizePhone(_phoneController.text.trim());
     final password = _passwordController.text;
-    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
     final whitespaceRegex = RegExp(r'\s');
 
-    if (email.isEmpty || password.isEmpty) {
-      _showError('ইমেইল ও পাসওয়ার্ড দিন।');
+    if (phone.isEmpty || password.isEmpty) {
+      _showError('মোবাইল নম্বর ও পাসওয়ার্ড দিন।');
       return false;
     }
-    if (!emailRegex.hasMatch(email)) {
-      _showError('সঠিক ইমেইল ফরম্যাট দিন (example@email.com)।');
-      return false;
-    }
-    if (whitespaceRegex.hasMatch(email)) {
-      _showError('ইমেইলে স্পেস ব্যবহার করা যাবে না।');
+    if (!_isValidBdMobile(phone)) {
+      _showError('সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন (01XXXXXXXXX)।');
       return false;
     }
     if (whitespaceRegex.hasMatch(password)) {
@@ -127,11 +139,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       FadeInUp(
                         delay: const Duration(milliseconds: 200),
                         child: GoldenInputField(
-                          hint: AppStrings.email,
-                          icon: Icons.email_outlined,
-                          keyboardType: TextInputType.emailAddress,
-                          controller: _emailController,
-                          onChanged: _forceEmailLowercase,
+                          hint: AppStrings.mobileNumber,
+                          icon: Icons.phone_outlined,
+                          keyboardType: TextInputType.phone,
+                          maxLength: 13,
+                          controller: _phoneController,
+                          onChanged: _sanitizePhoneInput,
                           isGlassmorphic: true,
                         ),
                       ),
@@ -291,15 +304,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           borderRadius: BorderRadius.circular(14),
         ),
       ),
-      icon: SvgPicture.network(
-        'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+      icon: SvgPicture.asset(
+        AppAssets.googleLogo,
         width: 18,
         height: 18,
-        placeholderBuilder: (context) => const SizedBox(
-          width: 18,
-          height: 18,
-          child: CircularProgressIndicator(strokeWidth: 1.4),
-        ),
       ),
       label: Text(
         AppStrings.signUpWithGoogle,

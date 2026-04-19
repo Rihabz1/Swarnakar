@@ -4,6 +4,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
+import 'package:swarnakar/core/constants/app_assets.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -17,29 +18,45 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   late TextEditingController _nameController;
-  late TextEditingController _emailController;
+  late TextEditingController _phoneController;
   late TextEditingController _passwordController;
   late TextEditingController _confirmPasswordController;
 
-  void _forceEmailLowercase(String value) {
-    final lowered = value.toLowerCase();
-    if (_emailController.text == lowered) return;
-    final currentSelection = _emailController.selection.baseOffset;
+  void _sanitizePhoneInput(String value) {
+    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+    final cleaned = digits.length > 13 ? digits.substring(0, 13) : digits;
+    if (_phoneController.text == cleaned) return;
+    final currentSelection = _phoneController.selection.baseOffset;
     final nextOffset = currentSelection < 0
-        ? lowered.length
-        : currentSelection.clamp(0, lowered.length);
-    _emailController.value = _emailController.value.copyWith(
-      text: lowered,
+        ? cleaned.length
+        : currentSelection.clamp(0, cleaned.length);
+    _phoneController.value = _phoneController.value.copyWith(
+      text: cleaned,
       selection: TextSelection.collapsed(offset: nextOffset),
       composing: TextRange.empty,
     );
+  }
+
+  String _normalizePhone(String value) {
+    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.startsWith('880') && digits.length == 13) {
+      return digits.substring(2);
+    }
+    if (digits.startsWith('88') && digits.length == 13) {
+      return digits.substring(2);
+    }
+    return digits;
+  }
+
+  bool _isValidBdMobile(String phone) {
+    return RegExp(r'^01[3-9]\d{8}$').hasMatch(phone);
   }
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController();
-    _emailController = TextEditingController();
+    _phoneController = TextEditingController();
     _passwordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
   }
@@ -47,7 +64,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -63,22 +80,17 @@ class _SignupScreenState extends State<SignupScreen> {
 
   bool _validateSignup() {
     final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
+    final phone = _normalizePhone(_phoneController.text.trim());
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
-    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
     final whitespaceRegex = RegExp(r'\s');
 
-    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (name.isEmpty || phone.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       _showError('সবগুলো তথ্য দিন।');
       return false;
     }
-    if (!emailRegex.hasMatch(email)) {
-      _showError('সঠিক ইমেইল ফরম্যাট দিন (example@email.com)।');
-      return false;
-    }
-    if (whitespaceRegex.hasMatch(email)) {
-      _showError('ইমেইলে স্পেস ব্যবহার করা যাবে না।');
+    if (!_isValidBdMobile(phone)) {
+      _showError('সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন (01XXXXXXXXX)।');
       return false;
     }
     if (whitespaceRegex.hasMatch(password) || whitespaceRegex.hasMatch(confirmPassword)) {
@@ -165,11 +177,12 @@ class _SignupScreenState extends State<SignupScreen> {
                           FadeInUp(
                             delay: const Duration(milliseconds: 280),
                             child: GoldenInputField(
-                              hint: AppStrings.email,
-                              icon: Icons.email_outlined,
-                              keyboardType: TextInputType.emailAddress,
-                              controller: _emailController,
-                              onChanged: _forceEmailLowercase,
+                              hint: AppStrings.mobileNumber,
+                              icon: Icons.phone_outlined,
+                              keyboardType: TextInputType.phone,
+                              maxLength: 13,
+                              controller: _phoneController,
+                              onChanged: _sanitizePhoneInput,
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -199,8 +212,8 @@ class _SignupScreenState extends State<SignupScreen> {
                               text: AppStrings.createAccount,
                               onPressed: () {
                                 if (!_validateSignup()) return;
-                                final email = _emailController.text.trim();
-                                context.go('/otp?email=$email');
+                                final phone = _normalizePhone(_phoneController.text.trim());
+                                context.go('/otp?phone=$phone');
                               },
                             ),
                           ),
@@ -268,15 +281,10 @@ class _SignupScreenState extends State<SignupScreen> {
           borderRadius: BorderRadius.circular(14),
         ),
       ),
-      icon: SvgPicture.network(
-        'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+      icon: SvgPicture.asset(
+        AppAssets.googleLogo,
         width: 18,
         height: 18,
-        placeholderBuilder: (context) => const SizedBox(
-          width: 18,
-          height: 18,
-          child: CircularProgressIndicator(strokeWidth: 1.4),
-        ),
       ),
       label: Text(
         AppStrings.signUpWithGoogle,

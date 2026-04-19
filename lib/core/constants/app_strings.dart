@@ -7,7 +7,8 @@ class AppStrings {
   // Auth
   static const String signIn = 'সাইন ইন করুন';
   static const String signUp = 'নিবন্ধন করুন';
-  static const String email = 'ইমেইল ঠিকানা';
+  static const String email = 'মোবাইল নম্বর';
+  static const String mobileNumber = 'মোবাইল নম্বর';
   static const String password = 'পাসওয়ার্ড';
   static const String passwordHint = 'পাসওয়ার্ড লিখুন';
   static const String confirmPassword = 'পাসওয়ার্ড নিশ্চিত করুন';
