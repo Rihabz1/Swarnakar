@@ -19,7 +19,7 @@ class SilverPriceScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSubscribed = ref.watch(isSubscribedProvider);
-    final pricesBySection = ref.watch(silverPricesBySection);
+    final pricesBySectionAsync = ref.watch(silverPricesBySection);
     final exactUpdateTime = DateFormat('dd MMMM yyyy, hh:mm a', 'bn_BD').format(DateTime.now());
     final subtitleText = 'সর্বশেষ আপডেট: $exactUpdateTime';
 
@@ -67,38 +67,70 @@ class SilverPriceScreen extends ConsumerWidget {
       body: Container(
         color: AppColors.background,
         child: SingleChildScrollView(
-          child: Column(
-            children: [
-              ...pricesBySection.entries.map((entry) {
-                return Column(
-                  children: [
-                    SectionHeading(
-                      title: entry.key,
-                      subtitle: subtitleText,
-                      isCentered: true,
+          child: pricesBySectionAsync.when(
+            data: (pricesBySection) {
+              return Column(
+                children: [
+                  ...pricesBySection.entries.map((entry) {
+                    return Column(
+                      children: [
+                        SectionHeading(
+                          title: entry.key,
+                          subtitle: subtitleText,
+                          isCentered: true,
+                        ),
+                        GoldPriceCard(
+                          children: entry.value.map((price) {
+                            return PriceRowWidget(
+                              label: price.label,
+                              price: price.price,
+                              isBlurred: !isSubscribed,
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    );
+                  }),
+                  if (!isSubscribed)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 60),
+                      child: SubscribeBanner(
+                        onSubscribe: () => context.go('/paywall'),
+                      ),
                     ),
-                    GoldPriceCard(
-                      children: entry.value.map((price) {
-                        return PriceRowWidget(
-                          label: price.label,
-                          price: price.price,
-                          isBlurred: !isSubscribed,
-                        );
-                      }).toList(),
+                  if (isSubscribed)
+                    const SizedBox(height: 20),
+                ],
+              );
+            },
+            loading: () => const Padding(
+              padding: EdgeInsets.only(top: 40),
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            error: (error, stack) => Padding(
+              padding: const EdgeInsets.only(top: 40),
+              child: Column(
+                children: [
+                  Text(
+                    AppStrings.errorOccurred,
+                    style: AppTextStyles.hindSiliguri(
+                      fontSize: 12,
+                      color: AppColors.error,
                     ),
-                  ],
-                );
-              }),
-              if (!isSubscribed)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 60),
-                  child: SubscribeBanner(
-                    onSubscribe: () => context.go('/paywall'),
                   ),
-                ),
-              if (isSubscribed)
-                const SizedBox(height: 20),
-            ],
+                  const SizedBox(height: 6),
+                  Text(
+                    AppStrings.tryAgain,
+                    style: AppTextStyles.hindSiliguri(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

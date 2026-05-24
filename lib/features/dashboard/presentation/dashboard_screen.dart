@@ -16,11 +16,22 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final goldPrice = ref.watch(dashboardGoldPriceProvider);
-    final silverPrice = ref.watch(dashboardSilverPriceProvider);
+    final goldPriceAsync = ref.watch(dashboardGoldPriceProvider);
+    final silverPriceAsync = ref.watch(dashboardSilverPriceProvider);
     final isSubscribed = ref.watch(isSubscribedProvider);
     final exactUpdateTime = DateFormat('dd MMMM yyyy, hh:mm a', 'bn_BD').format(DateTime.now());
     final updateText = 'সর্বশেষ আপডেট: $exactUpdateTime';
+
+    final goldPriceText = goldPriceAsync.when(
+      data: (value) => CurrencyFormatter.formatBDT(value),
+      loading: () => '...',
+      error: (_, __) => '--',
+    );
+    final silverPriceText = silverPriceAsync.when(
+      data: (value) => CurrencyFormatter.formatBDT(value),
+      loading: () => '...',
+      error: (_, __) => '--',
+    );
 
     final dashboardCards = [
       ('সোনার বাজার', 'Gold Market', Icons.diamond_outlined, '/gold-price'),
@@ -94,7 +105,7 @@ class DashboardScreen extends ConsumerWidget {
                             Expanded(
                               child: _buildPriceSection(
                                 'সোনার বর্তমান বাজার',
-                                CurrencyFormatter.formatBDT(goldPrice),
+                                goldPriceText,
                                 updateText,
                                 isLocked: !isSubscribed,
                               ),
@@ -107,7 +118,7 @@ class DashboardScreen extends ConsumerWidget {
                             Expanded(
                               child: _buildPriceSection(
                                 'রৌপ্যের বর্তমান বাজার',
-                                CurrencyFormatter.formatBDT(silverPrice),
+                                silverPriceText,
                                 updateText,
                                 isLocked: !isSubscribed,
                               ),

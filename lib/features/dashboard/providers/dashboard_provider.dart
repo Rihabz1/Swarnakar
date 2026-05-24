@@ -1,12 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:swarnakar/features/gold_price/data/gold_price_mock.dart';
-import 'package:swarnakar/features/silver_price/data/silver_price_mock.dart';
+import 'package:swarnakar/features/gold_price/providers/gold_price_provider.dart';
+import 'package:swarnakar/features/silver_price/providers/silver_price_provider.dart';
 
 // Dashboard stats
-final dashboardGoldPriceProvider = Provider<double>((ref) {
-  return mockGoldPrices.isNotEmpty ? mockGoldPrices[0].price : 0;
+final dashboardGoldPriceProvider = Provider<AsyncValue<double>>((ref) {
+  final pricesAsync = ref.watch(goldPricesProvider);
+  return pricesAsync.whenData((prices) => prices.isNotEmpty ? prices.first.price : 0);
 });
 
-final dashboardSilverPriceProvider = Provider<double>((ref) {
-  return mockSilverPrices.isNotEmpty ? mockSilverPrices[0].price : 0;
+final dashboardSilverPriceProvider = Provider<AsyncValue<double>>((ref) {
+  final pricesAsync = ref.watch(silverPricesProvider);
+  return pricesAsync.whenData((prices) => prices.isNotEmpty ? prices.first.price : 0);
 });
