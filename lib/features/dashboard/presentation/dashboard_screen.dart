@@ -9,7 +9,10 @@ import 'package:swarnakar/core/utils/currency_formatter.dart';
 import 'package:swarnakar/core/providers/core_providers.dart';
 import 'package:swarnakar/shared/widgets/app_bottom_nav.dart';
 import 'package:swarnakar/features/dashboard/providers/dashboard_provider.dart';
-import 'package:intl/intl.dart';
+import 'package:swarnakar/core/utils/date_formatter.dart';
+import 'package:swarnakar/features/gold_price/providers/gold_price_provider.dart';
+import 'package:swarnakar/features/silver_price/providers/silver_price_provider.dart';
+import 'package:swarnakar/shared/models/price_model.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -18,9 +21,10 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final goldPriceAsync = ref.watch(dashboardGoldPriceProvider);
     final silverPriceAsync = ref.watch(dashboardSilverPriceProvider);
+    final goldPricesAsync = ref.watch(goldPricesProvider);
+    final silverPricesAsync = ref.watch(silverPricesProvider);
     final isSubscribed = ref.watch(isSubscribedProvider);
-    final exactUpdateTime = DateFormat('dd MMMM yyyy, hh:mm a', 'bn_BD').format(DateTime.now());
-    final updateText = 'সর্বশেষ আপডেট: $exactUpdateTime';
+    final updateText = _buildUpdatedAtText(goldPricesAsync, silverPricesAsync);
 
     final goldPriceText = goldPriceAsync.when(
       data: (value) => CurrencyFormatter.formatBDT(value),
@@ -359,6 +363,26 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  String _buildUpdatedAtText(
+    AsyncValue<List<PriceModel>> goldPricesAsync,
+    AsyncValue<List<PriceModel>> silverPricesAsync,
+  ) {
+    final goldUpdatedAt = _pickUpdatedAt(goldPricesAsync);
+    final silverUpdatedAt = _pickUpdatedAt(silverPricesAsync);
+    final formatted = DateFormatter.formatUpdatedAt(goldUpdatedAt ?? silverUpdatedAt);
+    if (formatted.isEmpty) {
+      return 'সর্বশেষ আপডেট: --';
+    }
+    return 'সর্বশেষ আপডেট: $formatted';
+  }
+
+  String? _pickUpdatedAt(AsyncValue<List<PriceModel>> pricesAsync) {
+    return pricesAsync.maybeWhen(
+      data: (prices) => prices.isNotEmpty ? prices.first.updatedAt : null,
+      orElse: () => null,
     );
   }
 }

@@ -11,7 +11,8 @@ import 'package:swarnakar/shared/widgets/price_row_widget.dart';
 import 'package:swarnakar/shared/widgets/subscribe_banner.dart';
 import 'package:swarnakar/core/providers/core_providers.dart';
 import 'package:swarnakar/features/gold_price/providers/gold_price_provider.dart';
-import 'package:intl/intl.dart';
+import 'package:swarnakar/core/utils/date_formatter.dart';
+import 'package:swarnakar/shared/models/price_model.dart';
 
 class GoldPriceScreen extends ConsumerWidget {
   const GoldPriceScreen({super.key});
@@ -20,8 +21,6 @@ class GoldPriceScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isSubscribed = ref.watch(isSubscribedProvider);
     final pricesBySectionAsync = ref.watch(goldPricesBySection);
-    final exactUpdateTime = DateFormat('dd MMMM yyyy, hh:mm a', 'bn_BD').format(DateTime.now());
-    final subtitleText = 'সর্বশেষ আপডেট: $exactUpdateTime';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -69,6 +68,7 @@ class GoldPriceScreen extends ConsumerWidget {
         child: SingleChildScrollView(
           child: pricesBySectionAsync.when(
             data: (pricesBySection) {
+              final subtitleText = _buildUpdatedAtText(pricesBySection);
               return Column(
                 children: [
                   ...pricesBySection.entries.map((entry) {
@@ -167,5 +167,23 @@ class GoldPriceScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String _buildUpdatedAtText(Map<String, List<PriceModel>> pricesBySection) {
+    final price = _pickFirstPrice(pricesBySection.values);
+    final formatted = DateFormatter.formatUpdatedAt(price?.updatedAt);
+    if (formatted.isEmpty) {
+      return 'সর্বশেষ আপডেট: --';
+    }
+    return 'সর্বশেষ আপডেট: $formatted';
+  }
+
+  PriceModel? _pickFirstPrice(Iterable<List<PriceModel>> sections) {
+    for (final prices in sections) {
+      if (prices.isNotEmpty) {
+        return prices.first;
+      }
+    }
+    return null;
   }
 }

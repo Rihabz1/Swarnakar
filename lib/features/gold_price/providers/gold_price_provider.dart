@@ -4,19 +4,27 @@ import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/models/price_model.dart';
 
 final goldPricesProvider = StreamProvider<List<PriceModel>>((ref) {
-  return FirebaseFirestore.instance.collection('prices').snapshots().map((snapshot) {
-    final doc = _pickPricesDoc(snapshot.docs);
-    if (doc == null) {
+  return FirebaseFirestore.instance.collection('prices').doc('current').snapshots().map((snapshot) {
+    final data = snapshot.data();
+    if (data == null) {
       return <PriceModel>[];
     }
 
-    final data = doc.data();
     final updatedAt = _readUpdatedAt(data['updatedAt']);
     final prices = <PriceModel>[];
 
-    _addPrice(prices, label: '24K', value: data['gold24k'], updatedAt: updatedAt);
-    _addPrice(prices, label: '22K', value: data['gold22k'], updatedAt: updatedAt);
-    _addPrice(prices, label: '18K', value: data['gold18k'], updatedAt: updatedAt);
+    _addPrice(prices, label: AppStrings.karat22, value: data['gold_22k'], updatedAt: updatedAt);
+    _addPrice(prices, label: AppStrings.karat21, value: data['gold_21k'], updatedAt: updatedAt);
+    _addPrice(prices, label: AppStrings.oldKarat22, value: data['gold_22k_old'], updatedAt: updatedAt);
+    _addPrice(prices, label: AppStrings.oldKarat21, value: data['gold_21k_old'], updatedAt: updatedAt);
+    _addPrice(
+      prices,
+      label: AppStrings.pureAcid,
+      value: data['gold_paka'],
+      updatedAt: updatedAt,
+      unit: '10 গ্রাম',
+    );
+    _addPrice(prices, label: AppStrings.pieceGold, value: data['gold_tukra'], updatedAt: updatedAt);
 
     return prices;
   });
@@ -35,23 +43,12 @@ final goldPricesBySection = Provider<AsyncValue<Map<String, List<PriceModel>>>>(
   });
 });
 
-QueryDocumentSnapshot<Map<String, dynamic>>? _pickPricesDoc(
-  List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
-) {
-  if (docs.isEmpty) return null;
-  for (final doc in docs) {
-    if (doc.id == 'current') {
-      return doc;
-    }
-  }
-  return docs.first;
-}
-
 void _addPrice(
   List<PriceModel> prices, {
   required String label,
   required Object? value,
   required String updatedAt,
+  String unit = AppStrings.perBhori,
 }) {
   final price = _readDoubleOrNull(value);
   if (price == null) return;
@@ -59,7 +56,7 @@ void _addPrice(
     PriceModel(
       label: label,
       price: price,
-      unit: AppStrings.perBhori,
+      unit: unit,
       updatedAt: updatedAt,
     ),
   );
