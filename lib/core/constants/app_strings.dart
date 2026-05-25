@@ -39,9 +39,11 @@ class AppStrings {
   static const String currentMarket = 'বর্তমান বাজার';
   static const String services = 'সেবাসমূহ';
   static const String calculator = 'ক্যালকুলেটর';
+  static const String converter = 'কনভার্টার';
   static const String zakat = 'যাকাত';
   static const String reports = 'বিবরণী';
   static const String settings = 'সেটিংস';
+  static const String priceHistory = 'দাম ইতিহাস';
   static const String profile = 'প্রোফাইল';
   static const String today = 'আজ';
   static const String morning = 'সকাল ৯:৩০';
@@ -84,6 +86,18 @@ class AppStrings {
   static const String metalValue = 'ধাতুর মূল্য';
   static const String labor = 'মজুরি';
   static const String totalPrice = 'মোট মূল্য';
+
+  // Price history
+  static const String priceHistoryTitle = 'দাম ইতিহাস';
+
+  // Converter
+  static const String converterTitle = 'কনভার্টার';
+  static const String fromUnit = 'থেকে';
+  static const String toUnit = 'রূপান্তর';
+  static const String gramUnit = 'গ্রাম';
+  static const String bhoriUnit = 'ভরি';
+  static const String ounceUnit = 'আউন্স';
+  static const String convertedValue = 'রূপান্তরিত মান';
 
   // Zakat
   static const String zakatTitle = 'যাকাত হিসাব';

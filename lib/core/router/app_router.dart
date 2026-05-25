@@ -11,7 +11,8 @@ import 'package:swarnakar/features/silver_price/presentation/silver_price_screen
 import 'package:swarnakar/features/calculator/presentation/calculator_screen.dart';
 import 'package:swarnakar/features/zakat/presentation/zakat_screen.dart';
 import 'package:swarnakar/features/subscription/presentation/paywall_screen.dart';
-import 'package:swarnakar/features/reports/presentation/reports_screen.dart';
+import 'package:swarnakar/features/converter/presentation/converter_screen.dart';
+import 'package:swarnakar/features/price_history/presentation/price_history_screen.dart';
 import 'package:swarnakar/features/settings/presentation/settings_screen.dart';
 
 final GoRouter appRouter = GoRouter(
@@ -85,9 +86,14 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const PaywallScreen(),
     ),
     GoRoute(
-      path: '/reports',
-      name: 'reports',
-      builder: (context, state) => const ReportsScreen(),
+      path: '/converter',
+      name: 'converter',
+      builder: (context, state) => const ConverterScreen(),
+    ),
+    GoRoute(
+      path: '/price-history',
+      name: 'price-history',
+      builder: (context, state) => const PriceHistoryScreen(),
     ),
     GoRoute(
       path: '/settings',

@@ -12,6 +12,7 @@ class AppColors {
   static const Color goldLight = Color(0xFFF1D27C);
   static const Color goldDark = Color(0xFF9F7A2A);
   static const Color goldSoft = Color(0xFF6D5523);
+  static const Color silver = Color(0xFFC0C0C0);
   static const Color white = Color(0xFFFFFFFF);
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFE3E8F2);

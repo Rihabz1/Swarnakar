@@ -38,12 +38,12 @@ class DashboardScreen extends ConsumerWidget {
     );
 
     final dashboardCards = [
-      ('সোনার বাজার', 'Gold Market', Icons.diamond_outlined, '/gold-price'),
-      ('রৌপ্যের বাজার', 'Silver Market', Icons.circle_outlined, '/silver-price'),
-      ('ক্যালকুলেটর', 'Calculator', Icons.calculate_outlined, '/calculator'),
-      ('যাকাত', 'Zakat', Icons.shield_outlined, '/zakat'),
-      ('বিবরণী', 'Reports', Icons.receipt_long_outlined, '/reports'),
-      ('সেটিংস', 'Settings', Icons.settings_outlined, '/settings'),
+      ('সোনার বাজার', 'Gold Market', Icons.diamond_outlined, '/gold-price', AppColors.gold),
+      ('রৌপ্যের বাজার', 'Silver Market', Icons.diamond_outlined, '/silver-price', AppColors.silver),
+      ('ক্যালকুলেটর', 'Calculator', Icons.calculate_outlined, '/calculator', AppColors.gold),
+      ('যাকাত', 'Zakat', Icons.shield_outlined, '/zakat', AppColors.gold),
+      (AppStrings.converter, 'Converter', Icons.swap_horiz, '/converter', AppColors.gold),
+      (AppStrings.priceHistory, 'History', Icons.show_chart_outlined, '/price-history', AppColors.gold),
     ];
 
     return Scaffold(
@@ -225,7 +225,7 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   itemCount: dashboardCards.length,
                   itemBuilder: (context, index) {
-                    final (bengaliName, englishName, icon, route) = dashboardCards[index];
+                    final (bengaliName, englishName, icon, route, iconColor) = dashboardCards[index];
                     return FadeInUp(
                       delay: Duration(milliseconds: index * 90),
                       child: GestureDetector(
@@ -234,6 +234,7 @@ class DashboardScreen extends ConsumerWidget {
                           bengaliName,
                           englishName,
                           icon,
+                          iconColor,
                         ),
                       ),
                     );
@@ -305,7 +306,12 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDashboardCard(String bengaliName, String englishName, IconData icon) {
+  Widget _buildDashboardCard(
+    String bengaliName,
+    String englishName,
+    IconData icon,
+    Color iconColor,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -331,15 +337,15 @@ class DashboardScreen extends ConsumerWidget {
             height: 40,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.gold.withValues(alpha: 0.1),
+              color: iconColor.withValues(alpha: 0.1),
               border: Border.all(
-                color: AppColors.gold.withValues(alpha: 0.28),
+                color: iconColor.withValues(alpha: 0.28),
                 width: 1,
               ),
             ),
             child: Icon(
               icon,
-              color: AppColors.gold,
+              color: iconColor,
               size: 20,
             ),
           ),
