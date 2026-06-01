@@ -7,7 +7,11 @@ import 'dart:async';
 
 class FirebaseService {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  Future<void>? _googleSignInInitialization;
   static const Duration _firestoreOpTimeout = Duration(seconds: 8);
+  
+  // Phone Authentication State
+  String? _phoneVerificationId;
 
   bool get _isFirebaseAuthPlatformSupported {
     return kIsWeb ||
@@ -156,6 +160,8 @@ class FirebaseService {
         );
       }
 
+      await _ensureGoogleSignInInitialized();
+
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
 
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
@@ -180,6 +186,185 @@ class FirebaseService {
     }
   }
 
+  // ==================== PHONE AUTHENTICATION METHODS ====================
+
+  // Verify phone number and send SMS code
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required Function(PhoneAuthCredential) onVerificationCompleted,
+    required Function(FirebaseAuthException) onVerificationFailed,
+    required Function(String, int?) onCodeSent,
+    required Function(String) onCodeAutoRetrievalTimeout,
+    Duration timeout = const Duration(seconds: 60),
+  }) async {
+    await _auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: onVerificationCompleted,
+      verificationFailed: (FirebaseAuthException e) {
+        onVerificationFailed(e);
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        _phoneVerificationId = verificationId;
+        onCodeSent(verificationId, resendToken);
+      },
+      codeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
+      timeout: timeout,
+    );
+  }
+
+  // Sign in with phone number and SMS code
+  Future<UserCredential> signInWithPhoneOtp(String smsCode) async {
+    if (_phoneVerificationId == null) {
+      throw FirebaseAuthException(
+        code: 'session-expired',
+        message: 'Verification session expired. Please request a new code.',
+      );
+    }
+    
+    final credential = PhoneAuthProvider.credential(
+      verificationId: _phoneVerificationId!,
+      smsCode: smsCode,
+    );
+    
+    final userCredential = await _auth.signInWithCredential(credential);
+    _clearPhoneVerificationState();
+    return userCredential;
+  }
+
+  // Link phone number to existing user account
+  Future<UserCredential> linkPhoneNumber(String smsCode) async {
+    if (_phoneVerificationId == null) {
+      throw FirebaseAuthException(
+        code: 'session-expired',
+        message: 'Verification session expired. Please request a new code.',
+      );
+    }
+    
+    final credential = PhoneAuthProvider.credential(
+      verificationId: _phoneVerificationId!,
+      smsCode: smsCode,
+    );
+    
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('No authenticated user found to link phone number');
+    }
+    
+    final userCredential = await user.linkWithCredential(credential);
+    _clearPhoneVerificationState();
+    return userCredential;
+  }
+
+  // Update phone number for existing user (requires re-authentication)
+  Future<void> updatePhoneNumber(String smsCode) async {
+    if (_phoneVerificationId == null) {
+      throw FirebaseAuthException(
+        code: 'session-expired',
+        message: 'Verification session expired. Please request a new code.',
+      );
+    }
+    
+    final credential = PhoneAuthProvider.credential(
+      verificationId: _phoneVerificationId!,
+      smsCode: smsCode,
+    );
+    
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('No authenticated user found');
+    }
+    
+    await user.updatePhoneNumber(credential);
+    _clearPhoneVerificationState();
+  }
+
+  // Get current phone number (if any)
+  String? getCurrentPhoneNumber() {
+    return _auth.currentUser?.phoneNumber;
+  }
+
+  // Clear phone verification state
+  void clearPhoneVerification() {
+    _clearPhoneVerificationState();
+  }
+
+  void _clearPhoneVerificationState() {
+    _phoneVerificationId = null;
+  }
+
+  // Get user-friendly error message for phone auth
+  String getPhoneAuthErrorMessage(FirebaseAuthException e) {
+    final raw = '${e.code} ${e.message ?? ''}'.toLowerCase();
+
+    if (raw.contains('billing_not_enabled') || raw.contains('billing not enabled')) {
+      return 'Phone verification is not enabled for this Firebase project yet. Please enable billing/phone auth in Firebase Console.';
+    }
+
+    if (raw.contains('recaptcha') || raw.contains('sitekey')) {
+      return 'Phone verification is not configured for this project. Please set up Firebase phone auth reCAPTCHA/Play Integrity in the Firebase Console.';
+    }
+
+    switch (e.code) {
+      case 'invalid-phone-number':
+        return 'Invalid phone number format. Please use country code (e.g., +880XXXXXXXXX)';
+      case 'too-many-requests':
+        return 'Too many attempts. Please try again later.';
+      case 'quota-exceeded':
+        return 'SMS quota exceeded. Please use email login or try again tomorrow.';
+      case 'invalid-verification-code':
+        return 'Invalid verification code. Please try again.';
+      case 'session-expired':
+        return 'Session expired. Please request a new code.';
+      case 'provider-already-linked':
+        return 'This phone number is already linked to another account.';
+      case 'credential-already-in-use':
+        return 'This phone number is already associated with an existing account.';
+      case 'missing-phone-number':
+        return 'Phone number is required.';
+      case 'user-disabled':
+        return 'This user account has been disabled.';
+      default:
+        return e.message ?? 'Phone authentication failed. Please try again.';
+    }
+  }
+
+  // Send verification code for re-authentication (for sensitive operations)
+  Future<void> sendPhoneVerificationForReAuth(String phoneNumber) async {
+    await _auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: (_) {},
+      verificationFailed: (_) {},
+      codeSent: (verificationId, resendToken) {
+        _phoneVerificationId = verificationId;
+      },
+      codeAutoRetrievalTimeout: (_) {},
+    );
+  }
+
+  // Re-authenticate with phone before sensitive operations
+  Future<UserCredential> reAuthenticateWithPhone(String smsCode) async {
+    if (_phoneVerificationId == null) {
+      throw FirebaseAuthException(
+        code: 'session-expired',
+        message: 'Verification session expired. Please request a new code.',
+      );
+    }
+    
+    final credential = PhoneAuthProvider.credential(
+      verificationId: _phoneVerificationId!,
+      smsCode: smsCode,
+    );
+    
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('No authenticated user found');
+    }
+    
+    return await user.reauthenticateWithCredential(credential);
+  }
+
+  // ==================== END PHONE AUTHENTICATION METHODS ====================
+
   // Sign out
   Future<void> signOut() async {
     try {
@@ -187,6 +372,7 @@ class FirebaseService {
         await _googleSignIn.signOut();
       }
       await _auth.signOut();
+      _clearPhoneVerificationState();
     } catch (e) {
       throw _handleFirebaseError(e);
     }
@@ -244,6 +430,39 @@ class FirebaseService {
           .get()
           .timeout(_firestoreOpTimeout);
       return doc.data();
+    } catch (e) {
+      if (_isFirestoreUnavailable(e) || e is TimeoutException) {
+        return null;
+      }
+      throw _handleFirebaseError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>?> getUserDataByPhoneNumber(String phoneNumber) async {
+    try {
+      final primaryQuery = await _firestore
+          .collection('users')
+          .where('phoneNumber', isEqualTo: phoneNumber)
+          .limit(1)
+          .get()
+          .timeout(_firestoreOpTimeout);
+
+      if (primaryQuery.docs.isNotEmpty) {
+        return primaryQuery.docs.first.data();
+      }
+
+      final legacyQuery = await _firestore
+          .collection('users')
+          .where('phone', isEqualTo: phoneNumber)
+          .limit(1)
+          .get()
+          .timeout(_firestoreOpTimeout);
+
+      if (legacyQuery.docs.isNotEmpty) {
+        return legacyQuery.docs.first.data();
+      }
+
+      return null;
     } catch (e) {
       if (_isFirestoreUnavailable(e) || e is TimeoutException) {
         return null;
@@ -365,6 +584,7 @@ class FirebaseService {
         'uid': user.uid,
         'name': user.displayName ?? '',
         'email': user.email,
+        'phoneNumber': user.phoneNumber, // Added phone number support
         'isSubscribed': false,
         'subscriptionExpiry': null,
         'createdAt': FieldValue.serverTimestamp(),
@@ -372,6 +592,14 @@ class FirebaseService {
         'isEmailVerified': true,
       });
     }
+  }
+
+  Future<void> _ensureGoogleSignInInitialized() {
+    return _googleSignInInitialization ??=
+        _googleSignIn.initialize().catchError((dynamic error) {
+          _googleSignInInitialization = null;
+          throw error;
+        });
   }
 
   void _ensureFirebaseInitialized() {

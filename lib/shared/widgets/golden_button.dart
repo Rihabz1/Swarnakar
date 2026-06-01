@@ -10,6 +10,7 @@ class GoldenButton extends StatelessWidget {
   final double? width;
   final double height;
   final bool isFullWidth;
+  final IconData? icon;
 
   const GoldenButton({
     super.key,
@@ -19,6 +20,7 @@ class GoldenButton extends StatelessWidget {
     this.width,
     this.height = 50,
     this.isFullWidth = true,
+    this.icon,
   });
 
   @override
@@ -54,10 +56,27 @@ class GoldenButton extends StatelessWidget {
             child: Center(
               child: isLoading
                   ? const _MetallicGoldLoader()
-                  : Text(
-                      text,
-                      style: AppTextStyles.buttonText,
-                    ),
+                  : icon == null
+                      ? Text(
+                          text,
+                          style: AppTextStyles.buttonText,
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              icon,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              text,
+                              style: AppTextStyles.buttonText,
+                            ),
+                          ],
+                        ),
             ),
           ),
         ),

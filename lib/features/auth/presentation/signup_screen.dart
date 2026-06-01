@@ -10,6 +10,7 @@ import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
 import 'package:swarnakar/features/auth/providers/auth_provider.dart';
+import 'phone_auth_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
@@ -279,6 +280,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                               delay: const Duration(milliseconds: 660),
                               child: _buildGoogleSignUp(authNotifier, authState.isLoading),
                             ),
+                            const SizedBox(height: 12),
+                            FadeInUp(
+                              delay: const Duration(milliseconds: 720),
+                              child: _buildPhoneSignupButton(),
+                            ),
                             const SizedBox(height: 20),
                             FadeInUp(
                               delay: const Duration(milliseconds: 760),
@@ -361,6 +367,27 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       label: Text(
         'Google দিয়ে সাইন আপ করুন',
         style: AppTextStyles.hindSiliguri(fontSize: 12, color: Colors.white.withValues(alpha: 0.8)),
+      ),
+    );
+  }
+
+  Widget _buildPhoneSignupButton() {
+    return OutlinedButton.icon(
+      onPressed: () => context.go('/phone-auth', extra: PhoneAuthMode.signup),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(double.infinity, 50),
+        side: BorderSide(color: AppColors.gold.withValues(alpha: 0.28)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+      ),
+      icon: const Icon(Icons.phone_android, color: AppColors.gold, size: 18),
+      label: Text(
+        'ফোন নম্বর দিয়ে সাইন আপ করুন',
+        style: AppTextStyles.hindSiliguri(
+          fontSize: 12,
+          color: AppColors.gold.withValues(alpha: 0.9),
+        ),
       ),
     );
   }

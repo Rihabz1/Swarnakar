@@ -10,6 +10,7 @@ import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
 import 'package:swarnakar/features/auth/providers/auth_provider.dart';
+import 'package:swarnakar/features/auth/presentation/phone_auth_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -97,7 +98,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authProvider);
     final authNotifier = ref.read(authProvider.notifier);
     
-    // Listen for auth state changes
     ref.listen(authProvider, (previous, next) {
       if (next.error != null) {
         _showError(next.error!);
@@ -208,9 +208,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           delay: const Duration(milliseconds: 650),
                           child: _buildGoogleSignIn(authNotifier, authState.isLoading),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 12),
                         FadeInUp(
-                          delay: const Duration(milliseconds: 760),
+                          delay: const Duration(milliseconds: 690),
+                          child: _buildPhoneSignInButton(),
+                        ),
+                        const SizedBox(height: 20),
+                        FadeInUp(
+                          delay: const Duration(milliseconds: 720),
                           child: _buildSignupLink(),
                         ),
                       ],
@@ -333,6 +338,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         style: AppTextStyles.hindSiliguri(
           fontSize: 12,
           color: Colors.white.withValues(alpha: 0.8),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhoneSignInButton() {
+    return OutlinedButton.icon(
+      onPressed: () => context.go('/phone-auth', extra: PhoneAuthMode.signin),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(double.infinity, 50),
+        side: BorderSide(color: AppColors.gold.withValues(alpha: 0.28)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+      ),
+      icon: const Icon(Icons.phone_android, color: AppColors.gold, size: 18),
+      label: Text(
+        'ফোন নম্বর দিয়ে সাইন ইন করুন',
+        style: AppTextStyles.hindSiliguri(
+          fontSize: 12,
+          color: AppColors.gold.withValues(alpha: 0.9),
         ),
       ),
     );

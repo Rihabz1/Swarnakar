@@ -872,9 +872,1652 @@ bun run db:studio
 
 ---
 
-## 17) Final Notes
+## 17) Architecture Diagrams
 
-Swarnakar already provides a strong product-oriented foundation with modern Flutter architecture and practical backend integration.
-The fastest path to production quality is to finish backend module wiring, replace mock data sources with APIs, and harden auth/security edges.
+### High-Level System Architecture
 
-If you want, the next README update can include architecture diagrams, API request/response payload tables for every endpoint, and a full contributor onboarding checklist.
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                       CLIENT APPLICATIONS                        │
+├─────────────────────────────────────────────────────────────────┤
+│  Flutter App (Multi-platform)                                   │
+│  ├── Web Browser (Chrome, Safari, Firefox)                      │
+│  ├── Android (Native Emulator / Physical Device)                │
+│  ├── iOS (Xcode Simulator / Physical Device)                    │
+│  ├── Linux Desktop (GTK)                                        │
+│  ├── macOS Desktop (Cocoa)                                      │
+│  └── Windows Desktop (Win32)                                    │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                    HTTP/REST API
+                           │
+┌──────────────────────────┴──────────────────────────────────────┐
+│              BACKEND LAYER (Bun + Hono)                          │
+├─────────────────────────────────────────────────────────────────┤
+│  Routes:                                                         │
+│  ├── /api/auth  → Authentication & OTP                          │
+│  ├── /api/profile → User Profile Management                     │
+│  ├── /health   → Status Check                                   │
+│  └── [Scaffolded] prices, calculator, reports, zakat            │
+│                                                                  │
+│  Services:                                                       │
+│  ├── AuthService (OTP generation, verification, JWT)            │
+│  └── ProfileService (CRUD operations)                           │
+│                                                                  │
+│  Middleware:                                                     │
+│  ├── CORS Handler                                               │
+│  ├── Logger                                                     │
+│  ├── JWT Verification                                           │
+│  └── Error Handler                                              │
+└──────────────┬──────────────────────────┬──────────────────────┘
+               │                          │
+               │                    Firebase Admin
+               │                   Service Account
+               │                          │
+┌──────────────┴──────────────────────────┴──────────────────────┐
+│           EXTERNAL SERVICES & PERSISTENCE                       │
+├─────────────────────────────────────────────────────────────────┤
+│  Firebase Console (Project: swarnakar-79e57)                    │
+│  ├── Firebase Auth (Email/Password, Google Sign-In)            │
+│  ├── Firestore Database (User profiles, stats)                 │
+│  └── Firebase Hosting (Optional web deployment)                │
+│                                                                  │
+│  Email Delivery (SMTP)                                          │
+│  └── Gmail SMTP (OTP email delivery)                            │
+│                                                                  │
+│  Data Store (In-Memory on Backend)                              │
+│  ├── OTP Records (email, code, expiry, attempts)               │
+│  ├── Reset Tokens (email, token, expiry)                       │
+│  └── Request Windows (rate limiting)                           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Frontend Data Flow (Riverpod State Management)
+
+```
+App Initialization
+       ↓
+ProviderScope (Riverpod Container)
+       ↓
+┌─────────────────────────────────┐
+│   Global State Providers         │
+├─────────────────────────────────┤
+│ • authStateProvider             │
+│ • isSubscribedProvider          │
+│ • userProvider                  │
+│ • connectionStatusProvider      │
+└─────────────────────────────────┘
+       ↓
+┌─────────────────────────────────┐
+│   Feature Providers              │
+├─────────────────────────────────┤
+│ • authNotifierProvider          │
+│ • profileNotifierProvider       │
+│ • goldPriceProvider             │
+│ • calculatorProvider            │
+│ • zakatProvider                 │
+│ • reportsProvider               │
+└─────────────────────────────────┘
+       ↓
+┌─────────────────────────────────┐
+│   Core Services                  │
+├─────────────────────────────────┤
+│ • FirebaseService               │
+│ • OTPService                    │
+│ • ProfileService                │
+└─────────────────────────────────┘
+       ↓
+┌─────────────────────────────────┐
+│   External APIs                  │
+├─────────────────────────────────┤
+│ • Firebase Auth API             │
+│ • Firestore API                 │
+│ • Backend REST API              │
+└─────────────────────────────────┘
+```
+
+### Authentication Flow Diagram
+
+```
+User → Signup/Login Screen
+  │
+  ├─ EMAIL/PASSWORD PATH:
+  │  ├→ Firebase Auth (Create User)
+  │  ├→ Firestore (Create User Document)
+  │  ├→ Firebase Email Verification
+  │  ├→ User Clicks Email Link
+  │  └→ Login → Firebase Verify → Sync Firestore
+  │
+  └─ GOOGLE SIGN-IN PATH:
+     ├→ Google Sign-In Popup
+     ├→ Firebase Auth (Create/Link User)
+     ├→ Firestore (Create/Update User Document)
+     └→ Dashboard (Auto-verified)
+
+RESET PASSWORD FLOW:
+Forgot Password Screen
+  ├→ Backend: Send OTP (email)
+  ├→ User Gets OTP in Email
+  ├→ OTP Screen (Verify OTP)
+  ├→ Backend: Verify OTP → Generate Reset Token
+  ├→ Reset Password Screen (New Password)
+  ├→ Backend: Validate Token → Firebase Admin updateUser()
+  └→ Login with New Password
+```
+
+---
+
+## 18) Complete API Documentation
+
+### API Overview
+
+All API endpoints are prefixed with the backend base URL:
+- **Development (Web):** `http://localhost:8787`
+- **Development (Android Emulator):** `http://10.0.2.2:8787`
+- **Production:** Configure via environment variables
+
+### Authentication Endpoints
+
+#### 1. Send OTP for Password Reset
+
+**Endpoint:** `POST /auth/send-otp` or `POST /auth/otp/send`
+
+**Description:** Initiates password reset flow by sending 6-digit OTP to user's email.
+
+**Request Headers:**
+```
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "purpose": "reset_password"
+}
+```
+
+**Response (200 - Success):**
+```json
+{
+  "success": true,
+  "message": "OTP sent successfully.",
+  "data": {
+    "maskedEmail": "us**@example.com",
+    "expiresInSeconds": 600,
+    "cooldownSeconds": 0,
+    "debugOtp": "123456"  // Only in development mode
+  }
+}
+```
+
+**Response (400 - Error):**
+```json
+{
+  "success": false,
+  "message": "Email and purpose are required.",
+  "error": "Email and purpose are required."
+}
+```
+
+**Status Codes:**
+- `200` - OTP sent successfully
+- `400` - Invalid request parameters
+- `429` - Rate limit exceeded (10 OTPs per hour per email)
+- `500` - Server error
+
+**Rate Limits:**
+- 10 OTP requests per email per hour
+- 45 second cooldown between resend requests
+
+---
+
+#### 2. Resend OTP
+
+**Endpoint:** `POST /auth/resend-otp` or `POST /auth/otp/resend`
+
+**Description:** Resend OTP if user didn't receive the first one.
+
+**Request Headers:**
+```
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "purpose": "reset_password"
+}
+```
+
+**Response (200 - Success):**
+```json
+{
+  "success": true,
+  "message": "OTP resent successfully.",
+  "data": {
+    "maskedEmail": "us**@example.com",
+    "expiresInSeconds": 600,
+    "cooldownSeconds": 45,
+    "debugOtp": "123456"
+  }
+}
+```
+
+**Response (400 - Error):**
+```json
+{
+  "success": false,
+  "message": "Must wait 45 seconds before resending OTP.",
+  "error": "Must wait 45 seconds before resending OTP."
+}
+```
+
+**Status Codes:**
+- `200` - OTP resent successfully
+- `400` - Cooldown period not elapsed
+- `429` - Rate limit exceeded
+- `500` - Server error
+
+---
+
+#### 3. Verify Reset OTP
+
+**Endpoint:** `POST /auth/verify-reset` or `POST /auth/otp/verify-reset`
+
+**Description:** Verify the 6-digit OTP sent to user's email. Returns a reset token for password change.
+
+**Request Headers:**
+```
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "code": "123456",
+  "purpose": "reset_password"
+}
+```
+
+**Response (200 - Success):**
+```json
+{
+  "success": true,
+  "message": "OTP verified successfully. Reset token generated.",
+  "data": {
+    "resetToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "expiresInSeconds": 1800
+  }
+}
+```
+
+**Response (400 - Error):**
+```json
+{
+  "success": false,
+  "message": "Invalid or expired OTP.",
+  "error": "Invalid or expired OTP."
+}
+```
+
+**Response (410 - Gone):**
+```json
+{
+  "success": false,
+  "message": "No OTP request found for this email.",
+  "error": "No OTP request found for this email."
+}
+```
+
+**Status Codes:**
+- `200` - OTP verified, reset token generated
+- `400` - Invalid OTP or max attempts exceeded
+- `410` - No OTP found for email
+- `500` - Server error
+
+**OTP Constraints:**
+- 6 digits (0-9)
+- Expires in 10 minutes (600 seconds)
+- Maximum 5 verification attempts per OTP
+- Case-insensitive code input
+
+---
+
+#### 4. Reset Password
+
+**Endpoint:** `POST /auth/reset-password` or `POST /auth/password/reset`
+
+**Description:** Update user password using reset token from verified OTP. Updates password in Firebase Auth.
+
+**Request Headers:**
+```
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "resetToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "newPassword": "SecureNewPassword123!@#"
+}
+```
+
+**Response (200 - Success):**
+```json
+{
+  "success": true,
+  "message": "Password reset successfully. Please log in with your new password.",
+  "data": {
+    "email": "user@example.com"
+  }
+}
+```
+
+**Response (400 - Error):**
+```json
+{
+  "success": false,
+  "message": "Invalid or expired reset token.",
+  "error": "Invalid or expired reset token."
+}
+```
+
+**Response (401 - Unauthorized):**
+```json
+{
+  "success": false,
+  "message": "User not found in Firebase.",
+  "error": "User not found in Firebase."
+}
+```
+
+**Status Codes:**
+- `200` - Password updated successfully
+- `400` - Invalid token or password validation failed
+- `401` - User not found
+- `500` - Server error
+
+**Password Constraints:**
+- Minimum 8 characters
+- Firebase Auth enforces additional security rules
+- Cannot reuse recent passwords
+
+---
+
+### Profile Endpoints (Authenticated)
+
+**Authentication Required:** All profile endpoints require a valid Firebase JWT token in the `Authorization` header.
+
+```
+Authorization: Bearer <Firebase_JWT_Token>
+```
+
+#### 5. Get User Profile
+
+**Endpoint:** `GET /api/profile`
+
+**Description:** Retrieve complete user profile information from Firestore.
+
+**Request Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2YzBlODA5YjM5MzEwY2YwYzZjMWMxMzYyMzcwYjE0NjE2YzA3YTkiLCJ0eXAiOiJKV1QifQ...
+```
+
+**Request Body:** None
+
+**Response (200 - Success):**
+```json
+{
+  "success": true,
+  "message": "Profile retrieved successfully.",
+  "data": {
+    "uid": "firebase_user_id_123",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "phone": "+880123456789",
+    "address": "Dhaka, Bangladesh",
+    "profileImage": "https://storage.googleapis.com/swarnakar-79e57.appspot.com/profiles/user_123.jpg",
+    "isSubscribed": true,
+    "subscriptionExpiry": "2026-12-31T23:59:59Z",
+    "isEmailVerified": true,
+    "totalCalculations": 45,
+    "savedReports": 12,
+    "favoritePrices": 8,
+    "preferences": {
+      "language": "bn",
+      "theme": "dark",
+      "notifications": true,
+      "currency": "BDT"
+    },
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-05-18T14:22:15Z"
+  }
+}
+```
+
+**Response (401 - Unauthorized):**
+```json
+{
+  "success": false,
+  "message": "Unauthorized",
+  "error": "Missing or invalid token"
+}
+```
+
+**Response (404 - Not Found):**
+```json
+{
+  "success": false,
+  "message": "User profile not found.",
+  "error": "User profile not found."
+}
+```
+
+**Status Codes:**
+- `200` - Profile retrieved successfully
+- `401` - Missing or invalid authentication token
+- `404` - User profile doesn't exist
+- `500` - Server error
+
+---
+
+#### 6. Update User Profile
+
+**Endpoint:** `PUT /api/profile/update`
+
+**Description:** Update user profile information. Only provided fields are updated (partial update supported).
+
+**Request Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2YzBlODA5YjM5MzEwY2YwYzZjMWMxMzYyMzcwYjE0NjE2YzA3YTkiLCJ0eXAiOiJKV1QifQ...
+```
+
+**Request Body (all fields optional):**
+```json
+{
+  "name": "Jane Doe",
+  "phone": "+880198765432",
+  "address": "Chittagong, Bangladesh",
+  "profileImage": "https://storage.googleapis.com/swarnakar-79e57.appspot.com/profiles/user_123_new.jpg",
+  "preferences": {
+    "language": "en",
+    "theme": "light",
+    "notifications": false
+  }
+}
+```
+
+**Response (200 - Success):**
+```json
+{
+  "success": true,
+  "message": "Profile updated successfully.",
+  "data": {
+    "uid": "firebase_user_id_123",
+    "name": "Jane Doe",
+    "email": "john@example.com",
+    "phone": "+880198765432",
+    "address": "Chittagong, Bangladesh",
+    "profileImage": "https://storage.googleapis.com/swarnakar-79e57.appspot.com/profiles/user_123_new.jpg",
+    "isSubscribed": true,
+    "subscriptionExpiry": "2026-12-31T23:59:59Z",
+    "isEmailVerified": true,
+    "totalCalculations": 45,
+    "savedReports": 12,
+    "favoritePrices": 8,
+    "preferences": {
+      "language": "en",
+      "theme": "light",
+      "notifications": false,
+      "currency": "BDT"
+    },
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-05-18T15:00:00Z"
+  }
+}
+```
+
+**Response (400 - Validation Error):**
+```json
+{
+  "success": false,
+  "message": "Invalid profile data provided.",
+  "error": "Phone number format is invalid"
+}
+```
+
+**Response (401 - Unauthorized):**
+```json
+{
+  "success": false,
+  "message": "Unauthorized",
+  "error": "Missing or invalid token"
+}
+```
+
+**Status Codes:**
+- `200` - Profile updated successfully
+- `400` - Validation error in request data
+- `401` - Missing or invalid token
+- `404` - User not found
+- `500` - Server error
+
+**Validation Rules:**
+- `name`: 2-100 characters
+- `phone`: Valid international format
+- `address`: 5-500 characters
+- `profileImage`: Valid HTTPS URL
+- `preferences.language`: 'bn' or 'en'
+- `preferences.theme`: 'dark' or 'light'
+
+---
+
+#### 7. Change Password
+
+**Endpoint:** `POST /api/profile/change-password`
+
+**Description:** Change user password (requires current password verification). Updates password in Firebase Auth.
+
+**Request Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2YzBlODA5YjM5MzEwY2YwYzZjMWMxMzYyMzcwYjE0NjE2YzA3YTkiLCJ0eXAiOiJKV1QifQ...
+```
+
+**Request Body:**
+```json
+{
+  "currentPassword": "OldPassword123!@#",
+  "newPassword": "NewPassword456!@#"
+}
+```
+
+**Response (200 - Success):**
+```json
+{
+  "success": true,
+  "message": "Password changed successfully.",
+  "data": {
+    "email": "john@example.com"
+  }
+}
+```
+
+**Response (400 - Invalid Current Password):**
+```json
+{
+  "success": false,
+  "message": "Current password is incorrect.",
+  "error": "Current password is incorrect."
+}
+```
+
+**Response (401 - Unauthorized):**
+```json
+{
+  "success": false,
+  "message": "Unauthorized",
+  "error": "Missing or invalid token"
+}
+```
+
+**Status Codes:**
+- `200` - Password changed successfully
+- `400` - Invalid current password or weak new password
+- `401` - Missing or invalid token
+- `500` - Server error
+
+**Password Constraints:**
+- Minimum 8 characters required
+- Must include uppercase, lowercase, numbers, and special characters (recommended)
+- Cannot reuse last 3 passwords
+
+---
+
+#### 8. Delete Account
+
+**Endpoint:** `DELETE /api/profile/delete-account`
+
+**Description:** Permanently delete user account, including Firestore document and Firebase Auth user. This action is irreversible.
+
+**Request Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2YzBlODA5YjM5MzEwY2YwYzZjMWMxMzYyMzcwYjE0NjE2YzA3YTkiLCJ0eXAiOiJKV1QifQ...
+```
+
+**Request Body (Optional confirmation):**
+```json
+{
+  "confirm": true
+}
+```
+
+**Response (200 - Success):**
+```json
+{
+  "success": true,
+  "message": "Account deleted successfully.",
+  "data": {
+    "email": "john@example.com",
+    "deletedAt": "2024-05-18T15:30:00Z"
+  }
+}
+```
+
+**Response (401 - Unauthorized):**
+```json
+{
+  "success": false,
+  "message": "Unauthorized",
+  "error": "Missing or invalid token"
+}
+```
+
+**Response (404 - Not Found):**
+```json
+{
+  "success": false,
+  "message": "User not found.",
+  "error": "User not found."
+}
+```
+
+**Status Codes:**
+- `200` - Account deleted successfully
+- `401` - Missing or invalid token
+- `404` - User not found
+- `500` - Server error
+
+**⚠️ WARNING:** This action is irreversible. All user data will be permanently deleted.
+
+---
+
+#### 9. Get User Statistics
+
+**Endpoint:** `GET /api/profile/stats`
+
+**Description:** Retrieve user activity statistics including calculations, reports, and saved items.
+
+**Request Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2YzBlODA5YjM5MzEwY2YwYzZjMWMxMzYyMzcwYjE0NjE2YzA3YTkiLCJ0eXAiOiJKV1QifQ...
+```
+
+**Request Body:** None
+
+**Response (200 - Success):**
+```json
+{
+  "success": true,
+  "message": "User statistics retrieved successfully.",
+  "data": {
+    "uid": "firebase_user_id_123",
+    "email": "john@example.com",
+    "totalCalculations": 45,
+    "totalGoldCalculations": 28,
+    "totalSilverCalculations": 17,
+    "savedReports": 12,
+    "favoritePrices": 8,
+    "favoriteGoldPrices": 5,
+    "favoriteSilverPrices": 3,
+    "zakatCalculations": 3,
+    "lastActivityDate": "2024-05-18T14:30:00Z",
+    "accountAgeInDays": 124,
+    "totalTimeSpentMinutes": 3456,
+    "subscriptionDaysRemaining": 227,
+    "mostUsedFeature": "calculator",
+    "statisticsUpdatedAt": "2024-05-18T15:00:00Z"
+  }
+}
+```
+
+**Response (401 - Unauthorized):**
+```json
+{
+  "success": false,
+  "message": "Unauthorized",
+  "error": "Missing or invalid token"
+}
+```
+
+**Status Codes:**
+- `200` - Statistics retrieved successfully
+- `401` - Missing or invalid token
+- `404` - User not found
+- `500` - Server error
+
+---
+
+### System Health Endpoint
+
+#### 10. Health Check
+
+**Endpoint:** `GET /health`
+
+**Description:** Check if backend server is running and responsive. No authentication required.
+
+**Request Headers:** None
+
+**Request Body:** None
+
+**Response (200 - OK):**
+```json
+{
+  "status": "ok",
+  "timestamp": "2024-05-18T15:00:00.123Z"
+}
+```
+
+**Status Codes:**
+- `200` - Server is healthy
+- `503` - Server unavailable
+
+---
+
+### Error Response Format
+
+All error responses follow this standardized format:
+
+```json
+{
+  "success": false,
+  "message": "Human-readable error message",
+  "error": "Technical error details",
+  "code": "ERROR_CODE",
+  "timestamp": "2024-05-18T15:00:00Z"
+}
+```
+
+### Common HTTP Status Codes
+
+| Code | Meaning | Example |
+|------|---------|---------|
+| 200 | OK - Request successful | Profile retrieved |
+| 400 | Bad Request - Invalid parameters | Missing required fields |
+| 401 | Unauthorized - Invalid/missing token | Token expired |
+| 404 | Not Found - Resource doesn't exist | User profile not found |
+| 429 | Too Many Requests - Rate limit exceeded | OTP limit exceeded |
+| 500 | Internal Server Error | Database connection failed |
+
+---
+
+## 19) Complete Setup Guide (Step-by-Step)
+
+### Prerequisites
+
+Before starting, ensure you have:
+
+- **Git** installed (for cloning and version control)
+- **Flutter SDK 3.x** ([Download](https://flutter.dev/docs/get-started/install))
+- **Dart 3.x** (comes with Flutter)
+- **Bun** runtime ([Install](https://bun.sh))
+- **Firebase CLI** ([Install](https://firebase.google.com/docs/cli))
+- **Android Studio** (for Android development) or **Xcode** (for iOS) or **Chrome** (for web)
+- **Node.js 18+** (optional, for some Drizzle tools)
+
+### Step 1: Clone Repository
+
+```bash
+git clone https://github.com/yourusername/swarnakar.git
+cd Swarnakar
+```
+
+### Step 2: Firebase Project Setup
+
+#### 2.1 Create Firebase Project
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Click **"Create a project"** or select existing **swarnakar-79e57**
+3. Enter project name: **"Swarnakar"**
+4. Accept terms and create project
+
+#### 2.2 Enable Firebase Authentication
+
+1. In Firebase Console, go to **Authentication** → **Sign-in method**
+2. Enable **Email/Password**:
+   - Click "Email/Password"
+   - Toggle "Enable"
+   - Select "Email link (passwordless sign-in)" and "Email/password"
+   - Save
+
+3. Enable **Google Sign-In**:
+   - Click "Google"
+   - Toggle "Enable"
+   - Select project support email
+   - Save
+
+#### 2.3 Create Firestore Database
+
+1. Go to **Firestore Database**
+2. Click **"Create database"**
+3. Select **"Start in production mode"** (configure rules later)
+4. Choose region: **"asia-south1"** (closest to Bangladesh) or your preferred region
+5. Click **"Enable"**
+
+#### 2.4 Set Up Firestore Collections
+
+1. In Firestore, create collections:
+   - **Collection name:** `users`
+   - **Collection name:** `Users` (alternative, backend checks both)
+
+2. Add initial security rules (go to **Rules** tab):
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read/write their own documents
+    match /users/{userId} {
+      allow read: if request.auth.uid == userId;
+      allow write: if request.auth.uid == userId;
+    }
+    
+    match /Users/{userId} {
+      allow read: if request.auth.uid == userId;
+      allow write: if request.auth.uid == userId;
+    }
+  }
+}
+```
+
+3. Click **"Publish"**
+
+#### 2.5 Get Firebase Service Account Key
+
+1. Go to **Project Settings** → **Service Accounts**
+2. Click **"Generate New Private Key"**
+3. Save the JSON file as `swarnakar-79e57-firebase-adminsdk-fbsvc-1f11cecb42.json`
+4. **⚠️ IMPORTANT:** Never commit this file to git (it contains production credentials)
+
+#### 2.6 Add Firebase Credentials to Backend
+
+```bash
+# Copy service account JSON to backend
+cp /path/to/downloaded/firebase-service-account.json backend/
+
+# Verify it's in .gitignore
+echo "backend/*.json" >> .gitignore
+echo "backend/.env" >> .gitignore
+```
+
+### Step 3: Backend Setup
+
+```bash
+# Navigate to backend directory
+cd backend
+
+# Install dependencies
+bun install
+
+# Create .env file
+cat > .env << 'EOF'
+PORT=8787
+FIREBASE_PROJECT_ID=swarnakar-79e57
+GOOGLE_APPLICATION_CREDENTIALS=./swarnakar-79e57-firebase-adminsdk-fbsvc-1f11cecb42.json
+
+# JWT Configuration (change for production)
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+JWT_EXPIRES_IN=7d
+
+# OTP Configuration
+OTP_EXPIRY_MINUTES=10
+OTP_MAX_ATTEMPTS=5
+OTP_RESEND_COOLDOWN_SECONDS=45
+OTP_RATE_LIMIT_PER_HOUR=10
+
+# SMTP Configuration (for email delivery)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-specific-password
+OTP_FROM_EMAIL=your-email@gmail.com
+
+# Database (if using PostgreSQL in future)
+DATABASE_URL=postgresql://user:password@localhost:5432/swarnakar_db
+EOF
+
+# Test backend startup
+bun run dev
+```
+
+If the backend starts successfully, you'll see:
+```
+Server running at http://localhost:8787
+```
+
+Press `Ctrl+C` to stop.
+
+### Step 4: Frontend (Flutter) Setup
+
+```bash
+# Navigate to project root
+cd ..
+
+# Get Flutter dependencies
+flutter pub get
+
+# Generate Riverpod providers (if needed)
+dart run build_runner build
+
+# Verify Flutter setup
+flutter doctor
+
+# List available devices
+flutter devices
+```
+
+### Step 5: Configure Firebase Options (Automatic)
+
+Firebase options are auto-generated, but verify:
+
+```bash
+# Check if firebase_options.dart exists
+cat lib/firebase_options.dart | head -20
+```
+
+If missing, regenerate:
+
+```bash
+flutterfire configure \
+  --project=swarnakar-79e57 \
+  --platforms=web,android,ios,macos,windows,linux \
+  --out=lib/firebase_options.dart
+```
+
+### Step 6: Run the Application
+
+#### Option 1: Run on Web (Easiest for Development)
+
+```bash
+# Terminal 1: Start Backend
+cd backend
+bun run dev
+
+# Terminal 2: Start Flutter Web
+flutter run -d chrome
+```
+
+#### Option 2: Run on Android Emulator
+
+```bash
+# Start Android Emulator first
+emulator -avd Pixel_6_API_30
+
+# Terminal 1: Start Backend
+cd backend
+bun run dev
+
+# Terminal 2: Start Flutter Android
+flutter run -d emulator-5554
+```
+
+#### Option 3: Run on iOS Simulator
+
+```bash
+# Terminal 1: Start Backend
+cd backend
+bun run dev
+
+# Terminal 2: Start Flutter iOS
+flutter run -d ios
+```
+
+#### Option 4: Run on Linux Desktop
+
+```bash
+# Terminal 1: Start Backend
+cd backend
+bun run dev
+
+# Terminal 2: Start Flutter Linux
+flutter run -d linux
+```
+
+### Step 7: Test the Application
+
+1. **Splash Screen** - Should load automatically
+2. **Signup** - Create account with email/password
+3. **Email Verification** - Check inbox for Firebase verification email
+4. **Login** - Login with verified email
+5. **Dashboard** - View home screen with gold/silver prices
+6. **Features** - Navigate through calculator, zakat, reports
+7. **Profile** - Access profile settings
+8. **Forgot Password** - Test password reset flow
+
+### Step 8: SMTP Configuration (Optional but Recommended)
+
+To send OTP emails via SMTP:
+
+1. **For Gmail:**
+   - Enable 2-Factor Authentication
+   - Generate App Password: [Google Account Security](https://myaccount.google.com/apppasswords)
+   - Use generated password in `.env` as `SMTP_PASS`
+
+2. **Update backend/.env:**
+   ```env
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=your-email@gmail.com
+   SMTP_PASS=xxxx-xxxx-xxxx-xxxx
+   ```
+
+3. **Restart backend:**
+   ```bash
+   cd backend
+   bun run dev
+   ```
+
+### Step 9: Enable Firestore Billing (Production)
+
+**⚠️ WARNING:** Firestore requires billing enabled for deployment.
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Select **swarnakar-79e57** project
+3. **Billing** → Link a billing account
+4. Deploy Firestore rules and indexes:
+   ```bash
+   firebase deploy --only firestore:rules,firestore:indexes
+   ```
+
+---
+
+## 20) Testing Guide
+
+### Flutter Testing
+
+#### Unit Tests
+
+```bash
+# Run all unit tests
+flutter test
+
+# Run specific test file
+flutter test test/widget_test.dart
+
+# Run tests with coverage
+flutter test --coverage
+```
+
+#### Widget Tests
+
+```bash
+# Test example from widget_test.dart
+flutter test test/widget_test.dart -v
+
+# Run test in verbose mode
+flutter test --verbose
+```
+
+#### Integration Tests
+
+```bash
+# Create integration test
+touch test_driver/app.dart
+
+# Run integration tests
+flutter drive --target=test_driver/app.dart
+```
+
+### Backend Testing
+
+```bash
+# Create simple test
+cat > backend/src/__tests__/auth.test.ts << 'EOF'
+import { describe, it, expect } from 'bun:test';
+import { AuthService } from '../services/auth.service';
+
+describe('AuthService', () => {
+  it('should generate 6-digit OTP', () => {
+    const authService = new AuthService();
+    // Test implementation
+  });
+});
+EOF
+
+# Run tests
+cd backend
+bun test
+```
+
+---
+
+## 21) Troubleshooting Guide
+
+### Common Issues and Solutions
+
+#### Issue: "Failed to load Firebase options"
+
+**Cause:** Firebase options not initialized
+
+**Solution:**
+```bash
+flutterfire configure --project=swarnakar-79e57
+flutter pub get
+flutter clean
+flutter pub get
+```
+
+#### Issue: "Firestore database creation returns HTTP 403"
+
+**Cause:** Billing not enabled on Firebase project
+
+**Solution:**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Select project
+3. Enable billing
+4. Wait 5 minutes
+5. Create Firestore database again
+
+#### Issue: "Backend CORS error: 'has been blocked by CORS policy'"
+
+**Cause:** Frontend and backend on different origins
+
+**Solution:** Update `backend/src/index.ts` CORS config:
+```typescript
+app.use('*', cors({
+  origin: (origin) => {
+    if (!origin) return '*'
+    if (origin.includes('localhost')) return origin
+    if (origin.includes('10.0.2.2')) return origin // Android emulator
+    return origin // Allow all for development
+  },
+  credentials: true
+}))
+```
+
+#### Issue: "Android emulator cannot reach localhost:8787"
+
+**Cause:** Android emulator runs in isolated network
+
+**Solution:** Use `10.0.2.2` instead of `localhost`:
+```bash
+flutter run --dart-define=OTP_API_BASE_URL=http://10.0.2.2:8787
+```
+
+#### Issue: "Flutter build fails: 'No package found'"
+
+**Cause:** Missing dependencies
+
+**Solution:**
+```bash
+flutter clean
+rm pubspec.lock
+flutter pub get
+flutter pub outdated
+```
+
+#### Issue: "Bun backend crashes on startup"
+
+**Cause:** Port 8787 already in use
+
+**Solution:**
+```bash
+# Find process using port 8787
+lsof -i :8787
+
+# Kill the process
+kill -9 <PID>
+
+# Or change port in .env
+PORT=8788 bun run dev
+```
+
+#### Issue: "Firebase Auth: 'User disabled' error"
+
+**Cause:** User account disabled in Firebase
+
+**Solution:** Re-enable user in Firebase Console → Authentication → Users
+
+#### Issue: "OTP email not received"
+
+**Cause:** SMTP not configured or email marked as spam
+
+**Solution:**
+1. Check `.env` SMTP settings
+2. Check spam folder
+3. Check Firebase Console logs
+4. For development, check backend console (debugOtp field)
+
+#### Issue: "jwt malformed" or "jwt expired"
+
+**Cause:** Token invalid or expired
+
+**Solution:**
+```bash
+# Clear app cache
+flutter clean
+
+# Logout and login again
+# Re-get fresh token from Firebase
+```
+
+#### Issue: "Firestore document not found after signup"
+
+**Cause:** User document not created
+
+**Solution:**
+```bash
+# Manually create in Firebase Console:
+# Collection: users
+# Document ID: user's Firebase UID
+# Fields: email, name, isEmailVerified: false
+```
+
+---
+
+## 22) Deployment Guide
+
+### Deploy Frontend (Flutter Web)
+
+```bash
+# Build web app
+flutter build web --release
+
+# Option 1: Deploy to Firebase Hosting
+firebase deploy --only hosting
+
+# Option 2: Deploy to custom server (e.g., Netlify, Vercel)
+# Copy build/web/* to hosting provider
+```
+
+### Deploy Backend (Bun)
+
+#### Option 1: Deploy to Railway
+
+```bash
+# Install Railway CLI
+npm install -g @railway/cli
+
+# Login
+railway login
+
+# Deploy
+railway up
+```
+
+#### Option 2: Deploy to Render
+
+```bash
+# Push to GitHub
+git push origin main
+
+# Connect repository to Render
+# Set build command: bun install && bun run build
+# Set start command: bun run start
+```
+
+#### Option 3: Deploy to Vercel (with serverless functions)
+
+```bash
+# Update backend/src/index.ts for serverless:
+export default app
+
+# Deploy
+vercel deploy
+```
+
+#### Option 4: Deploy to Docker
+
+```bash
+# Create Dockerfile in backend/
+cat > Dockerfile << 'EOF'
+FROM oven/bun:latest
+
+WORKDIR /app
+COPY . .
+
+RUN bun install
+
+EXPOSE 8787
+
+CMD ["bun", "run", "start"]
+EOF
+
+# Build and push to Docker Hub
+docker build -t yourname/swarnakar-backend .
+docker push yourname/swarnakar-backend
+
+# Run container
+docker run -p 8787:8787 \
+  -e PORT=8787 \
+  -e FIREBASE_PROJECT_ID=swarnakar-79e57 \
+  yourname/swarnakar-backend
+```
+
+### Deploy Mobile Apps
+
+#### Android APK/AAB Release
+
+```bash
+# Build APK (for direct installation)
+flutter build apk --release
+
+# Build AAB (for Google Play Store)
+flutter build appbundle --release
+
+# Sign APK
+jarsigner -verbose -sigalg MD5withRSA -digestalg SHA1 \
+  -keystore ~/key.jks \
+  build/app/outputs/apk/release/app-release-unsigned.apk \
+  alias_name
+
+# Upload to Google Play Console
+```
+
+#### iOS Release
+
+```bash
+# Build iOS app
+flutter build ios --release
+
+# Archive and upload to App Store
+# Use Xcode or Transporter app
+```
+
+### Production Security Checklist
+
+- [ ] Change `JWT_SECRET` in `.env`
+- [ ] Disable debug mode in Flutter (`kDebugMode = false`)
+- [ ] Enable HTTPS only (set SMTP_SECURE=true if using TLS)
+- [ ] Update CORS to specific domains
+- [ ] Rotate Firebase service account key regularly
+- [ ] Enable Firebase Security Rules (don't use permissive rules)
+- [ ] Set up rate limiting on API endpoints
+- [ ] Enable Firebase Authentication with email verification
+- [ ] Configure Firebase backup & restore
+- [ ] Set up monitoring and alerts
+- [ ] Use environment-specific secrets (.env.production)
+- [ ] Enable Firebase Performance Monitoring
+- [ ] Set up error logging (Crashlytics)
+- [ ] Audit Firebase database access logs
+
+---
+
+## 23) Contributing Guidelines
+
+### Code of Conduct
+
+- Be respectful to all contributors
+- Report issues professionally
+- Help others when possible
+- Share knowledge and experiences
+
+### How to Contribute
+
+#### 1. Fork the Repository
+
+```bash
+# Fork on GitHub, then clone
+git clone https://github.com/yourusername/swarnakar.git
+cd Swarnakar
+```
+
+#### 2. Create a Feature Branch
+
+```bash
+# Create branch from main
+git checkout -b feature/your-feature-name
+# or
+git checkout -b bugfix/your-bug-fix
+# or
+git checkout -b docs/improve-documentation
+```
+
+#### 3. Make Your Changes
+
+```bash
+# Make changes to files
+# Follow code style guidelines
+
+# Format code (Dart)
+dart format lib/
+flutter analyze
+
+# Format code (TypeScript)
+cd backend && bun run format  # if available
+```
+
+#### 4. Commit with Clear Messages
+
+```bash
+# Use conventional commits
+git commit -m "feat: add gold price API endpoint"
+git commit -m "fix: resolve CORS issue on profile endpoint"
+git commit -m "docs: update API documentation"
+git commit -m "style: format code according to guidelines"
+git commit -m "refactor: simplify authentication logic"
+git commit -m "test: add unit tests for OTP service"
+```
+
+#### 5. Push and Create Pull Request
+
+```bash
+# Push to your fork
+git push origin feature/your-feature-name
+
+# Create PR on GitHub
+# Fill in PR template with:
+# - Description of changes
+# - Related issues
+# - How to test
+# - Screenshots (if UI changes)
+```
+
+#### 6. Code Review and Merge
+
+- Wait for code review
+- Address feedback
+- Merge after approval
+
+### Coding Standards
+
+#### Dart/Flutter
+
+```dart
+// ✅ Good: Clear naming
+class UserAuthenticationProvider extends StateNotifier<AuthState> {
+  // Implementation
+}
+
+// ❌ Bad: Unclear naming
+class UAP extends StateNotifier<AS> {
+  // Implementation
+}
+
+// ✅ Good: Comments for complex logic
+// Verify OTP with rate limiting and retry attempts
+void verifyOtp(String code) {
+  // Implementation
+}
+
+// ✅ Good: Error handling
+try {
+  final user = await authService.signup(email, password);
+} catch (e) {
+  _handleAuthError(e);
+}
+
+// ❌ Bad: Silent failures
+try {
+  final user = await authService.signup(email, password);
+} catch (e) {
+  // Ignore
+}
+```
+
+#### TypeScript (Backend)
+
+```typescript
+// ✅ Good: Proper typing
+interface OtpRequest {
+  email: string;
+  purpose: 'reset_password' | 'login_verification';
+}
+
+async sendOtp(request: OtpRequest): Promise<OtpResponse> {
+  // Implementation
+}
+
+// ❌ Bad: Use of any
+function sendOtp(request: any): any {
+  // Implementation
+}
+
+// ✅ Good: Error handling
+try {
+  await authService.sendOtp(email);
+} catch (error) {
+  logger.error('OTP send failed:', error);
+  throw new ApiError('Failed to send OTP', 500);
+}
+```
+
+### Issue Reporting
+
+When reporting issues, include:
+
+```markdown
+## Description
+What is the problem?
+
+## Steps to Reproduce
+1. Step 1
+2. Step 2
+3. Step 3
+
+## Expected Behavior
+What should happen?
+
+## Actual Behavior
+What actually happened?
+
+## Environment
+- Flutter version: `flutter --version`
+- Dart version: `dart --version`
+- OS: Windows/Mac/Linux
+- Device: Android/iOS/Web/Desktop
+
+## Logs
+```
+Paste error logs here
+```
+
+## Screenshots
+Attach screenshots if applicable
+```
+
+### Feature Requests
+
+Template:
+
+```markdown
+## Feature Description
+What feature do you want to add?
+
+## Use Case
+Why is this feature needed?
+
+## Proposed Implementation
+How should this work?
+
+## Alternatives
+Are there alternative approaches?
+
+## Additional Context
+Any other relevant information?
+```
+
+---
+
+## 24) Frequently Asked Questions (FAQ)
+
+### Setup & Installation
+
+**Q: Do I need Android Studio or Xcode?**  
+A: Only if developing for Android or iOS. For web development, Chrome is sufficient.
+
+**Q: Can I run backend on a different port?**  
+A: Yes, change `PORT` in `backend/.env` and update Flutter's `OTP_API_BASE_URL`.
+
+**Q: Why is Firebase billing required?**  
+A: Firestore databases require billing to be enabled, even if within free tier limits.
+
+### Architecture & Features
+
+**Q: Is this production-ready?**  
+A: The core auth and profile systems are production-ready. Market prices and other features are currently mocked.
+
+**Q: Can I use PostgreSQL instead of Firestore?**  
+A: The database layer is scaffolded for future migration. Currently, Firestore is used for user data.
+
+**Q: How often is the OTP valid?**  
+A: By default, 10 minutes (600 seconds). Change `OTP_EXPIRY_MINUTES` in `.env`.
+
+**Q: Can I customize the UI theme?**  
+A: Yes, modify `lib/core/theme/app_colors.dart` and `app_text_styles.dart`.
+
+### Security
+
+**Q: Is the backend JWT verification production-ready?**  
+A: Currently, it decodes without full verification. For production, upgrade to Firebase token verification.
+
+**Q: How do I rotate Firebase credentials?**  
+A: Generate new service account key in Firebase Console → Project Settings → Service Accounts.
+
+**Q: Should I commit `.env` and service account JSON?**  
+A: No. Add to `.gitignore` and use CI/CD secrets management.
+
+### Deployment
+
+**Q: Which hosting provider should I use?**  
+A: For web: Firebase Hosting, Netlify, or Vercel. For backend: Railway, Render, or Docker.
+
+**Q: How do I set up HTTPS?**  
+A: Most hosting providers (Firebase, Vercel, Railway) provide SSL/TLS automatically.
+
+**Q: Can I use subdomain-based routing?**  
+A: Yes, configure CORS and update API base URLs accordingly.
+
+---
+
+## 25) Final Notes
+
+**Swarnakar** is a comprehensive full-stack jewellery business application with:
+- ✅ Modern Flutter architecture (Riverpod, GoRouter)
+- ✅ TypeScript backend (Bun + Hono)
+- ✅ Firebase authentication and data persistence
+- ✅ Production-ready auth flows (OTP, email verification, password reset)
+- ✅ Multi-platform support (Web, Android, iOS, Desktop)
+- ✅ Bangla-first UI/UX
+
+### Next Steps
+
+1. **Complete Setup:** Follow Step-by-Step Setup Guide (Section 19)
+2. **Run Tests:** Verify installation with Section 20
+3. **Contribute:** Submit PRs following Contributing Guidelines (Section 23)
+4. **Deploy:** Use Deployment Guide (Section 22) for production
+
+### Support
+
+For questions, issues, or contributions:
+- 📧 Email: sarkarkabbo72@gmail.com
+- 🐛 Report bugs: Open GitHub issues
+- 💡 Feature requests: Discuss in GitHub discussions
+- 📝 Documentation: Check this README and inline code comments
+
+### License
+
+This project is open source. [Add your license here]
+
+---
+
+**Happy coding! 🚀**

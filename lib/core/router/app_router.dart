@@ -14,6 +14,7 @@ import 'package:swarnakar/features/subscription/presentation/paywall_screen.dart
 import 'package:swarnakar/features/reports/presentation/reports_screen.dart';
 import 'package:swarnakar/features/settings/presentation/settings_screen.dart';
 import 'package:swarnakar/features/settings/presentation/profile_screen.dart';
+import 'package:swarnakar/features/auth/presentation/phone_auth_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
@@ -45,6 +46,15 @@ final GoRouter appRouter = GoRouter(
         final email = state.uri.queryParameters['email'] ?? '';
         final flow = state.uri.queryParameters['flow'] ?? 'signup';
         return OtpScreen(email: email, flow: flow);
+      },
+    ),
+
+    GoRoute(
+      path: '/phone-auth',
+      name: 'phone-auth',
+      builder: (context, state) {
+        final mode = state.extra as PhoneAuthMode? ?? PhoneAuthMode.signin;
+        return PhoneAuthScreen(mode: mode);
       },
     ),
     GoRoute(

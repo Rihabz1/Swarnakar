@@ -8,6 +8,7 @@ class FirebaseAuthService {
   FirebaseAuthService._();
 
   static final FirebaseAuthService instance = FirebaseAuthService._();
+  static final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -92,14 +93,9 @@ class FirebaseAuthService {
   }
 
   Future<User?> signInWithGoogle() async {
-    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-    if (googleUser == null) {
-      return null;
-    }
-
+    final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
     final GoogleSignInAuthentication googleAuth = googleUser.authentication;
     final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,
     );
 

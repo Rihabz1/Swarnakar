@@ -47,6 +47,21 @@ type ResetPasswordResult = {
   email: string;
 };
 
+// Phone OTP types
+type PhoneOtpRecord = {
+  phoneNumber: string;
+  otpHash: string;
+  expiresAt: number;
+  attempts: number;
+  sentAt: number;
+};
+
+type PhoneOtpSendResult = {
+  maskedPhone: string;
+  expiresInSeconds: number;
+  debugOtp?: string;
+};
+
 const OTP_EXPIRY_MINUTES = Number(process.env.OTP_EXPIRY_MINUTES ?? 10);
 const OTP_MAX_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS ?? 5);
 const OTP_RESEND_COOLDOWN_SECONDS = Number(process.env.OTP_RESEND_COOLDOWN_SECONDS ?? 45);
@@ -82,12 +97,24 @@ const requestWindowStore = new Map<string, number[]>();
 const userStore = new Map<string, UserRecord>();
 const resetTokenStore = new Map<string, ResetTokenRecord>();
 
+// Phone OTP store
+const phoneOtpStore = new Map<string, PhoneOtpRecord>();
+const phoneRequestWindowStore = new Map<string, number[]>();
+
 const otpKey = (email: string, purpose: OtpPurpose) => `${purpose}:${email}`;
+const phoneOtpKey = (phoneNumber: string) => `phone:${phoneNumber}`;
 
 const hashOtp = (email: string, purpose: OtpPurpose, otp: string): string => {
   return crypto
     .createHash('sha256')
     .update(`${email}:${purpose}:${otp}`)
+    .digest('hex');
+};
+
+const hashPhoneOtp = (phoneNumber: string, otp: string): string => {
+  return crypto
+    .createHash('sha256')
+    .update(`phone:${phoneNumber}:${otp}`)
     .digest('hex');
 };
 
@@ -125,8 +152,35 @@ const assertRateLimit = (email: string) => {
   requestWindowStore.set(email, recent);
 };
 
+const assertPhoneRateLimit = (phoneNumber: string) => {
+  const now = Date.now();
+  const oneHourAgo = now - 60 * 60 * 1000;
+  const previous = phoneRequestWindowStore.get(phoneNumber) ?? [];
+  const recent = previous.filter((ts) => ts > oneHourAgo);
+
+  if (recent.length >= OTP_RATE_LIMIT_PER_HOUR) {
+    throw new Error('Too many OTP requests. Please try again later.');
+  }
+
+  recent.push(now);
+  phoneRequestWindowStore.set(phoneNumber, recent);
+};
+
 const assertCooldown = (email: string, purpose: OtpPurpose) => {
   const existing = otpStore.get(otpKey(email, purpose));
+  if (!existing) {
+    return;
+  }
+
+  const waitMs = existing.sentAt + OTP_RESEND_COOLDOWN_SECONDS * 1000 - Date.now();
+  if (waitMs > 0) {
+    const waitSeconds = Math.ceil(waitMs / 1000);
+    throw new Error(`Please wait ${waitSeconds}s before requesting a new OTP.`);
+  }
+};
+
+const assertPhoneCooldown = (phoneNumber: string) => {
+  const existing = phoneOtpStore.get(phoneOtpKey(phoneNumber));
   if (!existing) {
     return;
   }
@@ -362,6 +416,237 @@ const resetPasswordWithToken = async ({ resetToken, newPassword }: ResetPassword
   };
 };
 
+// ============ PHONE AUTH HELPER FUNCTIONS ============
+
+/**
+ * Format phone number to E.164 format
+ */
+const formatPhoneNumber = (phoneNumber: string): string => {
+  let cleaned = phoneNumber.replace(/\D/g, '');
+  
+  if (cleaned.startsWith('0')) {
+    cleaned = '88' + cleaned.substring(1);
+  }
+  
+  if (!cleaned.startsWith('88') && cleaned.length === 10) {
+    cleaned = '88' + cleaned;
+  }
+  
+  if (!cleaned.startsWith('88') && cleaned.length === 11) {
+    cleaned = '88' + cleaned;
+  }
+  
+  return '+' + cleaned;
+};
+
+/**
+ * Mask phone number for response
+ */
+const maskPhoneNumber = (phoneNumber: string): string => {
+  const formatted = formatPhoneNumber(phoneNumber);
+  if (formatted.length <= 8) return formatted;
+  const start = formatted.slice(0, -4);
+  return start.slice(0, -2) + '****' + formatted.slice(-2);
+};
+
+/**
+ * Check if phone number exists in Firebase Auth
+ */
+const isPhoneNumberExists = async (phoneNumber: string): Promise<boolean> => {
+  try {
+    const auth = await getAuth();
+    const formattedNumber = formatPhoneNumber(phoneNumber);
+    const user = await auth.getUserByPhoneNumber(formattedNumber);
+    return !!user;
+  } catch (error: any) {
+    if (error.code === 'auth/user-not-found') {
+      return false;
+    }
+    throw error;
+  }
+};
+
+/**
+ * Get user by phone number
+ */
+const getUserByPhoneNumber = async (phoneNumber: string): Promise<any> => {
+  try {
+    const auth = await getAuth();
+    const formattedNumber = formatPhoneNumber(phoneNumber);
+    const user = await auth.getUserByPhoneNumber(formattedNumber);
+    return user;
+  } catch (error: any) {
+    if (error.code === 'auth/user-not-found') {
+      return null;
+    }
+    throw error;
+  }
+};
+
+/**
+ * Create user with phone number
+ */
+const createPhoneUser = async (phoneNumber: string, name?: string): Promise<any> => {
+  const auth = await getAuth();
+  const db = await getFirestore();
+  const formattedNumber = formatPhoneNumber(phoneNumber);
+  
+  const userRecord = await auth.createUser({
+    phoneNumber: formattedNumber,
+    displayName: name || null,
+    emailVerified: false,
+  });
+  
+  const userProfile = {
+    uid: userRecord.uid,
+    phoneNumber: formattedNumber,
+    name: name || null,
+    email: null,
+    isSubscribed: false,
+    isPhoneVerified: true,
+    isEmailVerified: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  
+  await db.collection('users').doc(userRecord.uid).set(userProfile);
+  await db.collection('Users').doc(userRecord.uid).set(userProfile);
+  
+  return userRecord;
+};
+
+/**
+ * Generate custom token for phone user
+ */
+const generateCustomToken = async (uid: string): Promise<string> => {
+  const auth = await getAuth();
+  return await auth.createCustomToken(uid);
+};
+
+/**
+ * Get user profile from Firestore
+ */
+const getUserProfile = async (uid: string): Promise<any> => {
+  const db = await getFirestore();
+  const doc = await db.collection('users').doc(uid).get();
+  return doc.data();
+};
+
+/**
+ * Send OTP to phone number
+ */
+const sendPhoneOtp = async (phoneNumber: string): Promise<PhoneOtpSendResult> => {
+  const formattedNumber = formatPhoneNumber(phoneNumber);
+  
+  assertPhoneRateLimit(formattedNumber);
+  assertPhoneCooldown(formattedNumber);
+  
+  const code = generateOtpCode();
+  const now = Date.now();
+  
+  phoneOtpStore.set(phoneOtpKey(formattedNumber), {
+    phoneNumber: formattedNumber,
+    otpHash: hashPhoneOtp(formattedNumber, code),
+    expiresAt: now + OTP_EXPIRY_MINUTES * 60 * 1000,
+    attempts: 0,
+    sentAt: now,
+  });
+  
+  // Log OTP in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`📱 Phone OTP for ${formattedNumber}: ${code}`);
+  }
+  
+  return {
+    maskedPhone: maskPhoneNumber(formattedNumber),
+    expiresInSeconds: OTP_EXPIRY_MINUTES * 60,
+    ...(process.env.NODE_ENV === 'development' ? { debugOtp: code } : {}),
+  };
+};
+
+/**
+ * Verify phone OTP
+ */
+const verifyPhoneOtp = (phoneNumber: string, code: string): boolean => {
+  if (!/^\d{6}$/.test(code)) {
+    throw new Error('OTP must be 6 digits.');
+  }
+  
+  const formattedNumber = formatPhoneNumber(phoneNumber);
+  const key = phoneOtpKey(formattedNumber);
+  const record = phoneOtpStore.get(key);
+  
+  if (!record) {
+    throw new Error('OTP not found. Please request a new code.');
+  }
+  
+  if (Date.now() > record.expiresAt) {
+    phoneOtpStore.delete(key);
+    throw new Error('OTP has expired. Please request a new code.');
+  }
+  
+  if (record.attempts >= OTP_MAX_ATTEMPTS) {
+    phoneOtpStore.delete(key);
+    throw new Error('Too many incorrect attempts. Request a new OTP.');
+  }
+  
+  const candidate = hashPhoneOtp(formattedNumber, code);
+  if (candidate !== record.otpHash) {
+    record.attempts += 1;
+    phoneOtpStore.set(key, record);
+    throw new Error('Invalid OTP.');
+  }
+  
+  phoneOtpStore.delete(key);
+  return true;
+};
+
+/**
+ * Link phone number to existing email user
+ */
+const linkPhoneToUser = async (uid: string, phoneNumber: string): Promise<void> => {
+  const auth = await getAuth();
+  const db = await getFirestore();
+  const formattedNumber = formatPhoneNumber(phoneNumber);
+  
+  const existingUser = await getUserByPhoneNumber(formattedNumber);
+  if (existingUser && existingUser.uid !== uid) {
+    throw new Error('Phone number already linked to another account');
+  }
+  
+  await auth.updateUser(uid, {
+    phoneNumber: formattedNumber,
+  });
+  
+  const updateData = {
+    phoneNumber: formattedNumber,
+    updatedAt: new Date().toISOString(),
+  };
+  
+  await db.collection('users').doc(uid).update(updateData);
+  await db.collection('Users').doc(uid).update(updateData);
+};
+
+/**
+ * Unlink phone number from user
+ */
+const unlinkPhoneFromUser = async (uid: string): Promise<void> => {
+  const auth = await getAuth();
+  const db = await getFirestore();
+  
+  await auth.updateUser(uid, {
+    phoneNumber: null,
+  });
+  
+  const updateData = {
+    phoneNumber: null,
+    updatedAt: new Date().toISOString(),
+  };
+  
+  await db.collection('users').doc(uid).update(updateData);
+  await db.collection('Users').doc(uid).update(updateData);
+};
+
 export class AuthService {
   requestOtp = issueOtp;
   resendOtp = issueOtp;
@@ -369,4 +654,17 @@ export class AuthService {
   verifyOtpOnly = verifyOtpOnly;
   verifyResetWithOtp = verifyResetWithOtp;
   resetPasswordWithToken = resetPasswordWithToken;
+  
+  // Phone auth methods
+  formatPhoneNumber = formatPhoneNumber;
+  maskPhoneNumber = maskPhoneNumber;
+  isPhoneNumberExists = isPhoneNumberExists;
+  getUserByPhoneNumber = getUserByPhoneNumber;
+  createPhoneUser = createPhoneUser;
+  generateCustomToken = generateCustomToken;
+  getUserProfile = getUserProfile;
+  sendPhoneOtp = sendPhoneOtp;
+  verifyPhoneOtp = verifyPhoneOtp;
+  linkPhoneToUser = linkPhoneToUser;
+  unlinkPhoneFromUser = unlinkPhoneFromUser;
 }
