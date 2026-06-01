@@ -214,7 +214,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   
   Future<void> sendPhoneVerificationCode(String phoneNumber) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+    String? failureMessage;
+
     await _firebaseService.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       onVerificationCompleted: (credential) async {
@@ -228,9 +229,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         }
       },
       onVerificationFailed: (e) {
+        failureMessage = _firebaseService.getPhoneAuthErrorMessage(e);
         state = state.copyWith(
           isLoading: false,
-          error: _firebaseService.getPhoneAuthErrorMessage(e),
+          error: failureMessage,
         );
       },
       onCodeSent: (verificationId, resendToken) {
@@ -244,6 +246,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = state.copyWith(phoneVerificationId: verificationId);
       },
     );
+
+    // After verifyPhoneNumber returns, one of the callbacks should have fired.
+    // If we don't have a verification id, consider it a failure and throw so
+    // callers (UI) can react via try/catch.
+    if (state.phoneVerificationId == null) {
+      state = state.copyWith(isLoading: false);
+      throw Exception(failureMessage ?? 'Failed to send verification code.');
+    }
   }
   
   Future<void> verifyPhoneOtp(String smsCode) async {

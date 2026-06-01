@@ -197,19 +197,50 @@ class FirebaseService {
     required Function(String) onCodeAutoRetrievalTimeout,
     Duration timeout = const Duration(seconds: 60),
   }) async {
+    final completer = Completer<void>();
+
     await _auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
-      verificationCompleted: onVerificationCompleted,
+      verificationCompleted: (PhoneAuthCredential credential) {
+        try {
+          onVerificationCompleted(credential);
+        } finally {
+          if (!completer.isCompleted) completer.complete();
+        }
+      },
       verificationFailed: (FirebaseAuthException e) {
-        onVerificationFailed(e);
+        // Log raw exception for easier debugging
+        try {
+          // Provide both friendly and raw details via callback
+          onVerificationFailed(e);
+        } finally {
+          if (!completer.isCompleted) completer.complete();
+        }
       },
       codeSent: (String verificationId, int? resendToken) {
         _phoneVerificationId = verificationId;
-        onCodeSent(verificationId, resendToken);
+        try {
+          onCodeSent(verificationId, resendToken);
+        } finally {
+          if (!completer.isCompleted) completer.complete();
+        }
       },
-      codeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
+      codeAutoRetrievalTimeout: (String verificationId) {
+        try {
+          onCodeAutoRetrievalTimeout(verificationId);
+        } finally {
+          if (!completer.isCompleted) completer.complete();
+        }
+      },
       timeout: timeout,
     );
+
+    // Wait until one of the callbacks above fires (codeSent / failed / timeout)
+    try {
+      await completer.future;
+    } catch (_) {
+      // Ignore - callbacks already handled errors via onVerificationFailed
+    }
   }
 
   // Sign in with phone number and SMS code
