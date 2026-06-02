@@ -4,10 +4,8 @@ import 'package:animate_do/animate_do.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
-import 'package:swarnakar/core/constants/app_assets.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -22,7 +20,6 @@ class _SignupScreenState extends State<SignupScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _passwordController;
   late TextEditingController _confirmPasswordController;
-  bool _isGoogleLoading = false;
 
   void _sanitizePhoneInput(String value) {
     final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
@@ -108,26 +105,6 @@ class _SignupScreenState extends State<SignupScreen> {
       return false;
     }
     return true;
-  }
-
-  Future<void> _handleGoogleSignIn() async {
-    setState(() => _isGoogleLoading = true);
-    try {
-      final user = await FirebaseAuthService.instance.signInWithGoogle();
-      if (!mounted) return;
-      if (user == null) {
-        _showError('Google সাইন-ইন বাতিল হয়েছে।');
-        return;
-      }
-      context.go('/dashboard');
-    } catch (_) {
-      if (!mounted) return;
-      _showError('Google সাইন-ইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
-    } finally {
-      if (mounted) {
-        setState(() => _isGoogleLoading = false);
-      }
-    }
   }
 
   @override
@@ -232,20 +209,20 @@ class _SignupScreenState extends State<SignupScreen> {
                             delay: const Duration(milliseconds: 560),
                             child: GoldenButton(
                               text: AppStrings.createAccount,
-                              onPressed: () {
+                              onPressed: () async {
                                 if (!_validateSignup()) return;
                                 final phone = _normalizePhone(_phoneController.text.trim());
+                                await FirebaseAuthService.instance.stageSignup(
+                                  name: _nameController.text.trim(),
+                                  phone: phone,
+                                  password: _passwordController.text,
+                                  acceptAnyOtp: true,
+                                );
                                 context.go('/otp?phone=$phone');
                               },
                             ),
                           ),
                           const SizedBox(height: 16),
-                          _buildDivider(),
-                          const SizedBox(height: 12),
-                          FadeInUp(
-                            delay: const Duration(milliseconds: 660),
-                            child: _buildGoogleSignUp(),
-                          ),
                           const SizedBox(height: 20),
                           FadeInUp(
                             delay: const Duration(milliseconds: 760),
@@ -259,60 +236,6 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        Expanded(
-          child: Divider(
-            color: AppColors.textMuted.withValues(alpha: 0.2),
-            thickness: 1,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            AppStrings.or,
-            style: AppTextStyles.hindSiliguri(
-              fontSize: 11,
-              color: AppColors.textMuted,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Divider(
-            color: AppColors.textMuted.withValues(alpha: 0.2),
-            thickness: 1,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGoogleSignUp() {
-    return OutlinedButton.icon(
-      onPressed: _isGoogleLoading ? null : _handleGoogleSignIn,
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(double.infinity, 50),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-      ),
-      icon: SvgPicture.asset(
-        AppAssets.googleLogo,
-        width: 18,
-        height: 18,
-      ),
-      label: Text(
-        AppStrings.signUpWithGoogle,
-        style: AppTextStyles.hindSiliguri(
-          fontSize: 12,
-          color: Colors.white.withValues(alpha: 0.8),
         ),
       ),
     );

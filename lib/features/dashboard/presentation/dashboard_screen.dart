@@ -13,6 +13,7 @@ import 'package:swarnakar/core/utils/date_formatter.dart';
 import 'package:swarnakar/features/gold_price/providers/gold_price_provider.dart';
 import 'package:swarnakar/features/silver_price/providers/silver_price_provider.dart';
 import 'package:swarnakar/shared/models/price_model.dart';
+import 'package:swarnakar/shared/models/user_model.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -23,7 +24,10 @@ class DashboardScreen extends ConsumerWidget {
     final silverPriceAsync = ref.watch(dashboardSilverPriceProvider);
     final goldPricesAsync = ref.watch(goldPricesProvider);
     final silverPricesAsync = ref.watch(silverPricesProvider);
-    final isSubscribed = ref.watch(isSubscribedProvider);
+    final profileAsync = ref.watch(userProfileProvider);
+    final fallbackSubscribed = ref.watch(isSubscribedProvider);
+    final profile = profileAsync.asData?.value;
+    final isSubscribed = _hasActiveSubscription(profile) || fallbackSubscribed;
     final updateText = _buildUpdatedAtText(goldPricesAsync, silverPricesAsync);
 
     final goldPriceText = goldPriceAsync.when(
@@ -390,5 +394,12 @@ class DashboardScreen extends ConsumerWidget {
       data: (prices) => prices.isNotEmpty ? prices.first.updatedAt : null,
       orElse: () => null,
     );
+  }
+
+  bool _hasActiveSubscription(UserModel? profile) {
+    if (profile == null || !profile.isSubscribed) return false;
+    final expiresAt = profile.subExpires;
+    if (expiresAt == null) return true;
+    return expiresAt.isAfter(DateTime.now());
   }
 }

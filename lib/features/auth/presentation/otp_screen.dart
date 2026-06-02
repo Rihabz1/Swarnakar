@@ -5,6 +5,7 @@ import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
+import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
 import 'dart:async';
 
 class OtpScreen extends StatefulWidget {
@@ -26,6 +27,8 @@ class _OtpScreenState extends State<OtpScreen> {
   late List<FocusNode> _otpFocusNodes;
   late Timer _timer;
   int _secondsRemaining = 42;
+  bool _isSubmitting = false;
+  bool _isResending = false;
 
   @override
   void initState() {
@@ -108,19 +111,63 @@ class _OtpScreenState extends State<OtpScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _handleVerify() {
+  Future<void> _handleVerify() async {
     final code = _otpCode();
-    if (code.length != 6 || code.contains(RegExp(r'[^0-9]'))) {
-      _showMessage('৬ সংখ্যার সঠিক OTP দিন।');
-      return;
-    }
-
     if (widget.flow == 'reset') {
-      context.go('/reset-password?phone=${widget.phone}');
-      return;
+      if (code.length != 6 || code.contains(RegExp(r'[^0-9]'))) {
+        _showMessage('৬ সংখ্যার সঠিক OTP দিন।');
+        return;
+      }
+    } else {
+      if (code.isEmpty) {
+        _showMessage('OTP দিন।');
+        return;
+      }
     }
 
-    context.go('/login');
+    setState(() => _isSubmitting = true);
+    try {
+      if (widget.flow == 'reset') {
+        if (!mounted) return;
+        context.go('/reset-password?phone=${widget.phone}&otp=$code');
+      } else {
+        await FirebaseAuthService.instance.completeSignupWithOtp(otp: code);
+        if (!mounted) return;
+        context.go('/dashboard');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is AuthException
+          ? (e.message ?? 'সাইন আপ ব্যর্থ হয়েছে। আবার চেষ্টা করুন।')
+          : 'সাইন আপ ব্যর্থ হয়েছে: $e';
+      _showMessage(message);
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  Future<void> _resendOtp() async {
+    if (_isResending) return;
+    setState(() => _isResending = true);
+    try {
+      if (widget.flow == 'reset') {
+        await FirebaseAuthService.instance.requestPasswordResetOtp(widget.phone);
+        if (!mounted) return;
+        _showMessage('OTP আবার পাঠানো হয়েছে।');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is AuthException
+          ? (e.message ?? 'OTP পাঠানো যায়নি। আবার চেষ্টা করুন।')
+          : 'OTP পাঠানো যায়নি। আবার চেষ্টা করুন।';
+      _showMessage(message);
+    } finally {
+      if (mounted) {
+        setState(() => _isResending = false);
+      }
+    }
   }
 
   @override
@@ -220,6 +267,7 @@ class _OtpScreenState extends State<OtpScreen> {
                             delay: const Duration(milliseconds: 520),
                             child: GoldenButton(
                               text: widget.flow == 'reset' ? 'OTP যাচাই করুন' : AppStrings.verify,
+                              isLoading: _isSubmitting,
                               onPressed: _handleVerify,
                             ),
                           ),
@@ -328,6 +376,9 @@ class _OtpScreenState extends State<OtpScreen> {
                     _secondsRemaining = 42;
                   });
                   _startTimer();
+                  if (widget.flow == 'reset') {
+                    _resendOtp();
+                  }
                 },
                 child: Text(
                   AppStrings.resendCode,

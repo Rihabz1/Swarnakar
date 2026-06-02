@@ -8,8 +8,6 @@ import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
 import 'package:swarnakar/core/providers/core_providers.dart';
-import 'package:swarnakar/core/constants/app_assets.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -79,6 +77,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
   }
 
+  Future<void> _handlePhoneLogin() async {
+    if (!_validateLogin()) return;
+    ref.read(isLoadingProvider.notifier).state = true;
+    try {
+      final phone = _normalizePhone(_phoneController.text.trim());
+      await FirebaseAuthService.instance.signInWithPhonePassword(
+        phone: phone,
+        password: _passwordController.text,
+      );
+      if (!mounted) return;
+      context.go('/dashboard');
+    } catch (e) {
+      if (!mounted) return;
+        final message = e is AuthException
+          ? (e.message ?? 'লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।')
+          : 'লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।';
+      _showError(message);
+    } finally {
+      if (mounted) {
+        ref.read(isLoadingProvider.notifier).state = false;
+      }
+    }
+  }
+
   bool _validateLogin() {
     final phone = _normalizePhone(_phoneController.text.trim());
     final password = _passwordController.text;
@@ -101,26 +123,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return false;
     }
     return true;
-  }
-
-  Future<void> _handleGoogleSignIn() async {
-    ref.read(isLoadingProvider.notifier).state = true;
-    try {
-      final user = await FirebaseAuthService.instance.signInWithGoogle();
-      if (!mounted) return;
-      if (user == null) {
-        _showError('Google সাইন-ইন বাতিল হয়েছে।');
-        return;
-      }
-      context.go('/dashboard');
-    } catch (_) {
-      if (!mounted) return;
-      _showError('Google সাইন-ইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
-    } finally {
-      if (mounted) {
-        ref.read(isLoadingProvider.notifier).state = false;
-      }
-    }
   }
 
   @override
@@ -209,18 +211,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: GoldenButton(
                           text: AppStrings.signIn,
                           isLoading: isLoading,
-                          onPressed: () {
-                            if (!_validateLogin()) return;
-                            context.go('/dashboard');
-                          },
+                          onPressed: _handlePhoneLogin,
                         ),
-                      ),
-                      const SizedBox(height: 18),
-                      _buildDivider(),
-                      const SizedBox(height: 14),
-                      FadeInUp(
-                        delay: const Duration(milliseconds: 650),
-                        child: _buildGoogleSignIn(),
                       ),
                       const SizedBox(height: 24),
                       FadeInUp(
@@ -282,60 +274,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        Expanded(
-          child: Divider(
-            color: AppColors.textMuted.withValues(alpha: 0.2),
-            thickness: 1,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            AppStrings.or,
-            style: AppTextStyles.hindSiliguri(
-              fontSize: 11,
-              color: AppColors.textMuted,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Divider(
-            color: AppColors.textMuted.withValues(alpha: 0.2),
-            thickness: 1,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGoogleSignIn() {
-    return OutlinedButton.icon(
-      onPressed: _handleGoogleSignIn,
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(double.infinity, 50),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-      ),
-      icon: SvgPicture.asset(
-        AppAssets.googleLogo,
-        width: 18,
-        height: 18,
-      ),
-      label: Text(
-        AppStrings.signUpWithGoogle,
-        style: AppTextStyles.hindSiliguri(
-          fontSize: 12,
-          color: Colors.white.withValues(alpha: 0.8),
-        ),
       ),
     );
   }

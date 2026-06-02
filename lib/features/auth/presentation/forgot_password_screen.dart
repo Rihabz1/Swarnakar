@@ -5,6 +5,7 @@ import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
+import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -15,6 +16,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   late final TextEditingController _phoneController;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -64,7 +66,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _sendOtp() {
+  Future<void> _openReset() async {
     final phone = _normalizePhone(_phoneController.text.trim());
 
     if (phone.isEmpty || !_isValidBdMobile(phone)) {
@@ -72,7 +74,23 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       return;
     }
 
-    context.go('/otp?phone=$phone&flow=reset');
+    setState(() => _isLoading = true);
+    try {
+      final otp = await FirebaseAuthService.instance.requestPasswordResetOtp(phone);
+      if (!mounted) return;
+      _showMessage('ডেমো OTP: $otp');
+      context.go('/otp?phone=$phone&flow=reset');
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is AuthException
+          ? (e.message ?? 'OTP পাঠানো যায়নি। আবার চেষ্টা করুন।')
+          : 'OTP পাঠানো যায়নি। আবার চেষ্টা করুন।';
+      _showMessage(message);
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -118,7 +136,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     FadeInUp(
                       delay: const Duration(milliseconds: 120),
                       child: Text(
-                        'মোবাইল নম্বর দিন, আমরা OTP পাঠাবো',
+                        'মোবাইল নম্বর দিন, নতুন পাসওয়ার্ড সেট করুন',
                         style: AppTextStyles.hindSiliguri(
                           fontSize: 12,
                           color: AppColors.white.withValues(alpha: 0.88),
@@ -142,8 +160,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     FadeInUp(
                       delay: const Duration(milliseconds: 320),
                       child: GoldenButton(
-                        text: 'OTP পাঠান',
-                        onPressed: _sendOtp,
+                        text: 'ওটিপি পাঠান',
+                        isLoading: _isLoading,
+                        onPressed: () => _openReset(),
                       ),
                     ),
                     const SizedBox(height: 8),

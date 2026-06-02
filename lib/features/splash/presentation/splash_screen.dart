@@ -5,6 +5,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
+import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat();
-    _navigateToLogin();
+    _navigateNext();
   }
 
   @override
@@ -32,12 +33,24 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
-  void _navigateToLogin() {
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        context.go('/login');
-      }
-    });
+  Future<void> _navigateNext() async {
+    await Future.delayed(const Duration(seconds: 3));
+    if (!mounted) return;
+    final restored = await FirebaseAuthService.instance.restoreSession();
+    if (!mounted) return;
+    if (!restored) {
+      context.go('/login');
+      return;
+    }
+    final profile = await FirebaseAuthService.instance.getCurrentUserProfile();
+    if (!mounted) return;
+    if (profile == null) {
+      await FirebaseAuthService.instance.clearSession();
+      if (!mounted) return;
+      context.go('/login');
+      return;
+    }
+    context.go('/dashboard');
   }
 
   @override

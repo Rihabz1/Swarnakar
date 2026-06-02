@@ -1,154 +1,544 @@
-import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:bcrypt/bcrypt.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:swarnakar/shared/models/user_model.dart';
+import 'dart:math';
+import 'dart:convert';
 
 class FirebaseAuthService {
   FirebaseAuthService._();
 
   static final FirebaseAuthService instance = FirebaseAuthService._();
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static const String _sessionPhoneKey = 'session_phone';
+  static const String _pendingSignupKey = 'pending_signup';
 
-  String toBdE164(String localPhone) {
-    final digits = localPhone.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.startsWith('01') && digits.length == 11) {
-      return '+880${digits.substring(1)}';
-    }
-    if (digits.startsWith('8801') && digits.length == 13) {
-      return '+$digits';
-    }
-    if (digits.startsWith('880') && digits.length == 13) {
-      return '+$digits';
-    }
-    throw FirebaseAuthException(
-      code: 'invalid-phone-number',
-      message: 'সঠিক মোবাইল নম্বর দিন।',
-    );
+  _PendingSignup? _pendingSignup;
+  String? _sessionPhone;
+
+  Future<bool> restoreSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final phone = prefs.getString(_sessionPhoneKey);
+    if (phone == null || phone.isEmpty) return false;
+    _sessionPhone = phone;
+    return true;
   }
 
-  Future<void> sendOtp({
-    required String phoneE164,
-    required void Function(String verificationId, int? resendToken) onCodeSent,
-    required void Function(String message) onFailed,
-    int? forceResendingToken,
-    void Function()? onAutoVerified,
+  Future<void> clearSession() async {
+    _sessionPhone = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_sessionPhoneKey);
+  }
+
+  Future<void> stageSignup({
+    required String name,
+    required String phone,
+    required String password,
+    bool acceptAnyOtp = true,
   }) async {
-    final completer = Completer<void>();
-
-    await _auth.verifyPhoneNumber(
-      phoneNumber: phoneE164,
-      forceResendingToken: forceResendingToken,
-      timeout: const Duration(seconds: 60),
-      verificationCompleted: (PhoneAuthCredential credential) async {
-        try {
-          final credentialResult = await _auth.signInWithCredential(credential);
-          await _saveUserProfileSafely(
-            credentialResult.user,
-            phone: credentialResult.user?.phoneNumber,
-          );
-          onAutoVerified?.call();
-        } catch (_) {
-          // Ignore auto-verification errors and allow manual OTP fallback.
-        }
-      },
-      verificationFailed: (FirebaseAuthException e) {
-        onFailed(_friendlyMessage(e));
-        if (!completer.isCompleted) {
-          completer.complete();
-        }
-      },
-      codeSent: (String verificationId, int? resendToken) {
-        onCodeSent(verificationId, resendToken);
-        if (!completer.isCompleted) {
-          completer.complete();
-        }
-      },
-      codeAutoRetrievalTimeout: (_) {
-        if (!completer.isCompleted) {
-          completer.complete();
-        }
-      },
+    _pendingSignup = _PendingSignup(
+      name: name,
+      phone: phone,
+      password: password,
+      acceptAnyOtp: acceptAnyOtp,
     );
-
-    await completer.future;
+    await _persistPendingSignup(_pendingSignup!);
   }
 
-  Future<User?> verifyOtp({
-    required String verificationId,
-    required String otp,
-    String? name,
-    String? phone,
-  }) async {
-    final credential = PhoneAuthProvider.credential(
-      verificationId: verificationId,
-      smsCode: otp,
-    );
-    final result = await _auth.signInWithCredential(credential);
-    await _saveUserProfileSafely(result.user, name: name, phone: phone);
-    return result.user;
+  Future<void> clearPendingSignup() async {
+    _pendingSignup = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_pendingSignupKey);
   }
 
-  Future<User?> signInWithGoogle() async {
-    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-    if (googleUser == null) {
-      return null;
+
+  Future<UserModel> completeSignupWithOtp({required String otp}) async {
+    var pending = _pendingSignup;
+    if (pending == null) {
+      pending = await _loadPendingSignup();
+      _pendingSignup = pending;
+    }
+    if (pending == null) {
+      throw AuthException(
+        code: 'missing-signup',
+        message: 'সাইন আপ তথ্য পাওয়া যায়নি। আবার চেষ্টা করুন।',
+      );
     }
 
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
+    // Demo OTP will proceed and accept anything
+    if (pending.acceptAnyOtp || otp.isNotEmpty) {
+      return registerWithPhonePassword(
+        name: pending.name,
+        phone: pending.phone,
+        password: pending.password,
+      );
+    }
 
-    final result = await _auth.signInWithCredential(credential);
-    await _saveUserProfileSafely(result.user);
-    return result.user;
+    throw AuthException(
+      code: 'invalid-otp',
+      message: 'ভুল OTP প্রদান করা হয়েছে। আবার চেষ্টা করুন।',
+    );
   }
 
-  Future<void> _saveUserProfileSafely(User? user, {String? name, String? phone}) async {
+  Future<UserModel> registerWithPhonePassword({
+    required String name,
+    required String phone,
+    required String password,
+  }) async {
+    final normalizedPhone = _normalizeLocalPhone(phone);
+    if (!_isValidBdMobile(normalizedPhone)) {
+      throw AuthException(
+        code: 'invalid-phone-number',
+        message: 'সঠিক মোবাইল নম্বর দিন।',
+      );
+    }
+
+    final existing = await _findUserDocByPhone(normalizedPhone);
+    if (existing != null) {
+      throw AuthException(
+        code: 'phone-already-in-use',
+        message: 'এই মোবাইল নম্বরে একটি অ্যাকাউন্ট আছে। লগ ইন করুন।',
+      );
+    }
+
+    final passwordHash = _hashPassword(password);
     try {
-      await _saveUserProfile(user, name: name, phone: phone)
-          .timeout(const Duration(seconds: 5));
-    } catch (_) {
-      // Best-effort profile sync; auth should not fail if Firestore is unavailable.
-    }
-  }
-
-  Future<void> _saveUserProfile(User? user, {String? name, String? phone}) async {
-    if (user == null) return;
-
-    final now = FieldValue.serverTimestamp();
-    await _firestore.collection('users').doc(user.uid).set(
-      {
-        'uid': user.uid,
-        'name': name ?? user.displayName ?? '',
-        'email': user.email ?? '',
-        'phone': phone ?? user.phoneNumber ?? '',
-        'provider': user.providerData.isNotEmpty ? user.providerData.first.providerId : 'unknown',
+      final docRef = _firestore.collection('users').doc();
+      final now = FieldValue.serverTimestamp();
+      final payload = <String, dynamic>{
+        'uid': docRef.id,
+        'name': name,
+        'email': '',
+        'phone': normalizedPhone,
+        'provider': 'local',
         'isSubscribed': false,
+        'plan': '',
+        'subExpires': null,
         'lastLoginAt': now,
         'updatedAt': now,
         'createdAt': now,
+        'passwordHash': passwordHash,
+        'passwordUpdatedAt': now,
+      };
+      await docRef.set(payload);
+      await _persistSessionPhone(normalizedPhone);
+      
+      // Clear pending signup only if successful
+      await clearPendingSignup();
+      
+      return UserModel(
+        uid: docRef.id,
+        name: name,
+        email: '',
+        phone: normalizedPhone,
+        shopName: '',
+        address: '',
+        isSubscribed: false,
+        plan: '',
+        subExpires: null,
+      );
+    } catch (e) {
+      throw AuthException(
+        code: 'internal-error',
+        message: 'অ্যাকাউন্ট তৈরি করা যায়নি: $e',
+      );
+    }
+  }
+
+  Future<UserModel> signInWithPhonePassword({
+    required String phone,
+    required String password,
+  }) async {
+    try {
+      final normalizedPhone = _normalizeLocalPhone(phone);
+      if (!_isValidBdMobile(normalizedPhone)) {
+        throw AuthException(
+          code: 'invalid-phone-number',
+          message: 'সঠিক মোবাইল নম্বর দিন।',
+        );
+      }
+
+      final doc = await _findUserDocByPhone(normalizedPhone);
+      if (doc == null) {
+        throw AuthException(
+          code: 'user-not-found',
+          message: 'এই নম্বরে অ্যাকাউন্ট নেই। সাইন আপ করুন।',
+        );
+      }
+
+      final data = doc.data() ?? <String, dynamic>{};
+      final passwordHash = (data['passwordHash'] as String?) ?? '';
+      if (passwordHash.isEmpty || !BCrypt.checkpw(password, passwordHash)) {
+        throw AuthException(
+          code: 'wrong-password',
+          message: 'পাসওয়ার্ড সঠিক নয়। আবার চেষ্টা করুন।',
+        );
+      }
+
+      await _persistSessionPhone(normalizedPhone);
+      return _userModelFromDoc(doc);
+    } on AuthException catch (e) {
+      throw AuthException(
+        code: e.code,
+        message: _friendlyLoginMessage(e),
+      );
+    }
+  }
+
+  Future<void> updatePasswordHashForPhone({
+    required String phone,
+    required String newPassword,
+  }) async {
+    final normalizedPhone = _normalizeLocalPhone(phone);
+    if (!_isValidBdMobile(normalizedPhone)) {
+      throw AuthException(
+        code: 'invalid-phone-number',
+        message: 'সঠিক মোবাইল নম্বর দিন।',
+      );
+    }
+
+    final targetDoc = await _findUserDocByPhone(normalizedPhone);
+
+    if (targetDoc == null) {
+      throw AuthException(
+        code: 'user-not-found',
+        message: 'এই নম্বরে অ্যাকাউন্ট নেই। সাইন আপ করুন।',
+      );
+    }
+
+    final passwordHash = _hashPassword(newPassword);
+    await targetDoc.reference.set(
+      {
+        'passwordHash': passwordHash,
+        'passwordUpdatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
       },
       SetOptions(merge: true),
     );
   }
 
-  String _friendlyMessage(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'invalid-phone-number':
-        return 'মোবাইল নম্বর সঠিক নয়।';
-      case 'too-many-requests':
-        return 'অনেকবার চেষ্টা হয়েছে। কিছুক্ষণ পরে আবার চেষ্টা করুন।';
-      case 'session-expired':
-        return 'OTP এর সময়সীমা শেষ। নতুন OTP নিন।';
-      case 'invalid-verification-code':
-        return 'OTP সঠিক নয়। আবার দিন।';
-      default:
-        return e.message ?? 'অথেনটিকেশন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।';
+
+  Future<void> changePasswordForCurrentUser({
+    required String currentPassword,
+    required String newPassword,
+    String? phone,
+  }) async {
+    try {
+      final lookupPhone = phone ?? _sessionPhone ?? '';
+      if (lookupPhone.isEmpty) {
+        throw AuthException(
+          code: 'not-authenticated',
+          message: 'লগইন পাওয়া যায়নি। আবার লগইন করুন।',
+        );
+      }
+      final normalizedPhone = _normalizeLocalPhone(lookupPhone);
+      if (!_isValidBdMobile(normalizedPhone)) {
+        throw AuthException(
+          code: 'invalid-phone-number',
+          message: 'সঠিক মোবাইল নম্বর দিন।',
+        );
+      }
+      final targetDoc = await _findUserDocByPhone(normalizedPhone);
+
+      if (targetDoc == null) {
+        throw AuthException(
+          code: 'user-not-found',
+          message: 'এই নম্বরে অ্যাকাউন্ট নেই। সাইন আপ করুন।',
+        );
+      }
+
+      final data = targetDoc.data() ?? <String, dynamic>{};
+      final passwordHash = (data['passwordHash'] as String?) ?? '';
+      if (passwordHash.isEmpty || !BCrypt.checkpw(currentPassword, passwordHash)) {
+        throw AuthException(
+          code: 'wrong-password',
+          message: 'বর্তমান পাসওয়ার্ড সঠিক নয়।',
+        );
+      }
+
+      final updatedHash = _hashPassword(newPassword);
+      await targetDoc.reference.set(
+        {
+          'passwordHash': updatedHash,
+          'passwordUpdatedAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+    } on AuthException catch (e) {
+      throw AuthException(
+        code: e.code,
+        message: _friendlyChangePasswordMessage(e),
+      );
     }
   }
+
+  Future<String> requestPasswordResetOtp(String phone) async {
+    final normalizedPhone = _normalizeLocalPhone(phone);
+    if (!_isValidBdMobile(normalizedPhone)) {
+      throw AuthException(
+        code: 'invalid-phone-number',
+        message: 'সঠিক মোবাইল নম্বর দিন।',
+      );
+    }
+
+    final doc = await _findUserDocByPhone(normalizedPhone);
+    if (doc == null) {
+      throw AuthException(
+        code: 'user-not-found',
+        message: 'এই নম্বরে অ্যাকাউন্ট নেই।',
+      );
+    }
+
+    final mockOtp = _generateOtp();
+    final expiresAt = DateTime.now().add(const Duration(minutes: 5));
+    await doc.reference.update({
+      'resetOtp': mockOtp,
+      'otpCreatedAt': FieldValue.serverTimestamp(),
+      'otpExpiresAt': Timestamp.fromDate(expiresAt),
+    });
+
+    return mockOtp;
+  }
+
+  Future<void> resetPasswordWithOtp({
+    required String phone,
+    required String otp,
+    required String newPassword,
+  }) async {
+    final normalizedPhone = _normalizeLocalPhone(phone);
+    if (!_isValidBdMobile(normalizedPhone)) {
+      throw AuthException(
+        code: 'invalid-phone-number',
+        message: 'সঠিক মোবাইল নম্বর দিন।',
+      );
+    }
+
+    final doc = await _findUserDocByPhone(normalizedPhone);
+    if (doc == null) {
+      throw AuthException(
+        code: 'user-not-found',
+        message: 'এই নম্বরে অ্যাকাউন্ট নেই।',
+      );
+    }
+
+    final userData = doc.data() ?? <String, dynamic>{};
+    final storedOtp = (userData['resetOtp'] as String?) ?? '';
+    if (storedOtp.isEmpty) {
+      throw AuthException(
+        code: 'otp-missing',
+        message: 'OTP পাওয়া যায়নি। আবার OTP পাঠান।',
+      );
+    }
+
+    final expiresAt = userData['otpExpiresAt'];
+    if (expiresAt is Timestamp && expiresAt.toDate().isBefore(DateTime.now())) {
+      await doc.reference.update({
+        'resetOtp': FieldValue.delete(),
+        'otpCreatedAt': FieldValue.delete(),
+        'otpExpiresAt': FieldValue.delete(),
+      });
+      throw AuthException(
+        code: 'otp-expired',
+        message: 'OTP এর মেয়াদ শেষ হয়েছে। আবার OTP পাঠান।',
+      );
+    }
+
+    if (storedOtp != otp.trim()) {
+      throw AuthException(
+        code: 'invalid-otp',
+        message: 'ভুল OTP প্রদান করা হয়েছে।',
+      );
+    }
+
+    final passwordHash = _hashPassword(newPassword);
+    await doc.reference.update({
+      'passwordHash': passwordHash,
+      'passwordUpdatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+      'resetOtp': FieldValue.delete(),
+      'otpCreatedAt': FieldValue.delete(),
+      'otpExpiresAt': FieldValue.delete(),
+    });
+  }
+
+  Future<UserModel?> getCurrentUserProfile() async {
+    final phone = _sessionPhone;
+    if (phone == null || phone.isEmpty) return null;
+    final doc = await _findUserDocByPhone(phone);
+    if (doc == null) return null;
+    return _userModelFromDoc(doc);
+  }
+
+  Future<UserModel> updateUserProfile({
+    required String name,
+    required String shopName,
+    required String address,
+  }) async {
+    final phone = _sessionPhone;
+    if (phone == null || phone.isEmpty) {
+      throw AuthException(
+        code: 'not-authenticated',
+        message: 'লগইন পাওয়া যায়নি। আবার লগইন করুন।',
+      );
+    }
+    final doc = await _findUserDocByPhone(phone);
+    if (doc == null) {
+      throw AuthException(
+        code: 'user-not-found',
+        message: 'এই নম্বরে অ্যাকাউন্ট নেই। সাইন আপ করুন।',
+      );
+    }
+    final payload = {
+      'name': name,
+      'shopName': shopName,
+      'address': address,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+    await doc.reference.set(payload, SetOptions(merge: true));
+    final updatedDoc = await doc.reference.get();
+    return _userModelFromDoc(updatedDoc);
+  }
+
+  Future<DocumentSnapshot<Map<String, dynamic>>?> _findUserDocByPhone(
+    String normalizedPhone,
+  ) async {
+    if (!_isValidBdMobile(normalizedPhone)) {
+      return null;
+    }
+    final snapshot = await _firestore
+        .collection('users')
+        .where('phone', isEqualTo: normalizedPhone)
+        .limit(1)
+        .get();
+    if (snapshot.docs.isNotEmpty) {
+      return snapshot.docs.first;
+    }
+    return null;
+  }
+
+  UserModel _userModelFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data() ?? <String, dynamic>{};
+    final subExpires = data['subExpires'];
+    return UserModel(
+      uid: (data['uid'] as String?) ?? doc.id,
+      name: (data['name'] as String?) ?? '',
+      email: (data['email'] as String?) ?? '',
+      phone: (data['phone'] as String?) ?? '',
+      shopName: (data['shopName'] as String?) ?? '',
+      address: (data['address'] as String?) ?? '',
+      isSubscribed: (data['isSubscribed'] as bool?) ?? false,
+      plan: (data['plan'] as String?) ?? '',
+      subExpires: subExpires is Timestamp ? subExpires.toDate() : null,
+    );
+  }
+
+  String _normalizeLocalPhone(String value) {
+    return value.replaceAll(RegExp(r'[^0-9]'), '');
+  }
+
+  bool _isValidBdMobile(String phone) {
+    return RegExp(r'^01[3-9]\d{8}$').hasMatch(phone);
+  }
+
+  Future<void> _persistSessionPhone(String phone) async {
+    _sessionPhone = phone;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_sessionPhoneKey, phone);
+  }
+
+  Future<void> _persistPendingSignup(_PendingSignup pending) async {
+    final prefs = await SharedPreferences.getInstance();
+    final payload = <String, dynamic>{
+      'name': pending.name,
+      'phone': pending.phone,
+      'password': pending.password,
+      'acceptAnyOtp': pending.acceptAnyOtp,
+    };
+    await prefs.setString(_pendingSignupKey, jsonEncode(payload));
+  }
+
+  Future<_PendingSignup?> _loadPendingSignup() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_pendingSignupKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final payload = jsonDecode(raw);
+      if (payload is! Map) return null;
+      return _PendingSignup(
+        name: (payload['name'] as String?) ?? '',
+        phone: (payload['phone'] as String?) ?? '',
+        password: (payload['password'] as String?) ?? '',
+        acceptAnyOtp: (payload['acceptAnyOtp'] as bool?) ?? true,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _hashPassword(String password) {
+    return BCrypt.hashpw(password, BCrypt.gensalt());
+  }
+
+  String _generateOtp() {
+    final value = Random.secure().nextInt(1000000);
+    return value.toString().padLeft(6, '0');
+  }
+
+  String _friendlyLoginMessage(AuthException e) {
+    switch (e.code) {
+      case 'user-not-found':
+        return 'এই নম্বরে অ্যাকাউন্ট নেই। সাইন আপ করুন।';
+      case 'wrong-password':
+        return 'পাসওয়ার্ড সঠিক নয়। আবার চেষ্টা করুন।';
+      case 'invalid-email':
+        return 'মোবাইল নম্বর সঠিক নয়।';
+      case 'user-disabled':
+        return 'এই অ্যাকাউন্ট নিষ্ক্রিয় করা হয়েছে।';
+      default:
+        return e.message ?? 'লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।';
+    }
+  }
+
+  String _friendlyChangePasswordMessage(AuthException e) {
+    switch (e.code) {
+      case 'wrong-password':
+        return 'বর্তমান পাসওয়ার্ড সঠিক নয়।';
+      case 'weak-password':
+        return 'পাসওয়ার্ড আরও শক্তিশালী দিন।';
+      case 'requires-recent-login':
+        return 'নিরাপত্তার জন্য আবার লগইন করুন।';
+      case 'internal':
+      case 'internal-error':
+      case 'unknown':
+        return 'পাসওয়ার্ড আপডেট ব্যর্থ হয়েছে। আবার চেষ্টা করুন।';
+      default:
+        return e.message ?? 'পাসওয়ার্ড আপডেট ব্যর্থ হয়েছে।';
+    }
+  }
+}
+
+class AuthException implements Exception {
+  final String code;
+  final String? message;
+
+  AuthException({
+    required this.code,
+    this.message,
+  });
+}
+
+class _PendingSignup {
+  final String name;
+  final String phone;
+  final String password;
+  final bool acceptAnyOtp;
+
+  const _PendingSignup({
+    required this.name,
+    required this.phone,
+    required this.password,
+    required this.acceptAnyOtp,
+  });
 }

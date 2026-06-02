@@ -52,7 +52,8 @@ final GoRouter appRouter = GoRouter(
       name: 'reset-password',
       builder: (context, state) {
         final phone = state.uri.queryParameters['phone'] ?? state.uri.queryParameters['email'] ?? '';
-        return ResetPasswordScreen(phone: phone);
+        final otp = state.uri.queryParameters['otp'] ?? '';
+        return ResetPasswordScreen(phone: phone, otp: otp);
       },
     ),
     GoRoute(

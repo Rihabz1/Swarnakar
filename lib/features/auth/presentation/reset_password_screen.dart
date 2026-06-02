@@ -5,11 +5,13 @@ import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
+import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String phone;
+  final String otp;
 
-  const ResetPasswordScreen({super.key, required this.phone});
+  const ResetPasswordScreen({super.key, required this.phone, required this.otp});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -18,6 +20,7 @@ class ResetPasswordScreen extends StatefulWidget {
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   late final TextEditingController _passwordController;
   late final TextEditingController _confirmPasswordController;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -39,11 +42,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  bool _validateAndSubmit() {
+  bool _validateInputs() {
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
     final whitespaceRegex = RegExp(r'\s');
-
     if (password.isEmpty || confirmPassword.isEmpty) {
       _showMessage('নতুন পাসওয়ার্ড ও কনফার্ম পাসওয়ার্ড দিন।');
       return false;
@@ -60,10 +62,37 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       _showMessage('পাসওয়ার্ড মিলছে না।');
       return false;
     }
-
-    _showMessage('পাসওয়ার্ড সফলভাবে আপডেট হয়েছে।');
-    context.go('/login');
     return true;
+  }
+
+  Future<void> _submitReset() async {
+    if (!_validateInputs()) return;
+    if (widget.otp.trim().isEmpty) {
+      _showMessage('OTP পাওয়া যায়নি। আবার OTP যাচাই করুন।');
+      return;
+    }
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseAuthService.instance.resetPasswordWithOtp(
+        phone: widget.phone,
+        otp: widget.otp,
+        newPassword: _passwordController.text,
+      );
+      if (!mounted) return;
+      _showMessage('পাসওয়ার্ড সফলভাবে আপডেট হয়েছে।');
+      context.go('/login');
+    } catch (e) {
+      if (!mounted) return;
+      if (e is AuthException) {
+        _showMessage(e.message ?? 'পাসওয়ার্ড রিসেট ব্যর্থ হয়েছে।');
+      } else {
+        _showMessage('পাসওয়ার্ড রিসেট ব্যর্থ হয়েছে।');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -109,7 +138,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     FadeInUp(
                       delay: const Duration(milliseconds: 120),
                       child: Text(
-                        widget.phone,
+                        'নতুন পাসওয়ার্ড সেট করুন',
                         style: AppTextStyles.hindSiliguri(
                           fontSize: 12,
                           color: AppColors.white.withValues(alpha: 0.88),
@@ -129,7 +158,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                     const SizedBox(height: 12),
                     FadeInUp(
-                      delay: const Duration(milliseconds: 320),
+                      delay: const Duration(milliseconds: 300),
                       child: GoldenInputField(
                         hint: 'পাসওয়ার্ড নিশ্চিত করুন',
                         icon: Icons.lock_outline,
@@ -140,10 +169,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                     const SizedBox(height: 18),
                     FadeInUp(
-                      delay: const Duration(milliseconds: 420),
+                      delay: const Duration(milliseconds: 380),
                       child: GoldenButton(
                         text: 'পাসওয়ার্ড আপডেট করুন',
-                        onPressed: _validateAndSubmit,
+                        isLoading: _isLoading,
+                        onPressed: _submitReset,
                       ),
                     ),
                     const SizedBox(height: 8),
