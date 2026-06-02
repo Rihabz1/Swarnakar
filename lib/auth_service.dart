@@ -37,7 +37,7 @@ class AuthService {
   Future<void> resetPasswordWithPhone(
       String phone, String otp, String passwordHash) async {
     phone = phone.trim();
-    otp = otp.trim();
+    otp = otp.trim().replaceAll(RegExp(r'\s+'), '');
     passwordHash = passwordHash.trim();
 
     if (phone.isEmpty) {
@@ -65,7 +65,8 @@ class AuthService {
     final userData = doc.data();
 
     // Verify OTP
-    if (userData['resetOtp'] != otp) {
+    final storedOtp = userData['resetOtp'];
+    if (storedOtp == null || storedOtp.toString() != otp) {
       throw Exception('ভুল OTP প্রদান করা হয়েছে। (Invalid OTP)');
     }
 
