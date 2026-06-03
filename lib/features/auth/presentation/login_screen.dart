@@ -87,6 +87,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         password: _passwordController.text,
       );
       if (!mounted) return;
+      ref.invalidate(userProfileProvider);
       context.go('/dashboard');
     } catch (e) {
       if (!mounted) return;

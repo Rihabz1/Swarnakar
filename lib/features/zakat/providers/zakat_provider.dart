@@ -4,11 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 final zakatNisabProvider = StreamProvider.autoDispose<Map<String, dynamic>>((ref) {
   return FirebaseFirestore.instance
       .collection('zakat')
-      .limit(1)
+      .doc('nisab')
       .snapshots()
       .map((snapshot) {
-    if (snapshot.docs.isNotEmpty) {
-      return snapshot.docs.first.data();
+    if (snapshot.exists && snapshot.data() != null) {
+      return snapshot.data()!;
     }
     return {
       'gold_nisab': 895200.0,

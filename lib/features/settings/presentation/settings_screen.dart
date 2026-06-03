@@ -545,6 +545,7 @@ class SettingsScreen extends ConsumerWidget {
                   child: InkWell(
                     onTap: () {
                       FirebaseAuthService.instance.clearSession().then((_) {
+                        ref.invalidate(userProfileProvider);
                         if (context.mounted) {
                           context.go('/login');
                         }
