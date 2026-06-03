@@ -21,6 +21,19 @@ final userProfileProvider = FutureProvider<UserModel?>((ref) async {
   return FirebaseAuthService.instance.getCurrentUserProfile();
 });
 
+final activeSubscriptionProvider = Provider<bool>((ref) {
+  final profileAsync = ref.watch(userProfileProvider);
+  final fallbackSubscribed = ref.watch(isSubscribedProvider);
+  final profile = profileAsync.asData?.value;
+  
+  if (fallbackSubscribed) return true;
+  if (profile == null || !profile.isSubscribed) return false;
+  
+  final expiresAt = profile.subExpires;
+  if (expiresAt == null) return true;
+  return expiresAt.isAfter(DateTime.now());
+});
+
 // Auth state
 final isLoadingProvider = StateProvider<bool>((ref) => false);
 final authErrorProvider = StateProvider<String?>((ref) => null);

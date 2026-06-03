@@ -24,7 +24,9 @@ final silverPricesProvider = StreamProvider<List<PriceModel>>((ref) {
 
 final silverPricesBySection = Provider<AsyncValue<Map<String, List<PriceModel>>>>((ref) {
   final pricesAsync = ref.watch(silverPricesProvider);
+
   return pricesAsync.whenData((prices) {
+
     return {
       AppStrings.newSilver: prices.where((p) => !p.label.contains('চাঁদি') && !p.label.contains('এসিড')).toList(),
       AppStrings.silverAndAcidKaim: prices.where((p) => p.label.contains('চাঁদি') || p.label.contains('এসিড')).toList(),

@@ -36,7 +36,8 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final result = ref.watch(zakatResultProvider);
+    final result = ref.watch(zakatCalculatorProvider);
+    final nisabAsync = ref.watch(zakatNisabProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -74,7 +75,7 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
             child: Column(
             children: [
-              _buildNisabReferenceCard(),
+              _buildNisabReferenceCard(nisabAsync),
               const SizedBox(height: 20),
               GoldenInputField(
                 hint: AppStrings.totalGoldGrams,
@@ -128,14 +129,14 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
                   final receivable = double.tryParse(controllers[4].text) ?? 0;
                   final debts = double.tryParse(controllers[5].text) ?? 0;
 
-                  ref.read(zakatGoldGramsProvider.notifier).state = goldGrams;
-                  ref.read(zakatSilverGramsProvider.notifier).state = silverGrams;
-                  ref.read(zakatCashProvider.notifier).state = cash;
-                  ref.read(zakatBizGoodsProvider.notifier).state = bizGoods;
-                  ref.read(zakatReceivableProvider.notifier).state = receivable;
-                  ref.read(zakatDebtsProvider.notifier).state = debts;
-
-                  // Providers will auto-calculate based on watched values
+                  ref.read(zakatCalculatorProvider.notifier).calculate(
+                    goldGrams: goldGrams,
+                    silverGrams: silverGrams,
+                    cash: cash,
+                    bizGoods: bizGoods,
+                    receivable: receivable,
+                    debts: debts,
+                  );
                 },
               ),
               const SizedBox(height: 20),
@@ -157,7 +158,7 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
     );
   }
 
-  Widget _buildNisabReferenceCard() {
+  Widget _buildNisabReferenceCard(AsyncValue<Map<String, dynamic>> nisabAsync) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -168,33 +169,46 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            AppStrings.nisabLimit,
-            style: AppTextStyles.hindSiliguri(
-              fontSize: 10,
-              color: AppColors.textMuted,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            AppStrings.goldNisab,
-            style: AppTextStyles.hindSiliguri(
-              fontSize: 10,
-              color: AppColors.gold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            AppStrings.silverNisab,
-            style: AppTextStyles.hindSiliguri(
-              fontSize: 10,
-              color: AppColors.gold,
-            ),
-          ),
-        ],
+      child: nisabAsync.when(
+        data: (data) {
+          final goldNisab = (data['gold_nisab'] ?? 895200.0).toDouble();
+          final silverNisab = (data['silver_nisab'] ?? 52860.0).toDouble();
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                AppStrings.nisabLimit,
+                style: AppTextStyles.hindSiliguri(
+                  fontSize: 10,
+                  color: AppColors.textMuted,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'স্বর্ণ নিসাব: ${CurrencyFormatter.formatBDT(goldNisab)}',
+                style: AppTextStyles.hindSiliguri(
+                  fontSize: 10,
+                  color: AppColors.gold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'রৌপ্য নিসাব: ${CurrencyFormatter.formatBDT(silverNisab)}',
+                style: AppTextStyles.hindSiliguri(
+                  fontSize: 10,
+                  color: AppColors.gold,
+                ),
+              ),
+            ],
+          );
+        },
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.gold),
+        ),
+        error: (err, stack) => Text(
+          'Error loading Nisab',
+          style: AppTextStyles.hindSiliguri(color: AppColors.error, fontSize: 10),
+        ),
       ),
     );
   }

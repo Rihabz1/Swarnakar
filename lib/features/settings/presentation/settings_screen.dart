@@ -297,6 +297,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(userProfileProvider);
     final fallbackSubscribed = ref.watch(isSubscribedProvider);
+    final isSubscribedGlobal = profileAsync.value?.isSubscribed ?? fallbackSubscribed;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -511,7 +512,7 @@ class SettingsScreen extends ConsumerWidget {
               _buildSettingsRow(
                 AppStrings.subscription,
                 Icons.workspace_premium,
-                showBadge: fallbackSubscribed,
+                showBadge: isSubscribedGlobal,
               ),
             ]),
             // Settings Group 2

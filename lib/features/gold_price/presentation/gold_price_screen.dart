@@ -19,7 +19,7 @@ class GoldPriceScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isSubscribed = ref.watch(isSubscribedProvider);
+    final isSubscribed = ref.watch(activeSubscriptionProvider);
     final pricesBySectionAsync = ref.watch(goldPricesBySection);
 
     return Scaffold(

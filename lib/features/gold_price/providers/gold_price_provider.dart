@@ -32,7 +32,9 @@ final goldPricesProvider = StreamProvider<List<PriceModel>>((ref) {
 
 final goldPricesBySection = Provider<AsyncValue<Map<String, List<PriceModel>>>>((ref) {
   final pricesAsync = ref.watch(goldPricesProvider);
+
   return pricesAsync.whenData((prices) {
+
     return {
       AppStrings.currentDhakaPrices: prices
           .where((p) => !p.label.contains('পুরাতন') && !p.label.contains('পাকা') && !p.label.contains('টুকরা'))
