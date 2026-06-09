@@ -8,6 +8,7 @@ import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
 import 'package:swarnakar/core/providers/core_providers.dart';
+import 'package:swarnakar/core/utils/connectivity_helper.dart';
 import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -91,9 +92,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       context.go('/dashboard');
     } catch (e) {
       if (!mounted) return;
-      final message = e is AuthException
-          ? (e.message ?? 'লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।')
-          : 'লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।';
+      final message = e is NetworkException
+          ? ConnectivityHelper.offlineRetryMessage
+          : e is AuthException
+              ? (e.message ?? 'লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।')
+              : 'লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।';
       _showError(message);
     } finally {
       if (mounted) {

@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
+import 'package:swarnakar/core/providers/connectivity_provider.dart';
 import 'package:swarnakar/shared/models/price_model.dart';
 
-final goldPricesProvider = StreamProvider<List<PriceModel>>((ref) {
-  return FirebaseFirestore.instance
+final goldPricesProvider = StreamProvider<List<PriceModel>>((ref) async* {
+  await requireInternet(ref);
+  yield* FirebaseFirestore.instance
       .collection('prices')
       .doc('current')
       .snapshots()

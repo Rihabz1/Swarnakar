@@ -5,13 +5,15 @@ import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
+import 'package:swarnakar/core/utils/connectivity_helper.dart';
 import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String phone;
   final String otp;
 
-  const ResetPasswordScreen({super.key, required this.phone, required this.otp});
+  const ResetPasswordScreen(
+      {super.key, required this.phone, required this.otp});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -50,7 +52,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       _showMessage('নতুন পাসওয়ার্ড ও কনফার্ম পাসওয়ার্ড দিন।');
       return false;
     }
-    if (whitespaceRegex.hasMatch(password) || whitespaceRegex.hasMatch(confirmPassword)) {
+    if (whitespaceRegex.hasMatch(password) ||
+        whitespaceRegex.hasMatch(confirmPassword)) {
       _showMessage('পাসওয়ার্ডে স্পেস ব্যবহার করা যাবে না।');
       return false;
     }
@@ -83,7 +86,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       context.go('/login');
     } catch (e) {
       if (!mounted) return;
-      if (e is AuthException) {
+      if (e is NetworkException) {
+        _showMessage(ConnectivityHelper.offlineRetryMessage);
+      } else if (e is AuthException) {
         _showMessage(e.message ?? 'পাসওয়ার্ড রিসেট ব্যর্থ হয়েছে।');
       } else {
         _showMessage('পাসওয়ার্ড রিসেট ব্যর্থ হয়েছে।');

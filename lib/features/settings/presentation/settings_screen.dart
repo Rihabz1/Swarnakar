@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
+import 'package:swarnakar/core/utils/connectivity_helper.dart';
 import 'package:swarnakar/shared/widgets/app_bottom_nav.dart';
 import 'package:swarnakar/core/providers/core_providers.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
@@ -57,9 +58,11 @@ class SettingsScreen extends ConsumerWidget {
                   Navigator.pop(context);
                 }
               } catch (e) {
-                final message = e is AuthException
-                    ? (e.message ?? 'প্রোফাইল আপডেট ব্যর্থ হয়েছে।')
-                    : 'প্রোফাইল আপডেট ব্যর্থ হয়েছে।';
+                final message = e is NetworkException
+                    ? ConnectivityHelper.offlineRetryMessage
+                    : e is AuthException
+                        ? (e.message ?? 'প্রোফাইল আপডেট ব্যর্থ হয়েছে।')
+                        : 'প্রোফাইল আপডেট ব্যর্থ হয়েছে।';
                 ScaffoldMessenger.of(context)
                   ..hideCurrentSnackBar()
                   ..showSnackBar(SnackBar(content: Text(message)));
@@ -211,9 +214,11 @@ class SettingsScreen extends ConsumerWidget {
                   ..showSnackBar(const SnackBar(
                       content: Text('পাসওয়ার্ড আপডেট হয়েছে।')));
               } catch (e) {
-                final message = e is AuthException
-                    ? (e.message ?? 'পাসওয়ার্ড আপডেট ব্যর্থ হয়েছে।')
-                    : 'পাসওয়ার্ড আপডেট ব্যর্থ হয়েছে।';
+                final message = e is NetworkException
+                    ? ConnectivityHelper.offlineRetryMessage
+                    : e is AuthException
+                        ? (e.message ?? 'পাসওয়ার্ড আপডেট ব্যর্থ হয়েছে।')
+                        : 'পাসওয়ার্ড আপডেট ব্যর্থ হয়েছে।';
                 ScaffoldMessenger.of(context)
                   ..hideCurrentSnackBar()
                   ..showSnackBar(SnackBar(content: Text(message)));

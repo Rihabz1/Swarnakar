@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:swarnakar/core/providers/connectivity_provider.dart';
 import 'package:swarnakar/features/gold_price/providers/gold_price_provider.dart';
 import 'package:swarnakar/features/silver_price/providers/silver_price_provider.dart';
 
@@ -16,16 +17,18 @@ final dashboardSilverPriceProvider = Provider<AsyncValue<double>>((ref) {
       .whenData((prices) => prices.isNotEmpty ? prices.first.price : 0);
 });
 
-final dashboardLastUpdatedProvider = StreamProvider<DateTime?>((ref) {
-  return FirebaseFirestore.instance
+final dashboardLastUpdatedProvider = StreamProvider<DateTime?>((ref) async* {
+  await requireInternet(ref);
+  yield* FirebaseFirestore.instance
       .collection('prices')
       .doc('current')
       .snapshots()
       .map((snapshot) => _readUpdatedAt(snapshot.data()?['updatedAt']));
 });
 
-final dashboardNoticeProvider = StreamProvider<String>((ref) {
-  return FirebaseFirestore.instance
+final dashboardNoticeProvider = StreamProvider<String>((ref) async* {
+  await requireInternet(ref);
+  yield* FirebaseFirestore.instance
       .collection('prices')
       .doc('current')
       .snapshots()

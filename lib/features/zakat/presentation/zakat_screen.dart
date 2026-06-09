@@ -5,6 +5,7 @@ import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/core/utils/currency_formatter.dart';
+import 'package:swarnakar/core/utils/connectivity_helper.dart';
 import 'package:swarnakar/shared/widgets/app_bottom_nav.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
@@ -204,7 +205,9 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
           child: CircularProgressIndicator(color: AppColors.gold),
         ),
         error: (err, stack) => Text(
-          'Error loading Nisab',
+          err is NetworkException
+              ? ConnectivityHelper.offlineShortMessage
+              : 'Error loading Nisab',
           style:
               AppTextStyles.hindSiliguri(color: AppColors.error, fontSize: 10),
         ),

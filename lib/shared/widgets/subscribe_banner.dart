@@ -33,7 +33,7 @@ class SubscribeBanner extends StatelessWidget {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: 50,
@@ -54,6 +54,7 @@ class SubscribeBanner extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             AppStrings.upgradePremium,
+            textAlign: TextAlign.center,
             style: AppTextStyles.hindSiliguri(
               fontSize: 15,
               fontWeight: FontWeight.bold,
@@ -63,15 +64,19 @@ class SubscribeBanner extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             AppStrings.unlockFeatures,
+            textAlign: TextAlign.center,
             style: AppTextStyles.hindSiliguri(
               fontSize: 10.5,
               color: AppColors.textMuted,
             ),
           ),
           const SizedBox(height: 12),
-          GoldenButton(
-            text: AppStrings.subscribeNow,
-            onPressed: onSubscribe,
+          SizedBox(
+            width: double.infinity,
+            child: GoldenButton(
+              text: AppStrings.subscribeNow,
+              onPressed: onSubscribe,
+            ),
           ),
         ],
       ),

@@ -5,6 +5,8 @@ import 'package:animate_do/animate_do.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
+import 'package:swarnakar/core/providers/connectivity_provider.dart';
+import 'package:swarnakar/core/utils/connectivity_helper.dart';
 import 'package:swarnakar/shared/widgets/app_bottom_nav.dart';
 import 'package:swarnakar/features/dashboard/providers/dashboard_provider.dart';
 
@@ -14,9 +16,18 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lastUpdatedAsync = ref.watch(dashboardLastUpdatedProvider);
-    final updateText = _buildUpdatedAtText(lastUpdatedAsync);
+    final internetAsync = ref.watch(internetConnectionProvider);
+    final isOffline = internetAsync.value == false;
+    final updateText = isOffline
+        ? const _UpdateText(
+            timeLine: ConnectivityHelper.offlineTitle,
+            dateLine: ConnectivityHelper.offlineRequiredMessage,
+          )
+        : _buildUpdatedAtText(lastUpdatedAsync);
     final noticeAsync = ref.watch(dashboardNoticeProvider);
-    final noticeText = noticeAsync.value ?? defaultDashboardNotice;
+    final noticeText = isOffline
+        ? ConnectivityHelper.offlineShortMessage
+        : noticeAsync.value ?? defaultDashboardNotice;
 
     final dashboardCards = [
       (
@@ -104,8 +115,16 @@ class DashboardScreen extends ConsumerWidget {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
                 sliver: SliverToBoxAdapter(
-                  child: FadeInDown(
-                    child: _buildUpdateCard(updateText, noticeText),
+                  child: Column(
+                    children: [
+                      if (isOffline) ...[
+                        _buildOfflineBanner(),
+                        const SizedBox(height: 10),
+                      ],
+                      FadeInDown(
+                        child: _buildUpdateCard(updateText, noticeText),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -159,6 +178,30 @@ class DashboardScreen extends ConsumerWidget {
         bottomNavigationBar: AppBottomNav(
           currentIndex: AppBottomNav.getIndexFromRoute('/dashboard'),
           onTap: (index) {},
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOfflineBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppColors.error.withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        ConnectivityHelper.offlineRetryMessage,
+        textAlign: TextAlign.center,
+        style: AppTextStyles.hindSiliguri(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: AppColors.white,
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bcrypt/bcrypt.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:swarnakar/core/utils/connectivity_helper.dart';
 import 'package:swarnakar/shared/models/user_model.dart';
 import 'dart:math';
 import 'dart:convert';
@@ -37,6 +38,7 @@ class FirebaseAuthService {
     required String password,
     bool acceptAnyOtp = true,
   }) async {
+    await ConnectivityHelper.ensureConnected();
     _pendingSignup = _PendingSignup(
       name: name,
       phone: phone,
@@ -52,8 +54,8 @@ class FirebaseAuthService {
     await prefs.remove(_pendingSignupKey);
   }
 
-
   Future<UserModel> completeSignupWithOtp({required String otp}) async {
+    await ConnectivityHelper.ensureConnected();
     var pending = _pendingSignup;
     if (pending == null) {
       pending = await _loadPendingSignup();
@@ -86,6 +88,7 @@ class FirebaseAuthService {
     required String phone,
     required String password,
   }) async {
+    await ConnectivityHelper.ensureConnected();
     final normalizedPhone = _normalizeLocalPhone(phone);
     if (!_isValidBdMobile(normalizedPhone)) {
       throw AuthException(
@@ -121,12 +124,12 @@ class FirebaseAuthService {
         'passwordHash': passwordHash,
         'passwordUpdatedAt': now,
       };
-      await docRef.set(payload);
+      await _runFirestore(() => docRef.set(payload));
       await _persistSessionPhone(normalizedPhone);
-      
+
       // Clear pending signup only if successful
       await clearPendingSignup();
-      
+
       return UserModel(
         uid: docRef.id,
         name: name,
@@ -138,6 +141,8 @@ class FirebaseAuthService {
         plan: '',
         subExpires: null,
       );
+    } on NetworkException {
+      rethrow;
     } catch (e) {
       throw AuthException(
         code: 'internal-error',
@@ -151,6 +156,7 @@ class FirebaseAuthService {
     required String password,
   }) async {
     try {
+      await ConnectivityHelper.ensureConnected();
       final normalizedPhone = _normalizeLocalPhone(phone);
       if (!_isValidBdMobile(normalizedPhone)) {
         throw AuthException(
@@ -190,6 +196,7 @@ class FirebaseAuthService {
     required String phone,
     required String newPassword,
   }) async {
+    await ConnectivityHelper.ensureConnected();
     final normalizedPhone = _normalizeLocalPhone(phone);
     if (!_isValidBdMobile(normalizedPhone)) {
       throw AuthException(
@@ -208,16 +215,17 @@ class FirebaseAuthService {
     }
 
     final passwordHash = _hashPassword(newPassword);
-    await targetDoc.reference.set(
-      {
-        'passwordHash': passwordHash,
-        'passwordUpdatedAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
+    await _runFirestore(
+      () => targetDoc.reference.set(
+        {
+          'passwordHash': passwordHash,
+          'passwordUpdatedAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      ),
     );
   }
-
 
   Future<void> changePasswordForCurrentUser({
     required String currentPassword,
@@ -225,6 +233,7 @@ class FirebaseAuthService {
     String? phone,
   }) async {
     try {
+      await ConnectivityHelper.ensureConnected();
       final lookupPhone = phone ?? _sessionPhone ?? '';
       if (lookupPhone.isEmpty) {
         throw AuthException(
@@ -250,7 +259,8 @@ class FirebaseAuthService {
 
       final data = targetDoc.data() ?? <String, dynamic>{};
       final passwordHash = (data['passwordHash'] as String?) ?? '';
-      if (passwordHash.isEmpty || !BCrypt.checkpw(currentPassword, passwordHash)) {
+      if (passwordHash.isEmpty ||
+          !BCrypt.checkpw(currentPassword, passwordHash)) {
         throw AuthException(
           code: 'wrong-password',
           message: 'বর্তমান পাসওয়ার্ড সঠিক নয়।',
@@ -258,13 +268,15 @@ class FirebaseAuthService {
       }
 
       final updatedHash = _hashPassword(newPassword);
-      await targetDoc.reference.set(
-        {
-          'passwordHash': updatedHash,
-          'passwordUpdatedAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
+      await _runFirestore(
+        () => targetDoc.reference.set(
+          {
+            'passwordHash': updatedHash,
+            'passwordUpdatedAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        ),
       );
     } on AuthException catch (e) {
       throw AuthException(
@@ -275,6 +287,7 @@ class FirebaseAuthService {
   }
 
   Future<String> requestPasswordResetOtp(String phone) async {
+    await ConnectivityHelper.ensureConnected();
     final normalizedPhone = _normalizeLocalPhone(phone);
     if (!_isValidBdMobile(normalizedPhone)) {
       throw AuthException(
@@ -293,11 +306,13 @@ class FirebaseAuthService {
 
     final mockOtp = _generateOtp();
     final expiresAt = DateTime.now().add(const Duration(minutes: 5));
-    await doc.reference.update({
-      'resetOtp': mockOtp,
-      'otpCreatedAt': FieldValue.serverTimestamp(),
-      'otpExpiresAt': Timestamp.fromDate(expiresAt),
-    });
+    await _runFirestore(
+      () => doc.reference.update({
+        'resetOtp': mockOtp,
+        'otpCreatedAt': FieldValue.serverTimestamp(),
+        'otpExpiresAt': Timestamp.fromDate(expiresAt),
+      }),
+    );
 
     return mockOtp;
   }
@@ -307,6 +322,7 @@ class FirebaseAuthService {
     required String otp,
     required String newPassword,
   }) async {
+    await ConnectivityHelper.ensureConnected();
     final normalizedPhone = _normalizeLocalPhone(phone);
     if (!_isValidBdMobile(normalizedPhone)) {
       throw AuthException(
@@ -334,11 +350,13 @@ class FirebaseAuthService {
 
     final expiresAt = userData['otpExpiresAt'];
     if (expiresAt is Timestamp && expiresAt.toDate().isBefore(DateTime.now())) {
-      await doc.reference.update({
-        'resetOtp': FieldValue.delete(),
-        'otpCreatedAt': FieldValue.delete(),
-        'otpExpiresAt': FieldValue.delete(),
-      });
+      await _runFirestore(
+        () => doc.reference.update({
+          'resetOtp': FieldValue.delete(),
+          'otpCreatedAt': FieldValue.delete(),
+          'otpExpiresAt': FieldValue.delete(),
+        }),
+      );
       throw AuthException(
         code: 'otp-expired',
         message: 'OTP এর মেয়াদ শেষ হয়েছে। আবার OTP পাঠান।',
@@ -353,17 +371,20 @@ class FirebaseAuthService {
     }
 
     final passwordHash = _hashPassword(newPassword);
-    await doc.reference.update({
-      'passwordHash': passwordHash,
-      'passwordUpdatedAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-      'resetOtp': FieldValue.delete(),
-      'otpCreatedAt': FieldValue.delete(),
-      'otpExpiresAt': FieldValue.delete(),
-    });
+    await _runFirestore(
+      () => doc.reference.update({
+        'passwordHash': passwordHash,
+        'passwordUpdatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'resetOtp': FieldValue.delete(),
+        'otpCreatedAt': FieldValue.delete(),
+        'otpExpiresAt': FieldValue.delete(),
+      }),
+    );
   }
 
   Future<UserModel?> getCurrentUserProfile() async {
+    await ConnectivityHelper.ensureConnected();
     final phone = _sessionPhone;
     if (phone == null || phone.isEmpty) return null;
     final doc = await _findUserDocByPhone(phone);
@@ -376,6 +397,7 @@ class FirebaseAuthService {
     required String shopName,
     required String address,
   }) async {
+    await ConnectivityHelper.ensureConnected();
     final phone = _sessionPhone;
     if (phone == null || phone.isEmpty) {
       throw AuthException(
@@ -396,22 +418,26 @@ class FirebaseAuthService {
       'address': address,
       'updatedAt': FieldValue.serverTimestamp(),
     };
-    await doc.reference.set(payload, SetOptions(merge: true));
-    final updatedDoc = await doc.reference.get();
+    await _runFirestore(
+        () => doc.reference.set(payload, SetOptions(merge: true)));
+    final updatedDoc = await _runFirestore(() => doc.reference.get());
     return _userModelFromDoc(updatedDoc);
   }
 
   Future<DocumentSnapshot<Map<String, dynamic>>?> _findUserDocByPhone(
     String normalizedPhone,
   ) async {
+    await ConnectivityHelper.ensureConnected();
     if (!_isValidBdMobile(normalizedPhone)) {
       return null;
     }
-    final snapshot = await _firestore
-        .collection('users')
-        .where('phone', isEqualTo: normalizedPhone)
-        .limit(1)
-        .get();
+    final snapshot = await _runFirestore(
+      () => _firestore
+          .collection('users')
+          .where('phone', isEqualTo: normalizedPhone)
+          .limit(1)
+          .get(),
+    );
     if (snapshot.docs.isNotEmpty) {
       return snapshot.docs.first;
     }
@@ -486,12 +512,30 @@ class FirebaseAuthService {
     return value.toString().padLeft(6, '0');
   }
 
+  Future<T> _runFirestore<T>(Future<T> Function() action) async {
+    await ConnectivityHelper.ensureConnected();
+    try {
+      return await action();
+    } on FirebaseException catch (e) {
+      if (_isNetworkFirebaseError(e)) {
+        throw const NetworkException();
+      }
+      rethrow;
+    }
+  }
+
+  bool _isNetworkFirebaseError(FirebaseException e) {
+    return e.code == 'unavailable' ||
+        e.code == 'deadline-exceeded' ||
+        e.code == 'network-request-failed';
+  }
+
   String _friendlyLoginMessage(AuthException e) {
     switch (e.code) {
       case 'user-not-found':
-        return 'এই নম্বরে অ্যাকাউন্ট নেই। সাইন আপ করুন।';
+        return 'এই নম্বরের কোনো অ্যাকাউন্ট পাওয়া যায়নি।';
       case 'wrong-password':
-        return 'পাসওয়ার্ড সঠিক নয়। আবার চেষ্টা করুন।';
+        return 'পাসওয়ার্ড সঠিক নয়।';
       case 'invalid-email':
         return 'মোবাইল নম্বর সঠিক নয়।';
       case 'user-disabled':

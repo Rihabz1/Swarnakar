@@ -4,9 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
+import 'package:swarnakar/core/providers/connectivity_provider.dart';
+import 'package:swarnakar/core/utils/connectivity_helper.dart';
 import 'package:swarnakar/shared/widgets/app_bottom_nav.dart';
 import 'package:swarnakar/shared/widgets/section_heading.dart';
 import 'package:swarnakar/shared/widgets/gold_price_card.dart';
+import 'package:swarnakar/shared/widgets/offline_state_card.dart';
 import 'package:swarnakar/shared/widgets/price_row_widget.dart';
 import 'package:swarnakar/shared/widgets/subscribe_banner.dart';
 import 'package:swarnakar/core/providers/core_providers.dart';
@@ -61,12 +64,16 @@ class GoldPriceScreen extends ConsumerWidget {
       ),
       body: Container(
         color: AppColors.background,
-        child: SingleChildScrollView(
-          child: pricesBySectionAsync.when(
-            data: (pricesBySection) {
-              final subtitleText = _buildUpdatedAtText(pricesBySection);
-              return Column(
+        child: pricesBySectionAsync.when(
+          data: (pricesBySection) {
+            final subtitleText = _buildUpdatedAtText(pricesBySection);
+            return SingleChildScrollView(
+              child: Column(
                 children: [
+                  if (!isSubscribed)
+                    SubscribeBanner(
+                      onSubscribe: () => context.push('/paywall'),
+                    ),
                   ...pricesBySection.entries.map((entry) {
                     return Column(
                       children: [
@@ -87,46 +94,35 @@ class GoldPriceScreen extends ConsumerWidget {
                       ],
                     );
                   }),
-                  if (!isSubscribed)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 60),
-                      child: SubscribeBanner(
-                        onSubscribe: () => context.push('/paywall'),
-                      ),
-                    ),
                   if (isSubscribed) const SizedBox(height: 20),
-                ],
-              );
-            },
-            loading: () => const Padding(
-              padding: EdgeInsets.only(top: 40),
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
-            error: (error, stack) => Padding(
-              padding: const EdgeInsets.only(top: 40),
-              child: Column(
-                children: [
-                  Text(
-                    AppStrings.errorOccurred,
-                    style: AppTextStyles.hindSiliguri(
-                      fontSize: 12,
-                      color: AppColors.error,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    AppStrings.tryAgain,
-                    style: AppTextStyles.hindSiliguri(
-                      fontSize: 11,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
+                  if (!isSubscribed) const SizedBox(height: 20),
                 ],
               ),
-            ),
+            );
+          },
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.gold),
           ),
+          error: (error, stack) {
+            if (error is NetworkException) {
+              return OfflineStateCard(
+                onRetry: () {
+                  ref.invalidate(internetConnectionProvider);
+                  ref.invalidate(goldPricesProvider);
+                  ref.invalidate(goldPricesBySection);
+                },
+              );
+            }
+            return Center(
+              child: Text(
+                AppStrings.errorOccurred,
+                style: AppTextStyles.hindSiliguri(
+                  fontSize: 13,
+                  color: AppColors.error,
+                ),
+              ),
+            );
+          },
         ),
       ),
       bottomNavigationBar: AppBottomNav(

@@ -6,6 +6,7 @@ import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
+import 'package:swarnakar/core/utils/connectivity_helper.dart';
 import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -217,13 +218,26 @@ class _SignupScreenState extends State<SignupScreen> {
                                 if (!_validateSignup()) return;
                                 final phone = _normalizePhone(
                                     _phoneController.text.trim());
-                                await FirebaseAuthService.instance.stageSignup(
-                                  name: _nameController.text.trim(),
-                                  phone: phone,
-                                  password: _passwordController.text,
-                                  acceptAnyOtp: true,
-                                );
-                                context.push('/otp?phone=$phone');
+                                try {
+                                  await FirebaseAuthService.instance
+                                      .stageSignup(
+                                    name: _nameController.text.trim(),
+                                    phone: phone,
+                                    password: _passwordController.text,
+                                    acceptAnyOtp: true,
+                                  );
+                                  if (!context.mounted) return;
+                                  context.push('/otp?phone=$phone');
+                                } catch (e) {
+                                  if (!context.mounted) return;
+                                  final message = e is NetworkException
+                                      ? ConnectivityHelper.offlineRetryMessage
+                                      : e is AuthException
+                                          ? (e.message ??
+                                              'সাইন আপ ব্যর্থ হয়েছে। আবার চেষ্টা করুন।')
+                                          : 'সাইন আপ ব্যর্থ হয়েছে। আবার চেষ্টা করুন।';
+                                  _showError(message);
+                                }
                               },
                             ),
                           ),

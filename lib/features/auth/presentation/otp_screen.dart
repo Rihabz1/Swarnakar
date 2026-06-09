@@ -5,6 +5,7 @@ import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
+import 'package:swarnakar/core/utils/connectivity_helper.dart';
 import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
 import 'dart:async';
 
@@ -137,9 +138,11 @@ class _OtpScreenState extends State<OtpScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      final message = e is AuthException
-          ? (e.message ?? 'সাইন আপ ব্যর্থ হয়েছে। আবার চেষ্টা করুন।')
-          : 'সাইন আপ ব্যর্থ হয়েছে: $e';
+      final message = e is NetworkException
+          ? ConnectivityHelper.offlineRetryMessage
+          : e is AuthException
+              ? (e.message ?? 'সাইন আপ ব্যর্থ হয়েছে। আবার চেষ্টা করুন।')
+              : 'সাইন আপ ব্যর্থ হয়েছে। আবার চেষ্টা করুন।';
       _showMessage(message);
     } finally {
       if (mounted) {
@@ -160,9 +163,11 @@ class _OtpScreenState extends State<OtpScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      final message = e is AuthException
-          ? (e.message ?? 'OTP পাঠানো যায়নি। আবার চেষ্টা করুন।')
-          : 'OTP পাঠানো যায়নি। আবার চেষ্টা করুন।';
+      final message = e is NetworkException
+          ? ConnectivityHelper.offlineRetryMessage
+          : e is AuthException
+              ? (e.message ?? 'OTP পাঠানো যায়নি। আবার চেষ্টা করুন।')
+              : 'OTP পাঠানো যায়নি। আবার চেষ্টা করুন।';
       _showMessage(message);
     } finally {
       if (mounted) {
