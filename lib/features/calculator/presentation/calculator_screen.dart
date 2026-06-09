@@ -9,9 +9,6 @@ import 'package:swarnakar/shared/widgets/app_bottom_nav.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
 import 'package:swarnakar/features/calculator/providers/calculator_provider.dart';
-import 'package:swarnakar/features/gold_price/providers/gold_price_provider.dart';
-import 'package:swarnakar/features/silver_price/providers/silver_price_provider.dart';
-import 'package:swarnakar/shared/models/price_model.dart';
 
 class CalculatorScreen extends ConsumerStatefulWidget {
   const CalculatorScreen({super.key});
@@ -22,18 +19,21 @@ class CalculatorScreen extends ConsumerStatefulWidget {
 
 class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
   late TextEditingController _weightController;
+  late TextEditingController _rateController;
   late TextEditingController _laborController;
 
   @override
   void initState() {
     super.initState();
     _weightController = TextEditingController();
+    _rateController = TextEditingController();
     _laborController = TextEditingController();
   }
 
   @override
   void dispose() {
     _weightController.dispose();
+    _rateController.dispose();
     _laborController.dispose();
     super.dispose();
   }
@@ -41,12 +41,8 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
   @override
   Widget build(BuildContext context) {
     final result = ref.watch(calculatorResultProvider);
-    final goldPricesAsync = ref.watch(goldPricesProvider);
-    final silverPricesAsync = ref.watch(silverPricesProvider);
-    final rateOptions = _buildRateOptions(goldPricesAsync, silverPricesAsync);
-    final selectedRateOption = ref.watch(calculatorRateOptionProvider);
-
-    _ensureRateSelection(rateOptions, selectedRateOption);
+    final unit = ref.watch(calculatorUnitProvider);
+    final rateHint = _rateHintForUnit(unit);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -83,54 +79,58 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
             child: Column(
-            children: [
-              _buildUnitDropdown(ref),
-              const SizedBox(height: 12),
-              GoldenInputField(
-                hint: AppStrings.enterQuantity,
-                icon: Icons.scale_outlined,
-                keyboardType: TextInputType.number,
-                controller: _weightController,
-              ),
-              const SizedBox(height: 12),
-              _buildRateDropdown(ref, rateOptions, selectedRateOption),
-              const SizedBox(height: 12),
-              GoldenInputField(
-                hint: AppStrings.laborCharge,
-                icon: Icons.build_outlined,
-                keyboardType: TextInputType.number,
-                controller: _laborController,
-              ),
-              const SizedBox(height: 20),
-              GoldenButton(
-                text: AppStrings.calculate,
-                onPressed: () {
-                  final unit = ref.read(calculatorUnitProvider);
-                  final weight = double.tryParse(_weightController.text) ?? 0;
-                  final rate = ref.read(calculatorRateProvider);
-                  final labor = double.tryParse(_laborController.text) ?? 0;
-
-                  ref.read(calculatorWeightProvider.notifier).state = weight;
-                  ref.read(calculatorLaborProvider.notifier).state = labor;
-
-                  final result = computeCalculatorResult(
-                    unit: unit,
-                    weight: weight,
-                    rate: rate,
-                    labor: labor,
-                  );
-                  ref.read(calculatorResultProvider.notifier).state = result;
-
-                  // Providers will auto-calculate based on watched values
-                },
-              ),
-              const SizedBox(height: 20),
-              if (result != null)
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: _buildResultCard(result),
+              children: [
+                _buildUnitDropdown(ref),
+                const SizedBox(height: 12),
+                GoldenInputField(
+                  hint: AppStrings.enterQuantity,
+                  icon: Icons.scale_outlined,
+                  keyboardType: TextInputType.number,
+                  controller: _weightController,
                 ),
-            ],
+                const SizedBox(height: 12),
+                GoldenInputField(
+                  hint: rateHint,
+                  icon: Icons.payments_outlined,
+                  keyboardType: TextInputType.number,
+                  controller: _rateController,
+                ),
+                const SizedBox(height: 12),
+                GoldenInputField(
+                  hint: AppStrings.laborCharge,
+                  icon: Icons.build_outlined,
+                  keyboardType: TextInputType.number,
+                  controller: _laborController,
+                ),
+                const SizedBox(height: 20),
+                GoldenButton(
+                  text: AppStrings.calculate,
+                  onPressed: () {
+                    final unit = ref.read(calculatorUnitProvider);
+                    final weight = double.tryParse(_weightController.text) ?? 0;
+                    final rate = double.tryParse(_rateController.text) ?? 0;
+                    final labor = double.tryParse(_laborController.text) ?? 0;
+
+                    ref.read(calculatorWeightProvider.notifier).state = weight;
+                    ref.read(calculatorRateProvider.notifier).state = rate;
+                    ref.read(calculatorLaborProvider.notifier).state = labor;
+
+                    final result = computeCalculatorResult(
+                      unit: unit,
+                      weight: weight,
+                      rate: rate,
+                      labor: labor,
+                    );
+                    ref.read(calculatorResultProvider.notifier).state = result;
+                  },
+                ),
+                const SizedBox(height: 20),
+                if (result != null)
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: _buildResultCard(result),
+                  ),
+              ],
             ),
           ),
         ),
@@ -188,134 +188,14 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     );
   }
 
-  void _ensureRateSelection(
-    List<CalculatorRateOption> options,
-    CalculatorRateOption? selected,
-  ) {
-    if (options.isEmpty) {
-      return;
+  String _rateHintForUnit(String unit) {
+    if (unit == AppStrings.byGram) {
+      return 'প্রতি গ্রামের দাম লিখুন';
     }
-    if (selected != null && options.contains(selected)) {
-      return;
+    if (unit == AppStrings.byAna) {
+      return 'প্রতি আনার দাম লিখুন';
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final option = options.first;
-      ref.read(calculatorRateOptionProvider.notifier).state = option;
-      ref.read(calculatorRateProvider.notifier).state = option.ratePerBhori;
-    });
-  }
-
-  Widget _buildRateDropdown(
-    WidgetRef ref,
-    List<CalculatorRateOption> options,
-    CalculatorRateOption? selected,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(9),
-        border: Border.all(
-          color: AppColors.gold.withValues(alpha: 0.18),
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<CalculatorRateOption>(
-            value: selected != null && options.contains(selected) ? selected : null,
-            hint: Text(
-              AppStrings.marketRatePerBhori,
-              style: AppTextStyles.hindSiliguri(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            onChanged: options.isEmpty
-                ? null
-                : (option) {
-                    if (option == null) return;
-                    ref.read(calculatorRateOptionProvider.notifier).state = option;
-                    ref.read(calculatorRateProvider.notifier).state = option.ratePerBhori;
-                  },
-            items: options
-                .map((option) => DropdownMenuItem(
-                      value: option,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              option.label,
-                              style: AppTextStyles.hindSiliguri(
-                                fontSize: 12,
-                                color: AppColors.gold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            CurrencyFormatter.formatBDT(option.price),
-                            style: AppTextStyles.hindSiliguri(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ))
-                .toList(),
-            icon: const Icon(
-              Icons.expand_more,
-              color: AppColors.gold,
-              size: 18,
-            ),
-            isExpanded: true,
-            dropdownColor: AppColors.surface,
-          ),
-        ),
-      ),
-    );
-  }
-
-  List<CalculatorRateOption> _buildRateOptions(
-    AsyncValue<List<PriceModel>> goldPricesAsync,
-    AsyncValue<List<PriceModel>> silverPricesAsync,
-  ) {
-    final goldPrices = goldPricesAsync.maybeWhen(
-      data: (prices) => prices,
-      orElse: () => const <PriceModel>[],
-    );
-    final silverPrices = silverPricesAsync.maybeWhen(
-      data: (prices) => prices,
-      orElse: () => const <PriceModel>[],
-    );
-
-    final options = <CalculatorRateOption>[];
-    for (final price in goldPrices) {
-      options.add(
-        CalculatorRateOption(
-          id: 'gold:${price.label}',
-          label: '${AppStrings.gold} • ${price.label}',
-          price: price.price,
-          unit: price.unit,
-        ),
-      );
-    }
-    for (final price in silverPrices) {
-      options.add(
-        CalculatorRateOption(
-          id: 'silver:${price.label}',
-          label: '${AppStrings.silver} • ${price.label}',
-          price: price.price,
-          unit: price.unit,
-        ),
-      );
-    }
-
-    return options;
+    return 'প্রতি ভরির দাম লিখুন';
   }
 
   Widget _buildResultCard(Map<String, double> result) {

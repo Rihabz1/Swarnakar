@@ -30,7 +30,8 @@ class AppStrings {
   static const String verify = 'যাচাই করুন ও এগিয়ে যান';
   static const String didntReceiveCode = 'কোড পাননি? ';
   static const String resendCode = 'পুনরায় পাঠান';
-  static const String termsAccept = 'চালিয়ে গেলে আপনি আমাদের সেবার শর্তাবলী ও গোপনীয়তা নীতিতে সম্মত হচ্ছেন';
+  static const String termsAccept =
+      'চালিয়ে গেলে আপনি আমাদের সেবার শর্তাবলী ও গোপনীয়তা নীতিতে সম্মত হচ্ছেন';
 
   // Dashboard
   static const String home = 'হোম';
@@ -54,15 +55,15 @@ class AppStrings {
   static const String goldPerBhori = 'সোনা / ভরি';
   static const String silverPerBhori = 'রূপা / ভরি';
   static const String updateTime = 'আপডেট';
-  static const String currentDhakaPrices = 'ঢাকার বর্তমান বাজার (ভরি)';
-  static const String oldGoldPrices = 'পুরাতন / ভাঙারি (ভরি)';
+  static const String currentDhakaPrices = 'নতুন স্বর্ণ (ভরি)';
+  static const String oldGoldPrices = 'পুরাতন / ভাঙ্গরি স্বর্ণ (ভরি)';
   static const String pureFineGold = 'পাকা ও টুকরা';
   static const String karat22 = '২২ ক্যারেট';
   static const String karat21 = '২১ ক্যারেট';
   static const String oldKarat22 = '২২ ক্যারেট (পুরাতন)';
   static const String oldKarat21 = '২১ ক্যারেট (পুরাতন)';
-  static const String pureAcid = 'পাকা এসিড (১০ গ্রাম)';
-  static const String pieceGold = 'টুকরা স্বর্ণ (ভরি)';
+  static const String pureAcid = 'পাকা এসিড (প্রতি ভরি)';
+  static const String pieceGold = 'টুকরা স্বর্ণ (প্রতি ভরি)';
   static const String subscribeToView = 'সাবস্ক্রাইব করুন';
   static const String subscribeToSeePrice = 'মূল্য দেখতে সাবস্ক্রাইব করুন';
 
@@ -135,7 +136,8 @@ class AppStrings {
   static const String fullFeatures = 'সম্পূর্ণ ক্যালকুলেটর ও রিপোর্ট সুবিধা';
   static const String subscribeNow = 'এখনই সদস্যতা নিন →';
   static const String continueAsGuest = 'গেস্ট হিসেবে চালিয়ে যান';
-  static const String cancellableAnytime = 'যেকোনো সময় বাতিলযোগ্য · bKash / Card';
+  static const String cancellableAnytime =
+      'যেকোনো সময় বাতিলযোগ্য · bKash / Card';
 
   // Reports
   static const String reportsTitle = 'বিবরণী';

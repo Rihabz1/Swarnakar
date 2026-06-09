@@ -5,45 +5,54 @@ import 'package:animate_do/animate_do.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
-import 'package:swarnakar/core/utils/currency_formatter.dart';
-import 'package:swarnakar/core/providers/core_providers.dart';
 import 'package:swarnakar/shared/widgets/app_bottom_nav.dart';
 import 'package:swarnakar/features/dashboard/providers/dashboard_provider.dart';
-import 'package:swarnakar/core/utils/date_formatter.dart';
-import 'package:swarnakar/features/gold_price/providers/gold_price_provider.dart';
-import 'package:swarnakar/features/silver_price/providers/silver_price_provider.dart';
-import 'package:swarnakar/shared/models/price_model.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final goldPriceAsync = ref.watch(dashboardGoldPriceProvider);
-    final silverPriceAsync = ref.watch(dashboardSilverPriceProvider);
-    final goldPricesAsync = ref.watch(goldPricesProvider);
-    final silverPricesAsync = ref.watch(silverPricesProvider);
-    final isSubscribed = ref.watch(activeSubscriptionProvider);
-    final updateText = _buildUpdatedAtText(goldPricesAsync, silverPricesAsync);
-
-    final goldPriceText = goldPriceAsync.when(
-      data: (value) => CurrencyFormatter.formatBDT(value),
-      loading: () => '...',
-      error: (_, __) => '--',
-    );
-    final silverPriceText = silverPriceAsync.when(
-      data: (value) => CurrencyFormatter.formatBDT(value),
-      loading: () => '...',
-      error: (_, __) => '--',
-    );
+    final lastUpdatedAsync = ref.watch(dashboardLastUpdatedProvider);
+    final updateText = _buildUpdatedAtText(lastUpdatedAsync);
 
     final dashboardCards = [
-      ('সোনার বাজার', 'Gold Market', Icons.diamond_outlined, '/gold-price', AppColors.gold),
-      ('রৌপ্যের বাজার', 'Silver Market', Icons.diamond_outlined, '/silver-price', AppColors.silver),
-      ('ক্যালকুলেটর', 'Calculator', Icons.calculate_outlined, '/calculator', AppColors.gold),
+      (
+        'সোনার বাজার',
+        'Gold Market',
+        Icons.diamond_outlined,
+        '/gold-price',
+        AppColors.gold
+      ),
+      (
+        'রৌপ্যের বাজার',
+        'Silver Market',
+        Icons.diamond_outlined,
+        '/silver-price',
+        AppColors.silver
+      ),
+      (
+        'ক্যালকুলেটর',
+        'Calculator',
+        Icons.calculate_outlined,
+        '/calculator',
+        AppColors.gold
+      ),
       ('যাকাত', 'Zakat', Icons.shield_outlined, '/zakat', AppColors.gold),
-      (AppStrings.converter, 'Converter', Icons.swap_horiz, '/converter', AppColors.gold),
-      (AppStrings.priceHistory, 'History', Icons.show_chart_outlined, '/price-history', AppColors.gold),
+      (
+        AppStrings.converter,
+        'Converter',
+        Icons.swap_horiz,
+        '/converter',
+        AppColors.gold
+      ),
+      (
+        AppStrings.priceHistory,
+        'History',
+        Icons.show_chart_outlined,
+        '/price-history',
+        AppColors.gold
+      ),
     ];
 
     return Scaffold(
@@ -92,109 +101,7 @@ class DashboardScreen extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.all(14),
                 child: FadeInDown(
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: AppColors.gold.withValues(alpha: 0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildPriceSection(
-                                'সোনার বর্তমান বাজার',
-                                goldPriceText,
-                                updateText,
-                                isLocked: !isSubscribed,
-                              ),
-                            ),
-                            Container(
-                              width: 1,
-                              height: 46,
-                              color: AppColors.gold.withValues(alpha: 0.15),
-                            ),
-                            Expanded(
-                              child: _buildPriceSection(
-                                'রৌপ্যের বর্তমান বাজার',
-                                silverPriceText,
-                                updateText,
-                                isLocked: !isSubscribed,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        if (!isSubscribed)
-                          Align(
-                            alignment: Alignment.center,
-                            child: OutlinedButton.icon(
-                              onPressed: () => context.go('/paywall'),
-                              style: OutlinedButton.styleFrom(
-                                minimumSize: const Size(0, 34),
-                                visualDensity: const VisualDensity(
-                                  horizontal: -2,
-                                  vertical: -2,
-                                ),
-                                side: BorderSide(
-                                  color: AppColors.gold.withValues(alpha: 0.55),
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                              ),
-                              icon: const Icon(
-                                Icons.lock_outline,
-                                color: AppColors.gold,
-                                size: 14,
-                              ),
-                              label: Text(
-                                'প্রিমিয়াম আনলক করুন',
-                                style: AppTextStyles.hindSiliguri(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.gold,
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          Align(
-                            alignment: Alignment.center,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.gold.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: AppColors.gold.withValues(alpha: 0.35),
-                                ),
-                              ),
-                              child: Text(
-                                'প্রিমিয়াম সক্রিয়',
-                                style: AppTextStyles.hindSiliguri(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.gold,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+                  child: _buildUpdateCard(updateText),
                 ),
               ),
               Padding(
@@ -225,7 +132,8 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   itemCount: dashboardCards.length,
                   itemBuilder: (context, index) {
-                    final (bengaliName, englishName, icon, route, iconColor) = dashboardCards[index];
+                    final (bengaliName, englishName, icon, route, iconColor) =
+                        dashboardCards[index];
                     return FadeInUp(
                       delay: Duration(milliseconds: index * 90),
                       child: GestureDetector(
@@ -253,56 +161,72 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPriceSection(
-    String label,
-    String value,
-    String subtext, {
-    bool isLocked = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.hindSiliguri(
-            fontSize: 9.5,
-            color: AppColors.white,
-          ),
+  Widget _buildUpdateCard(_UpdateText updateText) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 28, 18, 24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.gold.withValues(alpha: 0.2),
+          width: 1,
         ),
-        const SizedBox(height: 2),
-        Row(
-          children: [
-            if (isLocked)
-              Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: Icon(
-                  Icons.lock_outline,
-                  size: 12,
-                  color: AppColors.vividGold.withValues(alpha: 0.82),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Column(
+            children: [
+              Text(
+                updateText.timeLine,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.hindSiliguri(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.white,
+                  height: 1.22,
                 ),
               ),
-            Text(
-              isLocked ? '••••••' : value,
-              style: AppTextStyles.hindSiliguri(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: isLocked ? AppColors.mutedChampagne : AppColors.gold,
+              Text(
+                updateText.dateLine,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.hindSiliguri(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.white,
+                  height: 1.22,
+                ),
               ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(8),
             ),
-          ],
-        ),
-        if (subtext.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
             child: Text(
-              subtext,
+              'কেউ মাল কিনছে না। আরও ১ঘন্টা সময় লাগতে পারে।',
+              textAlign: TextAlign.center,
               style: AppTextStyles.hindSiliguri(
-                fontSize: 9,
-                color: AppColors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Colors.red,
+                height: 1.25,
               ),
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -372,23 +296,84 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  String _buildUpdatedAtText(
-    AsyncValue<List<PriceModel>> goldPricesAsync,
-    AsyncValue<List<PriceModel>> silverPricesAsync,
-  ) {
-    final goldUpdatedAt = _pickUpdatedAt(goldPricesAsync);
-    final silverUpdatedAt = _pickUpdatedAt(silverPricesAsync);
-    final formatted = DateFormatter.formatUpdatedAt(goldUpdatedAt ?? silverUpdatedAt);
-    if (formatted.isEmpty) {
-      return 'সর্বশেষ আপডেট: --';
-    }
-    return 'সর্বশেষ আপডেট: $formatted';
-  }
-
-  String? _pickUpdatedAt(AsyncValue<List<PriceModel>> pricesAsync) {
-    return pricesAsync.maybeWhen(
-      data: (prices) => prices.isNotEmpty ? prices.first.updatedAt : null,
-      orElse: () => null,
+  _UpdateText _buildUpdatedAtText(AsyncValue<DateTime?> lastUpdatedAsync) {
+    return lastUpdatedAsync.when(
+      data: (updatedAt) => _formatBanglaUpdatedAt(updatedAt),
+      loading: () => const _UpdateText(
+        timeLine: 'সর্বশেষ আপডেট: --',
+        dateLine: '',
+      ),
+      error: (_, __) => const _UpdateText(
+        timeLine: 'সর্বশেষ আপডেট: --',
+        dateLine: '',
+      ),
     );
   }
+
+  _UpdateText _formatBanglaUpdatedAt(DateTime? updatedAt) {
+    if (updatedAt == null) {
+      return const _UpdateText(
+        timeLine: 'সর্বশেষ আপডেট: --',
+        dateLine: '',
+      );
+    }
+
+    final local = updatedAt.toLocal();
+    final period = local.hour < 12 ? 'সকাল' : 'বেলা';
+    final hourOfPeriod = local.hour % 12;
+    final hour = hourOfPeriod == 0 ? 12 : hourOfPeriod;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final month = _banglaMonths[local.month - 1];
+    final weekday = _banglaWeekdays[local.weekday - 1];
+
+    return _UpdateText(
+      timeLine:
+          'সর্বশেষ আপডেট: $period ${_toBanglaDigits(hour.toString())}.${_toBanglaDigits(minute)}টা',
+      dateLine:
+          '${_toBanglaDigits(local.day.toString())}ই $month ${_toBanglaDigits(local.year.toString())} রোজ: $weekday',
+    );
+  }
+
+  String _toBanglaDigits(String value) {
+    const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    return value.replaceAllMapped(
+      RegExp(r'\d'),
+      (match) => banglaDigits[int.parse(match.group(0)!)],
+    );
+  }
+
+  static const _banglaMonths = [
+    'জানুয়ারি',
+    'ফেব্রুয়ারি',
+    'মার্চ',
+    'এপ্রিল',
+    'মে',
+    'জুন',
+    'জুলাই',
+    'আগস্ট',
+    'সেপ্টেম্বর',
+    'অক্টোবর',
+    'নভেম্বর',
+    'ডিসেম্বর',
+  ];
+
+  static const _banglaWeekdays = [
+    'সোমবার',
+    'মঙ্গলবার',
+    'বুধবার',
+    'বৃহস্পতিবার',
+    'শুক্রবার',
+    'শনিবার',
+    'রবিবার',
+  ];
+}
+
+class _UpdateText {
+  const _UpdateText({
+    required this.timeLine,
+    required this.dateLine,
+  });
+
+  final String timeLine;
+  final String dateLine;
 }

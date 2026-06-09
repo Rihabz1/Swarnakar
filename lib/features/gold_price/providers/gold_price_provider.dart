@@ -4,7 +4,11 @@ import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/models/price_model.dart';
 
 final goldPricesProvider = StreamProvider<List<PriceModel>>((ref) {
-  return FirebaseFirestore.instance.collection('prices').doc('current').snapshots().map((snapshot) {
+  return FirebaseFirestore.instance
+      .collection('prices')
+      .doc('current')
+      .snapshots()
+      .map((snapshot) {
     final data = snapshot.data();
     if (data == null) {
       return <PriceModel>[];
@@ -13,34 +17,55 @@ final goldPricesProvider = StreamProvider<List<PriceModel>>((ref) {
     final updatedAt = _readUpdatedAt(data['updatedAt']);
     final prices = <PriceModel>[];
 
-    _addPrice(prices, label: AppStrings.karat22, value: data['gold_22k'], updatedAt: updatedAt);
-    _addPrice(prices, label: AppStrings.karat21, value: data['gold_21k'], updatedAt: updatedAt);
-    _addPrice(prices, label: AppStrings.oldKarat22, value: data['gold_22k_old'], updatedAt: updatedAt);
-    _addPrice(prices, label: AppStrings.oldKarat21, value: data['gold_21k_old'], updatedAt: updatedAt);
+    _addPrice(prices,
+        label: AppStrings.karat22,
+        value: data['gold_22k'],
+        updatedAt: updatedAt);
+    _addPrice(prices,
+        label: AppStrings.karat21,
+        value: data['gold_21k'],
+        updatedAt: updatedAt);
+    _addPrice(prices,
+        label: AppStrings.oldKarat22,
+        value: data['gold_22k_old'],
+        updatedAt: updatedAt);
+    _addPrice(prices,
+        label: AppStrings.oldKarat21,
+        value: data['gold_21k_old'],
+        updatedAt: updatedAt);
     _addPrice(
       prices,
       label: AppStrings.pureAcid,
       value: data['gold_paka'],
       updatedAt: updatedAt,
-      unit: '10 গ্রাম',
     );
-    _addPrice(prices, label: AppStrings.pieceGold, value: data['gold_tukra'], updatedAt: updatedAt);
+    _addPrice(prices,
+        label: AppStrings.pieceGold,
+        value: data['gold_tukra'],
+        updatedAt: updatedAt);
 
     return prices;
   });
 });
 
-final goldPricesBySection = Provider<AsyncValue<Map<String, List<PriceModel>>>>((ref) {
+final goldPricesBySection =
+    Provider<AsyncValue<Map<String, List<PriceModel>>>>((ref) {
   final pricesAsync = ref.watch(goldPricesProvider);
 
   return pricesAsync.whenData((prices) {
-
     return {
-      AppStrings.currentDhakaPrices: prices
-          .where((p) => !p.label.contains('পুরাতন') && !p.label.contains('পাকা') && !p.label.contains('টুকরা'))
-          .toList(),
-      AppStrings.oldGoldPrices: prices.where((p) => p.label.contains('পুরাতন')).toList(),
-      AppStrings.pureFineGold: prices.where((p) => p.label.contains('পাকা') || p.label.contains('টুকরা')).toList(),
+      AppStrings.oldGoldPrices: [
+        ...prices.where((price) => price.label == AppStrings.oldKarat22),
+        ...prices.where((price) => price.label == AppStrings.oldKarat21),
+      ],
+      AppStrings.currentDhakaPrices: [
+        ...prices.where((price) => price.label == AppStrings.karat22),
+        ...prices.where((price) => price.label == AppStrings.karat21),
+      ],
+      AppStrings.pureFineGold: [
+        ...prices.where((price) => price.label == AppStrings.pureAcid),
+        ...prices.where((price) => price.label == AppStrings.pieceGold),
+      ],
     };
   });
 });

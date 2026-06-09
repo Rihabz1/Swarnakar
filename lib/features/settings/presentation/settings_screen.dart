@@ -18,7 +18,8 @@ class SettingsScreen extends ConsumerWidget {
     return user.phone.isEmpty ? 'মোবাইল নম্বর যোগ করুন' : user.phone;
   }
 
-  void _showEditProfileSheet(BuildContext context, WidgetRef ref, UserModel profile) {
+  void _showEditProfileSheet(
+      BuildContext context, WidgetRef ref, UserModel profile) {
     final nameController = TextEditingController(text: profile.name);
     final shopController = TextEditingController(text: profile.shopName);
     final addressController = TextEditingController(text: profile.address);
@@ -73,7 +74,8 @@ class SettingsScreen extends ConsumerWidget {
               child: Container(
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
                   border: Border.all(
                     color: AppColors.gold.withValues(alpha: 0.2),
                     width: 1,
@@ -167,25 +169,30 @@ class SettingsScreen extends ConsumerWidget {
               if (current.isEmpty || next.isEmpty || confirm.isEmpty) {
                 ScaffoldMessenger.of(context)
                   ..hideCurrentSnackBar()
-                  ..showSnackBar(const SnackBar(content: Text('সবগুলো তথ্য দিন।')));
+                  ..showSnackBar(
+                      const SnackBar(content: Text('সবগুলো তথ্য দিন।')));
                 return;
               }
-              if (whitespaceRegex.hasMatch(current) || whitespaceRegex.hasMatch(next)) {
+              if (whitespaceRegex.hasMatch(current) ||
+                  whitespaceRegex.hasMatch(next)) {
                 ScaffoldMessenger.of(context)
                   ..hideCurrentSnackBar()
-                  ..showSnackBar(const SnackBar(content: Text('পাসওয়ার্ডে স্পেস ব্যবহার করা যাবে না।')));
+                  ..showSnackBar(const SnackBar(
+                      content: Text('পাসওয়ার্ডে স্পেস ব্যবহার করা যাবে না।')));
                 return;
               }
               if (next.length < 8) {
                 ScaffoldMessenger.of(context)
                   ..hideCurrentSnackBar()
-                  ..showSnackBar(const SnackBar(content: Text('পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।')));
+                  ..showSnackBar(const SnackBar(
+                      content: Text('পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।')));
                 return;
               }
               if (next != confirm) {
                 ScaffoldMessenger.of(context)
                   ..hideCurrentSnackBar()
-                  ..showSnackBar(const SnackBar(content: Text('পাসওয়ার্ড মিলছে না।')));
+                  ..showSnackBar(
+                      const SnackBar(content: Text('পাসওয়ার্ড মিলছে না।')));
                 return;
               }
 
@@ -201,7 +208,8 @@ class SettingsScreen extends ConsumerWidget {
                 }
                 ScaffoldMessenger.of(context)
                   ..hideCurrentSnackBar()
-                  ..showSnackBar(const SnackBar(content: Text('পাসওয়ার্ড আপডেট হয়েছে।')));
+                  ..showSnackBar(const SnackBar(
+                      content: Text('পাসওয়ার্ড আপডেট হয়েছে।')));
               } catch (e) {
                 final message = e is AuthException
                     ? (e.message ?? 'পাসওয়ার্ড আপডেট ব্যর্থ হয়েছে।')
@@ -220,7 +228,8 @@ class SettingsScreen extends ConsumerWidget {
               child: Container(
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
                   border: Border.all(
                     color: AppColors.gold.withValues(alpha: 0.2),
                     width: 1,
@@ -293,11 +302,132 @@ class SettingsScreen extends ConsumerWidget {
     });
   }
 
+  void _showAboutSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
+              border: Border.all(
+                color: AppColors.gold.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 38,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.textMuted.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    AppStrings.about,
+                    style: AppTextStyles.hindSiliguri(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '${AppStrings.appName} ${AppStrings.appVersion} একটি প্রিমিয়াম জুয়েলারি স্যুট। '
+                    'এতে স্বর্ণ ও রৌপ্যের বাজার দর দেখা, ভরি-গ্রাম-আউন্স রূপান্তর, '
+                    'ধাতুর মূল্য হিসাব, যাকাত হিসাব, রিপোর্ট এবং দাম ইতিহাস দেখার সুবিধা রয়েছে। '
+                    'জুয়েলারি ব্যবসা ও স্বর্ণকারদের দৈনন্দিন কাজ দ্রুত, নির্ভুল এবং সহজ করার জন্য অ্যাপটি তৈরি করা হয়েছে।',
+                    style: AppTextStyles.hindSiliguri(
+                      fontSize: 12,
+                      height: 1.55,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'ডেভেলপার তথ্য',
+                    style: AppTextStyles.hindSiliguri(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.gold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Md. Foisal Ahmed',
+                    style: AppTextStyles.hindSiliguri(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Software Engineer | Flutter App Developer | DevOps Engineer',
+                    style: AppTextStyles.hindSiliguri(
+                      fontSize: 12,
+                      height: 1.45,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Graduated in B.Sc. in CSE from MIST.',
+                    style: AppTextStyles.hindSiliguri(
+                      fontSize: 12,
+                      height: 1.45,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'যোগাযোগ',
+                    style: AppTextStyles.hindSiliguri(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.gold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildAboutInfoRow(
+                      Icons.phone_outlined, 'Phone: 01995357906'),
+                  const SizedBox(height: 8),
+                  _buildAboutInfoRow(
+                      Icons.email_outlined, 'Email: info@foisalahmed.online'),
+                  const SizedBox(height: 8),
+                  _buildAboutInfoRow(
+                      Icons.language, 'Website: foisalahmed.online'),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(userProfileProvider);
     final fallbackSubscribed = ref.watch(isSubscribedProvider);
-    final isSubscribedGlobal = profileAsync.value?.isSubscribed ?? fallbackSubscribed;
+    final isSubscribedGlobal =
+        profileAsync.value?.isSubscribed ?? fallbackSubscribed;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -333,24 +463,131 @@ class SettingsScreen extends ConsumerWidget {
         child: SingleChildScrollView(
           child: Column(
             children: [
-            // Profile Card
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: profileAsync.when(
-                data: (profile) {
-                  final user = profile ?? UserModel(
-                    uid: '',
-                    name: 'ব্যবহারকারী',
-                    email: '',
-                    phone: '',
-                    shopName: '',
-                    address: '',
-                    isSubscribed: false,
-                    plan: '',
-                    subExpires: null,
-                  );
-                  final isSubscribed = profile?.isSubscribed ?? fallbackSubscribed;
-                  return Container(
+              // Profile Card
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: profileAsync.when(
+                  data: (profile) {
+                    final user = profile ??
+                        UserModel(
+                          uid: '',
+                          name: 'ব্যবহারকারী',
+                          email: '',
+                          phone: '',
+                          shopName: '',
+                          address: '',
+                          isSubscribed: false,
+                          plan: '',
+                          subExpires: null,
+                        );
+                    final isSubscribed =
+                        profile?.isSubscribed ?? fallbackSubscribed;
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.gold.withValues(alpha: 0.18),
+                          width: 1,
+                        ),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.gold,
+                                width: 2,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                user.getInitials(),
+                                style: AppTextStyles.hindSiliguri(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.gold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user.name.isEmpty ? 'ব্যবহারকারী' : user.name,
+                                  style: AppTextStyles.hindSiliguri(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.white,
+                                  ),
+                                ),
+                                Text(
+                                  _displayContact(user),
+                                  style: AppTextStyles.hindSiliguri(
+                                    fontSize: 11,
+                                    color: AppColors.textMuted,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                if (isSubscribed)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          AppColors.gold.withValues(alpha: 0.1),
+                                      border: Border.all(
+                                        color: AppColors.gold
+                                            .withValues(alpha: 0.3),
+                                        width: 1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      AppStrings.premiumMember,
+                                      style: AppTextStyles.hindSiliguri(
+                                        fontSize: 9,
+                                        color: AppColors.gold,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: profile == null
+                                ? null
+                                : () => _showEditProfileSheet(
+                                    context, ref, profile),
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: AppColors.gold.withValues(alpha: 0.2),
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.edit_outlined,
+                                color: AppColors.gold,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  loading: () => Container(
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(16),
@@ -372,195 +609,103 @@ class SettingsScreen extends ConsumerWidget {
                               width: 2,
                             ),
                           ),
-                          child: Center(
-                            child: Text(
-                              user.getInitials(),
-                              style: AppTextStyles.hindSiliguri(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.gold,
-                              ),
-                            ),
-                          ),
                         ),
                         const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user.name.isEmpty ? 'ব্যবহারকারী' : user.name,
-                                style: AppTextStyles.hindSiliguri(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.white,
-                                ),
-                              ),
-                              Text(
-                                _displayContact(user),
-                                style: AppTextStyles.hindSiliguri(
-                                  fontSize: 11,
-                                  color: AppColors.textMuted,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              if (isSubscribed)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.gold.withValues(alpha: 0.1),
-                                    border: Border.all(
-                                      color: AppColors.gold.withValues(alpha: 0.3),
-                                      width: 1,
-                                    ),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    AppStrings.premiumMember,
-                                    style: AppTextStyles.hindSiliguri(
-                                      fontSize: 9,
-                                      color: AppColors.gold,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: profile == null
-                              ? null
-                              : () => _showEditProfileSheet(context, ref, profile),
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: AppColors.gold.withValues(alpha: 0.2),
-                                width: 1,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.edit_outlined,
-                              color: AppColors.gold,
-                              size: 16,
-                            ),
+                        Text(
+                          'লোড হচ্ছে...',
+                          style: AppTextStyles.hindSiliguri(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
                           ),
                         ),
                       ],
                     ),
-                  );
-                },
-                loading: () => Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.gold.withValues(alpha: 0.18),
-                      width: 1,
-                    ),
                   ),
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.gold,
-                            width: 2,
-                          ),
-                        ),
+                  error: (_, __) => Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.gold.withValues(alpha: 0.18),
+                        width: 1,
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'লোড হচ্ছে...',
-                        style: AppTextStyles.hindSiliguri(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                error: (_, __) => Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.gold.withValues(alpha: 0.18),
-                      width: 1,
                     ),
-                  ),
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    'প্রোফাইল লোড করা যায়নি',
-                    style: AppTextStyles.hindSiliguri(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'প্রোফাইল লোড করা যায়নি',
+                      style: AppTextStyles.hindSiliguri(
+                        fontSize: 12,
+                        color: AppColors.textMuted,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            // Settings Group 1
-            _buildSettingsGroup([
-              _buildSettingsRow(AppStrings.notifications, Icons.notifications_none),
-              _buildSettingsRow(AppStrings.language, Icons.language),
-              _buildSettingsRow(
-                AppStrings.subscription,
-                Icons.workspace_premium,
-                showBadge: isSubscribedGlobal,
-              ),
-            ]),
-            // Settings Group 2
-            _buildSettingsGroup([
-              _buildSettingsRow('পাসওয়ার্ড পরিবর্তন করুন', Icons.lock_outline, onTap: () {
-                profileAsync.whenData((profile) {
-                  if (profile == null) return;
-                  _showChangePasswordSheet(context, profile);
-                });
-              }),
-              _buildSettingsRow(AppStrings.privacyPolicy, Icons.privacy_tip_outlined),
-              _buildSettingsRow(AppStrings.termsOfService, Icons.description_outlined),
-              _buildSettingsRow(AppStrings.about, Icons.info_outlined),
-            ]),
-            // Logout Button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 20),
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 6),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: AppColors.error.withValues(alpha: 0.25),
-                    width: 1,
-                  ),
-                  color: AppColors.error.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
+              // Settings Group 1
+              _buildSettingsGroup([
+                _buildSettingsRow(
+                    AppStrings.notifications, Icons.notifications_none),
+                _buildSettingsRow(AppStrings.language, Icons.language),
+                _buildSettingsRow(
+                  AppStrings.subscription,
+                  Icons.workspace_premium,
+                  showBadge: isSubscribedGlobal,
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
+              ]),
+              // Settings Group 2
+              _buildSettingsGroup([
+                _buildSettingsRow(
+                    'পাসওয়ার্ড পরিবর্তন করুন', Icons.lock_outline, onTap: () {
+                  profileAsync.whenData((profile) {
+                    if (profile == null) return;
+                    _showChangePasswordSheet(context, profile);
+                  });
+                }),
+                _buildSettingsRow(
+                    AppStrings.privacyPolicy, Icons.privacy_tip_outlined),
+                _buildSettingsRow(
+                    AppStrings.termsOfService, Icons.description_outlined),
+                _buildSettingsRow(AppStrings.about, Icons.info_outlined,
                     onTap: () {
-                      FirebaseAuthService.instance.clearSession().then((_) {
-                        ref.invalidate(userProfileProvider);
-                        if (context.mounted) {
-                          context.go('/login');
-                        }
-                      });
-                    },
+                  _showAboutSheet(context);
+                }),
+              ]),
+              // Logout Button
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 20),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 6),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: AppColors.error.withValues(alpha: 0.25),
+                      width: 1,
+                    ),
+                    color: AppColors.error.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Center(
-                        child: Text(
-                          AppStrings.logout,
-                          style: AppTextStyles.hindSiliguri(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.error,
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        FirebaseAuthService.instance.clearSession().then((_) {
+                          ref.invalidate(userProfileProvider);
+                          if (context.mounted) {
+                            context.go('/login');
+                          }
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Center(
+                          child: Text(
+                            AppStrings.logout,
+                            style: AppTextStyles.hindSiliguri(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.error,
+                            ),
                           ),
                         ),
                       ),
@@ -568,7 +713,6 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-            ),
             ],
           ),
         ),
@@ -677,6 +821,30 @@ class SettingsScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAboutInfoRow(IconData icon, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          color: AppColors.gold,
+          size: 16,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: SelectableText(
+            text,
+            style: AppTextStyles.hindSiliguri(
+              fontSize: 12,
+              height: 1.35,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
