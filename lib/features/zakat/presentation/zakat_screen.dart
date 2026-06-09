@@ -46,11 +46,7 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
         elevation: 0,
         leading: GestureDetector(
           onTap: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/dashboard');
-            }
+            context.go('/dashboard');
           },
           child: const Icon(
             Icons.arrow_back_ios_new,
@@ -74,79 +70,81 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
             child: Column(
-            children: [
-              _buildNisabReferenceCard(nisabAsync),
-              const SizedBox(height: 20),
-              GoldenInputField(
-                hint: AppStrings.totalGoldGrams,
-                icon: Icons.diamond_outlined,
-                keyboardType: TextInputType.number,
-                controller: controllers[0],
-              ),
-              const SizedBox(height: 12),
-              GoldenInputField(
-                hint: AppStrings.totalSilverGrams,
-                icon: Icons.circle_outlined,
-                keyboardType: TextInputType.number,
-                controller: controllers[1],
-              ),
-              const SizedBox(height: 12),
-              GoldenInputField(
-                hint: AppStrings.cashAndSavings,
-                icon: Icons.account_balance_wallet_outlined,
-                keyboardType: TextInputType.number,
-                controller: controllers[2],
-              ),
-              const SizedBox(height: 12),
-              GoldenInputField(
-                hint: AppStrings.businessGoodsValue,
-                icon: Icons.store_outlined,
-                keyboardType: TextInputType.number,
-                controller: controllers[3],
-              ),
-              const SizedBox(height: 12),
-              GoldenInputField(
-                hint: AppStrings.receivableAmount,
-                icon: Icons.arrow_forward_outlined,
-                keyboardType: TextInputType.number,
-                controller: controllers[4],
-              ),
-              const SizedBox(height: 12),
-              GoldenInputField(
-                hint: AppStrings.deductLoans,
-                icon: Icons.remove_circle_outline,
-                keyboardType: TextInputType.number,
-                controller: controllers[5],
-              ),
-              const SizedBox(height: 20),
-              GoldenButton(
-                text: AppStrings.calculateZakat,
-                onPressed: () {
-                  final goldGrams = double.tryParse(controllers[0].text) ?? 0;
-                  final silverGrams = double.tryParse(controllers[1].text) ?? 0;
-                  final cash = double.tryParse(controllers[2].text) ?? 0;
-                  final bizGoods = double.tryParse(controllers[3].text) ?? 0;
-                  final receivable = double.tryParse(controllers[4].text) ?? 0;
-                  final debts = double.tryParse(controllers[5].text) ?? 0;
-
-                  ref.read(zakatCalculatorProvider.notifier).calculate(
-                    goldGrams: goldGrams,
-                    silverGrams: silverGrams,
-                    cash: cash,
-                    bizGoods: bizGoods,
-                    receivable: receivable,
-                    debts: debts,
-                  );
-                },
-              ),
-              const SizedBox(height: 20),
-              if (result != null)
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: _buildResultCard(result),
+              children: [
+                _buildNisabReferenceCard(nisabAsync),
+                const SizedBox(height: 20),
+                GoldenInputField(
+                  hint: AppStrings.totalGoldGrams,
+                  icon: Icons.diamond_outlined,
+                  keyboardType: TextInputType.number,
+                  controller: controllers[0],
                 ),
-              const SizedBox(height: 20),
-            ],
+                const SizedBox(height: 12),
+                GoldenInputField(
+                  hint: AppStrings.totalSilverGrams,
+                  icon: Icons.circle_outlined,
+                  keyboardType: TextInputType.number,
+                  controller: controllers[1],
+                ),
+                const SizedBox(height: 12),
+                GoldenInputField(
+                  hint: AppStrings.cashAndSavings,
+                  icon: Icons.account_balance_wallet_outlined,
+                  keyboardType: TextInputType.number,
+                  controller: controllers[2],
+                ),
+                const SizedBox(height: 12),
+                GoldenInputField(
+                  hint: AppStrings.businessGoodsValue,
+                  icon: Icons.store_outlined,
+                  keyboardType: TextInputType.number,
+                  controller: controllers[3],
+                ),
+                const SizedBox(height: 12),
+                GoldenInputField(
+                  hint: AppStrings.receivableAmount,
+                  icon: Icons.arrow_forward_outlined,
+                  keyboardType: TextInputType.number,
+                  controller: controllers[4],
+                ),
+                const SizedBox(height: 12),
+                GoldenInputField(
+                  hint: AppStrings.deductLoans,
+                  icon: Icons.remove_circle_outline,
+                  keyboardType: TextInputType.number,
+                  controller: controllers[5],
+                ),
+                const SizedBox(height: 20),
+                GoldenButton(
+                  text: AppStrings.calculateZakat,
+                  onPressed: () {
+                    final goldGrams = double.tryParse(controllers[0].text) ?? 0;
+                    final silverGrams =
+                        double.tryParse(controllers[1].text) ?? 0;
+                    final cash = double.tryParse(controllers[2].text) ?? 0;
+                    final bizGoods = double.tryParse(controllers[3].text) ?? 0;
+                    final receivable =
+                        double.tryParse(controllers[4].text) ?? 0;
+                    final debts = double.tryParse(controllers[5].text) ?? 0;
+
+                    ref.read(zakatCalculatorProvider.notifier).calculate(
+                          goldGrams: goldGrams,
+                          silverGrams: silverGrams,
+                          cash: cash,
+                          bizGoods: bizGoods,
+                          receivable: receivable,
+                          debts: debts,
+                        );
+                  },
+                ),
+                const SizedBox(height: 20),
+                if (result != null)
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: _buildResultCard(result),
+                  ),
+                const SizedBox(height: 20),
+              ],
             ),
           ),
         ),
@@ -207,7 +205,8 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
         ),
         error: (err, stack) => Text(
           'Error loading Nisab',
-          style: AppTextStyles.hindSiliguri(color: AppColors.error, fontSize: 10),
+          style:
+              AppTextStyles.hindSiliguri(color: AppColors.error, fontSize: 10),
         ),
       ),
     );
@@ -233,8 +232,12 @@ class _ZakatScreenState extends ConsumerState<ZakatScreen> {
           const SizedBox(height: 12),
           _buildResultRow(
             AppStrings.nisabStatus,
-            result['isEligible'] == true ? AppStrings.zakatEligible : AppStrings.nisabNotMet,
-            valueColor: result['isEligible'] == true ? AppColors.success : AppColors.error,
+            result['isEligible'] == true
+                ? AppStrings.zakatEligible
+                : AppStrings.nisabNotMet,
+            valueColor: result['isEligible'] == true
+                ? AppColors.success
+                : AppColors.error,
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),

@@ -76,10 +76,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final otp = await FirebaseAuthService.instance.requestPasswordResetOtp(phone);
+      final otp =
+          await FirebaseAuthService.instance.requestPasswordResetOtp(phone);
       if (!mounted) return;
       _showMessage('ডেমো OTP: $otp');
-      context.go('/otp?phone=$phone&flow=reset');
+      context.push('/otp?phone=$phone&flow=reset');
     } catch (e) {
       if (!mounted) return;
       final message = e is AuthException
@@ -167,7 +168,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                     const SizedBox(height: 8),
                     TextButton(
-                      onPressed: () => context.go('/login'),
+                      onPressed: () => context.push('/login'),
                       child: Text(
                         'লগইন এ ফিরে যান',
                         style: AppTextStyles.hindSiliguri(

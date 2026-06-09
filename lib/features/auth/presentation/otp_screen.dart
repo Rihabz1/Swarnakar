@@ -129,7 +129,7 @@ class _OtpScreenState extends State<OtpScreen> {
     try {
       if (widget.flow == 'reset') {
         if (!mounted) return;
-        context.go('/reset-password?phone=${widget.phone}&otp=$code');
+        context.push('/reset-password?phone=${widget.phone}&otp=$code');
       } else {
         await FirebaseAuthService.instance.completeSignupWithOtp(otp: code);
         if (!mounted) return;
@@ -153,7 +153,8 @@ class _OtpScreenState extends State<OtpScreen> {
     setState(() => _isResending = true);
     try {
       if (widget.flow == 'reset') {
-        await FirebaseAuthService.instance.requestPasswordResetOtp(widget.phone);
+        await FirebaseAuthService.instance
+            .requestPasswordResetOtp(widget.phone);
         if (!mounted) return;
         _showMessage('OTP আবার পাঠানো হয়েছে।');
       }
@@ -206,7 +207,8 @@ class _OtpScreenState extends State<OtpScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.surface.withValues(alpha: 0.92),
                         borderRadius: BorderRadius.circular(22),
-                        border: Border.all(color: AppColors.gold.withValues(alpha: 0.24)),
+                        border: Border.all(
+                            color: AppColors.gold.withValues(alpha: 0.24)),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.35),
@@ -227,7 +229,8 @@ class _OtpScreenState extends State<OtpScreen> {
                                   color: AppColors.gold.withValues(alpha: 0.36),
                                   width: 1.5,
                                 ),
-                                color: AppColors.background.withValues(alpha: 0.35),
+                                color: AppColors.background
+                                    .withValues(alpha: 0.35),
                               ),
                               child: const Icon(
                                 Icons.badge_outlined,
@@ -240,7 +243,9 @@ class _OtpScreenState extends State<OtpScreen> {
                           FadeInUp(
                             delay: const Duration(milliseconds: 180),
                             child: Text(
-                              widget.flow == 'reset' ? 'পাসওয়ার্ড রিসেট OTP' : AppStrings.verifyOtpTitle,
+                              widget.flow == 'reset'
+                                  ? 'পাসওয়ার্ড রিসেট OTP'
+                                  : AppStrings.verifyOtpTitle,
                               style: AppTextStyles.hindSiliguri(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -266,7 +271,9 @@ class _OtpScreenState extends State<OtpScreen> {
                           FadeInUp(
                             delay: const Duration(milliseconds: 520),
                             child: GoldenButton(
-                              text: widget.flow == 'reset' ? 'OTP যাচাই করুন' : AppStrings.verify,
+                              text: widget.flow == 'reset'
+                                  ? 'OTP যাচাই করুন'
+                                  : AppStrings.verify,
                               isLoading: _isSubmitting,
                               onPressed: _handleVerify,
                             ),

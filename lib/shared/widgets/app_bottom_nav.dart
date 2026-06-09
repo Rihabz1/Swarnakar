@@ -52,7 +52,9 @@ class AppBottomNav extends StatelessWidget {
         selectedColor: AppColors.gold,
       ),
     ];
-    final safeIndex = currentIndex >= 0 && currentIndex < items.length ? currentIndex : 0;
+    final safeIndex =
+        currentIndex >= 0 && currentIndex < items.length ? currentIndex : 0;
+    final currentRoute = GoRouterState.of(context).uri.path;
 
     return Container(
       decoration: BoxDecoration(
@@ -75,6 +77,9 @@ class AppBottomNav extends StatelessWidget {
         currentIndex: safeIndex,
         onTap: (index) {
           final route = items[index].route;
+          if (route == currentRoute) {
+            return;
+          }
           context.go(route);
         },
         backgroundColor: Colors.transparent,

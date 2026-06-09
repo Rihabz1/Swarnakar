@@ -29,11 +29,7 @@ class SilverPriceScreen extends ConsumerWidget {
         elevation: 0,
         leading: GestureDetector(
           onTap: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/dashboard');
-            }
+            context.go('/dashboard');
           },
           child: const Icon(
             Icons.arrow_back_ios_new,
@@ -95,11 +91,10 @@ class SilverPriceScreen extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 60),
                       child: SubscribeBanner(
-                        onSubscribe: () => context.go('/paywall'),
+                        onSubscribe: () => context.push('/paywall'),
                       ),
                     ),
-                  if (isSubscribed)
-                    const SizedBox(height: 20),
+                  if (isSubscribed) const SizedBox(height: 20),
                 ],
               );
             },
@@ -151,9 +146,13 @@ class SilverPriceScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.gold.withValues(alpha: 0.14) : Colors.transparent,
+          color: isActive
+              ? AppColors.gold.withValues(alpha: 0.14)
+              : Colors.transparent,
           border: Border.all(
-            color: isActive ? AppColors.gold : AppColors.textMuted.withValues(alpha: 0.45),
+            color: isActive
+                ? AppColors.gold
+                : AppColors.textMuted.withValues(alpha: 0.45),
             width: 1,
           ),
           borderRadius: BorderRadius.circular(24),

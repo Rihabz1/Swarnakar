@@ -15,6 +15,8 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lastUpdatedAsync = ref.watch(dashboardLastUpdatedProvider);
     final updateText = _buildUpdatedAtText(lastUpdatedAsync);
+    final noticeAsync = ref.watch(dashboardNoticeProvider);
+    final noticeText = noticeAsync.value ?? defaultDashboardNotice;
 
     final dashboardCards = [
       (
@@ -55,80 +57,79 @@ class DashboardScreen extends ConsumerWidget {
       ),
     ];
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        toolbarHeight: 72,
-        title: Text(
-          AppStrings.appName,
-          style: AppTextStyles.hindSiliguri(
-            fontSize: 30,
-            fontWeight: FontWeight.w700,
-            color: AppColors.gold,
-            height: 1.2,
-          ),
-        ),
-        centerTitle: false,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 14),
-            child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.gold,
-                  width: 1.5,
-                ),
-              ),
-              child: const Icon(
-                Icons.notifications_none,
-                color: AppColors.gold,
-                size: 14,
-              ),
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          toolbarHeight: 72,
+          title: Text(
+            AppStrings.appName,
+            style: AppTextStyles.hindSiliguri(
+              fontSize: 30,
+              fontWeight: FontWeight.w700,
+              color: AppColors.gold,
+              height: 1.2,
             ),
           ),
-        ],
-      ),
-      body: Container(
-        color: AppColors.background,
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(14),
-                child: FadeInDown(
-                  child: _buildUpdateCard(updateText),
+          centerTitle: false,
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 14),
+              child: Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.gold,
+                    width: 1.5,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.notifications_none,
+                  color: AppColors.gold,
+                  size: 14,
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 16, top: 4, bottom: 10),
-                child: Align(
-                  alignment: Alignment.centerLeft,
+            ),
+          ],
+        ),
+        body: Container(
+          color: AppColors.background,
+          child: CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                sliver: SliverToBoxAdapter(
+                  child: FadeInDown(
+                    child: _buildUpdateCard(updateText, noticeText),
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.only(left: 16, top: 0, bottom: 8),
+                sliver: SliverToBoxAdapter(
                   child: Text(
                     AppStrings.services,
                     style: AppTextStyles.hindSiliguri(
                       fontSize: 12,
-                      fontWeight: FontWeight.w400,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.white,
-                      letterSpacing: 0.6,
                     ),
                   ),
                 ),
               ),
-              Padding(
+              SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
+                sliver: SliverGrid.builder(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
-                    childAspectRatio: 1.25,
+                    childAspectRatio: 1.38,
                   ),
                   itemCount: dashboardCards.length,
                   itemBuilder: (context, index) {
@@ -149,22 +150,24 @@ class DashboardScreen extends ConsumerWidget {
                   },
                 ),
               ),
-              const SizedBox(height: 26),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 16),
+              ),
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: AppBottomNav(
-        currentIndex: AppBottomNav.getIndexFromRoute('/dashboard'),
-        onTap: (index) {},
+        bottomNavigationBar: AppBottomNav(
+          currentIndex: AppBottomNav.getIndexFromRoute('/dashboard'),
+          onTap: (index) {},
+        ),
       ),
     );
   }
 
-  Widget _buildUpdateCard(_UpdateText updateText) {
+  Widget _buildUpdateCard(_UpdateText updateText, String noticeText) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 28, 18, 24),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 18),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
@@ -188,7 +191,7 @@ class DashboardScreen extends ConsumerWidget {
                 updateText.timeLine,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.hindSiliguri(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: AppColors.white,
                   height: 1.22,
@@ -198,7 +201,7 @@ class DashboardScreen extends ConsumerWidget {
                 updateText.dateLine,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.hindSiliguri(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: AppColors.white,
                   height: 1.22,
@@ -206,23 +209,59 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: AppColors.white,
+              color: AppColors.background.withValues(alpha: 0.45),
               borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              'কেউ মাল কিনছে না। আরও ১ঘন্টা সময় লাগতে পারে।',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.hindSiliguri(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Colors.red,
-                height: 1.25,
+              border: Border.all(
+                color: AppColors.gold.withValues(alpha: 0.16),
+                width: 1,
               ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  color: const Color(0xFFA14220),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.notifications_none,
+                        color: AppColors.white,
+                        size: 13,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'নোটিশ',
+                        style: AppTextStyles.hindSiliguri(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Text(
+                    noticeText,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.hindSiliguri(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.white,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -252,13 +291,13 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: iconColor.withValues(alpha: 0.1),
@@ -270,15 +309,15 @@ class DashboardScreen extends ConsumerWidget {
             child: Icon(
               icon,
               color: iconColor,
-              size: 20,
+              size: 19,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 7),
           Text(
             bengaliName,
             textAlign: TextAlign.center,
             style: AppTextStyles.hindSiliguri(
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.bold,
               color: AppColors.gold,
             ),
@@ -287,7 +326,7 @@ class DashboardScreen extends ConsumerWidget {
             englishName,
             textAlign: TextAlign.center,
             style: AppTextStyles.poppins(
-              fontSize: 10,
+              fontSize: 9,
               color: AppColors.white,
             ),
           ),

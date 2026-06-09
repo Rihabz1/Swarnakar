@@ -134,7 +134,7 @@ class AppStrings {
   static const String priceNotif = 'দাম পরিবর্তনের তাৎক্ষণিক নোটিফিকেশন';
   static const String adFree = 'বিজ্ঞাপনমুক্ত প্রিমিয়াম অভিজ্ঞতা';
   static const String fullFeatures = 'সম্পূর্ণ ক্যালকুলেটর ও রিপোর্ট সুবিধা';
-  static const String subscribeNow = 'এখনই সদস্যতা নিন →';
+  static const String subscribeNow = 'এখনই সাবস্ক্রাইব করুন →';
   static const String continueAsGuest = 'গেস্ট হিসেবে চালিয়ে যান';
   static const String cancellableAnytime =
       'যেকোনো সময় বাতিলযোগ্য · bKash / Card';

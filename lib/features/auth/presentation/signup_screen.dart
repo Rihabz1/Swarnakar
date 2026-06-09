@@ -84,7 +84,10 @@ class _SignupScreenState extends State<SignupScreen> {
     final confirmPassword = _confirmPasswordController.text;
     final whitespaceRegex = RegExp(r'\s');
 
-    if (name.isEmpty || phone.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (name.isEmpty ||
+        phone.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
       _showError('সবগুলো তথ্য দিন।');
       return false;
     }
@@ -92,7 +95,8 @@ class _SignupScreenState extends State<SignupScreen> {
       _showError('সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন (01XXXXXXXXX)।');
       return false;
     }
-    if (whitespaceRegex.hasMatch(password) || whitespaceRegex.hasMatch(confirmPassword)) {
+    if (whitespaceRegex.hasMatch(password) ||
+        whitespaceRegex.hasMatch(confirmPassword)) {
       _showError('পাসওয়ার্ডে স্পেস ব্যবহার করা যাবে না।');
       return false;
     }
@@ -211,14 +215,15 @@ class _SignupScreenState extends State<SignupScreen> {
                               text: AppStrings.createAccount,
                               onPressed: () async {
                                 if (!_validateSignup()) return;
-                                final phone = _normalizePhone(_phoneController.text.trim());
+                                final phone = _normalizePhone(
+                                    _phoneController.text.trim());
                                 await FirebaseAuthService.instance.stageSignup(
                                   name: _nameController.text.trim(),
                                   phone: phone,
                                   password: _passwordController.text,
                                   acceptAnyOtp: true,
                                 );
-                                context.go('/otp?phone=$phone');
+                                context.push('/otp?phone=$phone');
                               },
                             ),
                           ),
@@ -253,7 +258,7 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
         ),
         GestureDetector(
-          onTap: () => context.go('/login'),
+          onTap: () => context.push('/login'),
           child: Text(
             AppStrings.signInHere,
             style: AppTextStyles.hindSiliguri(

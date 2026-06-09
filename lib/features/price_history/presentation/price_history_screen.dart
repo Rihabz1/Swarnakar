@@ -73,11 +73,7 @@ class _PriceHistoryScreenState extends State<PriceHistoryScreen> {
         elevation: 0,
         leading: GestureDetector(
           onTap: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/dashboard');
-            }
+            context.go('/dashboard');
           },
           child: const Icon(
             Icons.arrow_back_ios_new,

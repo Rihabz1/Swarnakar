@@ -52,7 +52,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _handleForgotPassword() {
-    context.go('/forgot-password');
+    context.push('/forgot-password');
   }
 
   @override
@@ -91,7 +91,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       context.go('/dashboard');
     } catch (e) {
       if (!mounted) return;
-        final message = e is AuthException
+      final message = e is AuthException
           ? (e.message ?? 'লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।')
           : 'লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।';
       _showError(message);
@@ -191,7 +191,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: TextButton(
                             onPressed: _handleForgotPassword,
                             style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 2),
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
@@ -291,7 +292,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
         GestureDetector(
-          onTap: () => context.go('/signup'),
+          onTap: () => context.push('/signup'),
           child: Text(
             AppStrings.register,
             style: AppTextStyles.hindSiliguri(

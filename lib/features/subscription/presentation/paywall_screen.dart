@@ -7,11 +7,25 @@ import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
 import 'package:swarnakar/core/providers/core_providers.dart';
 
-class PaywallScreen extends ConsumerWidget {
+class PaywallScreen extends ConsumerStatefulWidget {
   const PaywallScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PaywallScreen> createState() => _PaywallScreenState();
+}
+
+class _PaywallScreenState extends ConsumerState<PaywallScreen> {
+  int _selectedPlanIndex = 3;
+
+  static const _plans = [
+    _PremiumPlan(title: '১ মাস', price: '৳৩০'),
+    _PremiumPlan(title: '৩ মাস', price: '৳৮৫'),
+    _PremiumPlan(title: '৬ মাস', price: '৳১৭০'),
+    _PremiumPlan(title: '১ বছর', price: '৳৩৪৫', badge: 'সেরা ভ্যালু'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -117,7 +131,8 @@ class PaywallScreen extends ConsumerWidget {
                         GoldenButton(
                           text: AppStrings.subscribeNow,
                           onPressed: () {
-                            ref.read(isSubscribedProvider.notifier).state = true;
+                            ref.read(isSubscribedProvider.notifier).state =
+                                true;
                             context.go('/dashboard');
                           },
                         ),
@@ -136,7 +151,8 @@ class PaywallScreen extends ConsumerWidget {
                               onTap: () => context.go('/dashboard'),
                               borderRadius: BorderRadius.circular(10),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
                                 child: Center(
                                   child: Text(
                                     AppStrings.continueAsGuest,
@@ -173,116 +189,107 @@ class PaywallScreen extends ConsumerWidget {
   }
 
   Widget _buildPlanCards() {
-    return Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 132,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Positioned.fill(
-                  top: 16,
-                  child: _buildPlanCard(
-                    AppStrings.monthly,
-                    AppStrings.monthlyPrice,
-                    AppStrings.perMonth,
-                    false,
-                  ),
-                ),
-              ],
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 390;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _plans.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: isWide ? 4 : 2,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: isWide ? 0.82 : 1.35,
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: SizedBox(
-            height: 132,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Positioned.fill(
-                  top: 16,
-                  child: _buildPlanCard(
-                    AppStrings.yearly,
-                    AppStrings.yearlyPrice,
-                    AppStrings.perYear,
-                    true,
-                  ),
-                ),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.gold,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        AppStrings.best,
-                        style: AppTextStyles.hindSiliguri(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          color: const Color(0xFF0A0A0A),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+          itemBuilder: (context, index) {
+            final plan = _plans[index];
+            return _buildPlanCard(
+              plan: plan,
+              isSelected: index == _selectedPlanIndex,
+              onTap: () => setState(() => _selectedPlanIndex = index),
+            );
+          },
+        );
+      },
     );
   }
 
-  Widget _buildPlanCard(
-    String title,
-    String price,
-    String period,
-    bool isFeatured,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isFeatured ? AppColors.gold.withValues(alpha: 0.06) : AppColors.surface,
-        border: Border.all(
-          color: isFeatured ? AppColors.gold : AppColors.gold.withValues(alpha: 0.24),
-          width: 1.5,
-        ),
+  Widget _buildPlanCard({
+    required _PremiumPlan plan,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.gold.withValues(alpha: 0.08)
+                : AppColors.background.withValues(alpha: 0.22),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.gold
+                  : AppColors.gold.withValues(alpha: 0.18),
+              width: isSelected ? 1.7 : 1,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(height: 18, child: _buildPlanBadge(plan.badge)),
+              const SizedBox(height: 4),
+              Text(
+                plan.title,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.hindSiliguri(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? AppColors.gold : AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                plan.price,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.hindSiliguri(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.gold,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            style: AppTextStyles.hindSiliguri(
-              fontSize: 10,
-              color: isFeatured ? AppColors.gold.withValues(alpha: 0.75) : AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            price,
-            style: AppTextStyles.hindSiliguri(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.gold,
-            ),
-          ),
-          Text(
-            period,
-            style: AppTextStyles.hindSiliguri(
-              fontSize: 9,
-              color: isFeatured ? AppColors.gold.withValues(alpha: 0.5) : AppColors.textMuted,
-            ),
-          ),
-        ],
+    );
+  }
+
+  Widget? _buildPlanBadge(String? badge) {
+    if (badge == null) {
+      return null;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.gold,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        badge,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: AppTextStyles.hindSiliguri(
+          fontSize: 9,
+          fontWeight: FontWeight.w900,
+          color: const Color(0xFF0A0A0A),
+        ),
       ),
     );
   }
@@ -341,4 +348,16 @@ class PaywallScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _PremiumPlan {
+  const _PremiumPlan({
+    required this.title,
+    required this.price,
+    this.badge,
+  });
+
+  final String title;
+  final String price;
+  final String? badge;
 }

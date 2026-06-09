@@ -24,6 +24,19 @@ final dashboardLastUpdatedProvider = StreamProvider<DateTime?>((ref) {
       .map((snapshot) => _readUpdatedAt(snapshot.data()?['updatedAt']));
 });
 
+final dashboardNoticeProvider = StreamProvider<String>((ref) {
+  return FirebaseFirestore.instance
+      .collection('prices')
+      .doc('current')
+      .snapshots()
+      .map((snapshot) {
+    final notice = (snapshot.data()?['notice'] as String?)?.trim() ?? '';
+    return notice.isEmpty ? defaultDashboardNotice : notice;
+  });
+});
+
+const defaultDashboardNotice = 'কেউ এখন কিনছে না, আরও ১ ঘণ্টা সময় লাগতে পারে।';
+
 DateTime? _readUpdatedAt(Object? value) {
   if (value is Timestamp) {
     return value.toDate();
