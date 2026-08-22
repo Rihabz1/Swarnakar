@@ -96,7 +96,7 @@ Package metadata requires Dart 3.x. The latest verified local environment used F
 ## System architecture
 
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"fontSize":"18px","fontFamily":"Arial","primaryColor":"#FFF3C4","primaryTextColor":"#111827","primaryBorderColor":"#B7791F","lineColor":"#2563EB","secondaryColor":"#DBEAFE","tertiaryColor":"#DCFCE7","clusterBkg":"#F8FAFC","clusterBorder":"#64748B"}}}%%
+%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"18px","fontFamily":"Arial","textColor":"#111827","primaryColor":"#FFF3C4","primaryTextColor":"#111827","primaryBorderColor":"#B7791F","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#2563EB","edgeLabelBackground":"#FFFFFF","clusterBkg":"#F8FAFC","clusterBorder":"#64748B","clusterTextColor":"#111827","titleColor":"#111827"}}}%%
 flowchart TB
     User([User]) --> UI
 
@@ -157,7 +157,7 @@ flowchart TB
 ## Runtime data flow
 
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"fontSize":"18px","fontFamily":"Arial","primaryColor":"#DBEAFE","primaryTextColor":"#111827","primaryBorderColor":"#1D4ED8","lineColor":"#7C3AED","actorBkg":"#FDE68A","actorBorder":"#B45309","actorTextColor":"#111827","signalColor":"#1E3A8A","signalTextColor":"#111827","labelBoxBkgColor":"#DCFCE7","labelBoxBorderColor":"#15803D","noteBkgColor":"#FEF3C7","noteBorderColor":"#D97706","noteTextColor":"#111827"}}}%%
+%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"18px","fontFamily":"Arial","textColor":"#111827","primaryColor":"#DBEAFE","primaryTextColor":"#111827","primaryBorderColor":"#1D4ED8","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#7C3AED","edgeLabelBackground":"#FFFFFF","actorBkg":"#FDE68A","actorBorder":"#B45309","actorTextColor":"#111827","signalColor":"#1E3A8A","signalTextColor":"#111827","labelBoxBkgColor":"#DCFCE7","labelBoxBorderColor":"#15803D","labelTextColor":"#111827","loopTextColor":"#111827","noteBkgColor":"#FEF3C7","noteBorderColor":"#D97706","noteTextColor":"#111827","titleColor":"#111827"}}}%%
 sequenceDiagram
     autonumber
     actor User
@@ -226,7 +226,7 @@ This stream-based design avoids manual polling. Firestore changes flow through R
 ## Navigation map
 
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"fontSize":"19px","fontFamily":"Arial","primaryColor":"#DBEAFE","primaryTextColor":"#111827","primaryBorderColor":"#1D4ED8","lineColor":"#475569","clusterBkg":"#F8FAFC","clusterBorder":"#94A3B8"}}}%%
+%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"19px","fontFamily":"Arial","textColor":"#111827","primaryColor":"#DBEAFE","primaryTextColor":"#111827","primaryBorderColor":"#1D4ED8","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#475569","edgeLabelBackground":"#FFFFFF","clusterBkg":"#F8FAFC","clusterBorder":"#94A3B8","clusterTextColor":"#111827","titleColor":"#111827"}}}%%
 flowchart TB
     Splash["/"] -->|session found| Dashboard["/dashboard"]
     Splash -->|no session| Login["/login"]
@@ -275,7 +275,7 @@ All main feature routes use declarative GoRouter pages. Android also receives cu
 Firestore is document-oriented, so the following diagram represents the logical schema rather than relational enforcement.
 
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"fontSize":"19px","fontFamily":"Arial","primaryTextColor":"#111827","lineColor":"#475569","clusterBkg":"#F8FAFC","clusterBorder":"#64748B"}}}%%
+%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"19px","fontFamily":"Arial","textColor":"#111827","primaryTextColor":"#111827","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#475569","edgeLabelBackground":"#FFFFFF","clusterBkg":"#F8FAFC","clusterBorder":"#64748B","clusterTextColor":"#111827","titleColor":"#111827"}}}%%
 flowchart TB
     DB[("Cloud Firestore")]
 
@@ -360,7 +360,7 @@ No Firestore Security Rules or indexes are versioned in this repository. This mu
 The current flow is custom Firestore authentication—not Firebase Authentication.
 
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"fontSize":"18px","fontFamily":"Arial","primaryColor":"#DBEAFE","primaryTextColor":"#111827","primaryBorderColor":"#1D4ED8","lineColor":"#7C3AED","actorBkg":"#FDE68A","actorBorder":"#B45309","actorTextColor":"#111827","signalColor":"#1E3A8A","signalTextColor":"#111827","labelBoxBkgColor":"#DCFCE7","labelBoxBorderColor":"#15803D","noteBkgColor":"#FEF3C7","noteBorderColor":"#D97706","noteTextColor":"#111827"}}}%%
+%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"18px","fontFamily":"Arial","textColor":"#111827","primaryColor":"#DBEAFE","primaryTextColor":"#111827","primaryBorderColor":"#1D4ED8","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#7C3AED","edgeLabelBackground":"#FFFFFF","actorBkg":"#FDE68A","actorBorder":"#B45309","actorTextColor":"#111827","signalColor":"#1E3A8A","signalTextColor":"#111827","labelBoxBkgColor":"#DCFCE7","labelBoxBorderColor":"#15803D","labelTextColor":"#111827","loopTextColor":"#111827","noteBkgColor":"#FEF3C7","noteBorderColor":"#D97706","noteTextColor":"#111827","titleColor":"#111827"}}}%%
 sequenceDiagram
     autonumber
     actor User
@@ -406,7 +406,7 @@ This diagram documents current behavior, not a recommended production pattern. S
 ## State management
 
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"fontSize":"19px","fontFamily":"Arial","primaryTextColor":"#111827","lineColor":"#475569"}}}%%
+%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"19px","fontFamily":"Arial","textColor":"#111827","primaryTextColor":"#111827","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#475569","edgeLabelBackground":"#FFFFFF","clusterTextColor":"#111827","titleColor":"#111827"}}}%%
 flowchart TB
     Firestore[("Firestore snapshots")] --> Streams["StreamProvider"]
     Connectivity["Connectivity stream"] --> Streams
@@ -595,7 +595,7 @@ Current analysis findings include deprecated dart:html usage and BuildContext us
 ### Delivery maturity
 
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"fontSize":"20px","fontFamily":"Arial","primaryTextColor":"#111827","lineColor":"#475569"}}}%%
+%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"20px","fontFamily":"Arial","textColor":"#111827","primaryTextColor":"#111827","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#475569","edgeLabelBackground":"#FFFFFF","clusterTextColor":"#111827","titleColor":"#111827"}}}%%
 flowchart TB
     A["UI prototype<br/>complete"] --> B["Live market data<br/>partial"]
     B --> C["Quality and tests<br/>needed"]
@@ -631,7 +631,7 @@ Recommended direction: adopt Firebase Authentication or another trusted identity
 ## Roadmap
 
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"fontSize":"19px","fontFamily":"Arial","primaryTextColor":"#111827","lineColor":"#475569"}}}%%
+%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"19px","fontFamily":"Arial","textColor":"#111827","primaryTextColor":"#111827","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#475569","edgeLabelBackground":"#FFFFFF","clusterTextColor":"#111827","titleColor":"#111827"}}}%%
 flowchart TB
     Foundation["1 · Foundation<br/>Repair web build<br/>Resolve analyzer findings<br/>Add CI and tests"]
     Security["2 · Security<br/>Trusted authentication<br/>SMS OTP controls<br/>Tested Firestore rules"]
