@@ -1,0 +1,23 @@
+%%{init: {"theme":"base","themeVariables":{"background":"#0D1117","fontSize":"24px","fontFamily":"Arial","primaryColor":"#172554","primaryTextColor":"#FFFFFF","primaryBorderColor":"#60A5FA","lineColor":"#CBD5E1","tertiaryColor":"#111827","tertiaryTextColor":"#FFFFFF"}}}%%
+erDiagram
+    PRICES_CURRENT {
+        string documentId PK
+        number gold_22k
+        number gold_21k
+        number gold_22k_old
+        number gold_21k_old
+        number gold_paka
+        number gold_tukra
+        number silver_22k
+        number silver_21k
+        number silver_chandi
+        number silver_acid_kaim
+        timestamp updatedAt
+        string notice
+    }
+
+    ZAKAT_NISAB {
+        string documentId PK
+        number gold_nisab
+        number silver_nisab
+    }

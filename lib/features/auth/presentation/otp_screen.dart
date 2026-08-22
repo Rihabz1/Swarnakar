@@ -314,8 +314,10 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   Widget _buildOtpBoxes() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 4,
       children: List.generate(
         6,
         (index) => Padding(
@@ -363,8 +365,10 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   Widget _buildResendRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 4,
       children: [
         Text(
           AppStrings.didntReceiveCode,

@@ -120,6 +120,9 @@ class AppStrings {
 
   // Paywall
   static const String premium = 'প্রিমিয়াম';
+  static const String demoPayment = 'ডেমো পেমেন্ট';
+  static const String demoPaymentNotice =
+      'এটি একটি পোর্টফোলিও ডেমো। কোনো আসল টাকা কাটা হবে না।';
   static const String upgradePremium = 'প্রিমিয়ামে আপগ্রেড করুন';
   static const String unlockFeatures = 'লাইভ বাজার দর এবং সকল সুবিধা আনলক করুন';
   static const String monthly = 'মাসিক';
@@ -134,10 +137,10 @@ class AppStrings {
   static const String priceNotif = 'দাম পরিবর্তনের তাৎক্ষণিক নোটিফিকেশন';
   static const String adFree = 'বিজ্ঞাপনমুক্ত প্রিমিয়াম অভিজ্ঞতা';
   static const String fullFeatures = 'সম্পূর্ণ ক্যালকুলেটর ও রিপোর্ট সুবিধা';
-  static const String subscribeNow = 'এখনই সাবস্ক্রাইব করুন →';
+  static const String subscribeNow = 'ডেমো সাবস্ক্রিপশন চালু করুন →';
   static const String continueAsGuest = 'গেস্ট হিসেবে চালিয়ে যান';
   static const String cancellableAnytime =
-      'যেকোনো সময় বাতিলযোগ্য · bKash / Card';
+      'শুধু প্রদর্শনের জন্য · কোনো পেমেন্ট নেওয়া হয় না';
 
   // Reports
   static const String reportsTitle = 'বিবরণী';

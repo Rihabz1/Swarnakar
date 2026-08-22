@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
@@ -22,6 +25,7 @@ class _SignupScreenState extends State<SignupScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _passwordController;
   late TextEditingController _confirmPasswordController;
+  bool _isGoogleLoading = false;
 
   void _sanitizePhoneInput(String value) {
     final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
@@ -62,6 +66,30 @@ class _SignupScreenState extends State<SignupScreen> {
       ..showSnackBar(
         SnackBar(content: Text(message)),
       );
+  }
+
+  Future<void> _handleGoogleSignup() async {
+    setState(() => _isGoogleLoading = true);
+    try {
+      await FirebaseAuthService.instance.signInWithGoogle(
+        createAccount: true,
+      );
+      if (!mounted) return;
+      context.go('/dashboard');
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is NetworkException
+          ? ConnectivityHelper.offlineRetryMessage
+          : e is FirebaseAuthException
+              ? (e.message ??
+                  'Google দিয়ে সাইন আপ করা যায়নি। আবার চেষ্টা করুন।')
+              : e is AuthException
+                  ? (e.message ?? 'Google দিয়ে সাইন আপ করা যায়নি।')
+                  : 'Google দিয়ে সাইন আপ করা যায়নি। আবার চেষ্টা করুন।';
+      _showError(message);
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
+    }
   }
 
   bool _validateSignup() {
@@ -171,6 +199,9 @@ class _SignupScreenState extends State<SignupScreen> {
                               icon: Icons.phone_outlined,
                               keyboardType: TextInputType.phone,
                               maxLength: 13,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
                               controller: _phoneController,
                               onChanged: _sanitizePhoneInput,
                             ),
@@ -228,6 +259,75 @@ class _SignupScreenState extends State<SignupScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 620),
+                            child: Row(
+                              children: [
+                                const Expanded(
+                                  child: Divider(color: AppColors.cardBorder),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  child: Text(
+                                    'অথবা',
+                                    style: AppTextStyles.hindSiliguri(
+                                      fontSize: 11,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                ),
+                                const Expanded(
+                                  child: Divider(color: AppColors.cardBorder),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 680),
+                            child: SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: OutlinedButton.icon(
+                                onPressed: _isGoogleLoading
+                                    ? null
+                                    : _handleGoogleSignup,
+                                icon: _isGoogleLoading
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.gold,
+                                        ),
+                                      )
+                                    : SvgPicture.asset(
+                                        'assets/svg/google_user.svg',
+                                        width: 22,
+                                        height: 22,
+                                      ),
+                                label: Text(
+                                  'Google দিয়ে চালিয়ে যান',
+                                  style: AppTextStyles.hindSiliguri(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: AppColors.surfaceRaised,
+                                  side: const BorderSide(
+                                    color: AppColors.cardBorder,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 20),
                           FadeInUp(
                             delay: const Duration(milliseconds: 760),

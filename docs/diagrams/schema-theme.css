@@ -1,0 +1,27 @@
+.row-rect-odd > path:first-child {
+  fill: #111827 !important;
+}
+
+.row-rect-even > path:first-child {
+  fill: #1e3a5f !important;
+}
+
+.entityBox,
+.node rect {
+  stroke-width: 2px !important;
+}
+
+.nodeLabel,
+.label,
+.attribute-type,
+.attribute-name,
+.attribute-keys,
+.attribute-comment {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+.relationshipLine,
+.marker {
+  stroke-width: 2px !important;
+}

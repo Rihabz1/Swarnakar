@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
@@ -15,6 +16,7 @@ class GoldenInputField extends StatefulWidget {
   final int? maxLength;
   final VoidCallback? onIconTap;
   final bool isGlassmorphic;
+  final List<TextInputFormatter>? inputFormatters;
 
   const GoldenInputField({
     super.key,
@@ -29,6 +31,7 @@ class GoldenInputField extends StatefulWidget {
     this.maxLength,
     this.onIconTap,
     this.isGlassmorphic = false,
+    this.inputFormatters,
   });
 
   @override
@@ -108,6 +111,7 @@ class _GoldenInputFieldState extends State<GoldenInputField> {
               maxLines:
                   _obscureText && widget.obscureText ? 1 : widget.maxLines,
               maxLength: widget.maxLength,
+              inputFormatters: widget.inputFormatters,
               style: AppTextStyles.hindSiliguri(
                 fontSize: 14,
                 color: AppColors.textPrimary,

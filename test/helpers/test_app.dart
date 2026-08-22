@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:swarnakar/core/theme/app_theme.dart';
 
 Future<void> pumpTestRoute(
@@ -11,12 +12,13 @@ Future<void> pumpTestRoute(
   List<Override> overrides = const [],
   ProviderContainer? container,
 }) async {
+  await initializeDateFormatting('bn_BD');
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(800, 1000);
   addTearDown(tester.view.resetDevicePixelRatio);
   addTearDown(tester.view.resetPhysicalSize);
 
-  final router = GoRouter(initialLocation: path, routes: [
+  final routes = <RouteBase>[
     GoRoute(path: path, builder: (_, __) => child),
     GoRoute(
         path: '/dashboard',
@@ -27,7 +29,14 @@ Future<void> pumpTestRoute(
     GoRoute(
         path: '/forgot-password',
         builder: (_, __) => const Scaffold(body: Text('TEST_FORGOT'))),
-  ]);
+  ];
+  if (path != '/reset-password') {
+    routes.add(GoRoute(
+      path: '/reset-password',
+      builder: (_, __) => const Scaffold(body: Text('TEST_RESET_PASSWORD')),
+    ));
+  }
+  final router = GoRouter(initialLocation: path, routes: routes);
   addTearDown(router.dispose);
   final app =
       MaterialApp.router(theme: AppTheme.darkTheme, routerConfig: router);

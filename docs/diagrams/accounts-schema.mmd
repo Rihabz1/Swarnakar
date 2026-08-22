@@ -1,0 +1,31 @@
+%%{init: {"theme":"base","themeVariables":{"background":"#0D1117","fontSize":"24px","fontFamily":"Arial","primaryColor":"#172554","primaryTextColor":"#FFFFFF","primaryBorderColor":"#60A5FA","lineColor":"#CBD5E1","tertiaryColor":"#111827","tertiaryTextColor":"#FFFFFF"}}}%%
+erDiagram
+    USERS ||--o{ REPORTS : "owns"
+
+    USERS {
+        string uid PK
+        string name
+        string email
+        string phone
+        string provider
+        string passwordHash "nullable"
+        string resetOtp "nullable"
+        timestamp resetOtpExpiresAt "nullable"
+        string shopName
+        string address
+        boolean isSubscribed
+        string plan
+        timestamp subExpires "nullable"
+        timestamp createdAt
+        timestamp updatedAt
+        timestamp lastLoginAt
+    }
+
+    REPORTS {
+        string reportId PK
+        string userId FK
+        string type
+        string item
+        number value
+        timestamp createdAt
+    }

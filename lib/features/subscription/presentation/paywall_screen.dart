@@ -113,6 +113,41 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                             color: Colors.white.withValues(alpha: 0.82),
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.gold.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: AppColors.gold.withValues(alpha: 0.35),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                AppStrings.demoPayment,
+                                style: AppTextStyles.hindSiliguri(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.gold,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                AppStrings.demoPaymentNotice,
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.hindSiliguri(
+                                  fontSize: 10.5,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 16),
                         _buildPlanCards(),
                         const SizedBox(height: 14),
@@ -200,7 +235,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             crossAxisCount: isWide ? 4 : 2,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
-            childAspectRatio: isWide ? 0.82 : 1.35,
+            childAspectRatio: isWide ? 0.72 : 1.35,
           ),
           itemBuilder: (context, index) {
             final plan = _plans[index];

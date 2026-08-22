@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
@@ -64,6 +66,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
   }
 
+  Future<void> _showGoogleSignupPrompt() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text(
+          'নতুন Google অ্যাকাউন্ট',
+          style: AppTextStyles.hindSiliguri(
+            fontSize: 20,
+            color: AppColors.gold,
+          ),
+        ),
+        content: Text(
+          'এই Google অ্যাকাউন্টটি এখনো নিবন্ধিত নয়। প্রথমে সাইন আপ করুন।',
+          style: AppTextStyles.hindSiliguri(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('বাতিল'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.go('/signup');
+            },
+            child: const Text('সাইন আপ করুন'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _handlePhoneLogin() async {
     if (!_validateLogin()) return;
     ref.read(isLoadingProvider.notifier).state = true;
@@ -83,6 +121,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           : e is AuthException
               ? (e.message ?? 'লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।')
               : 'লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।';
+      _showError(message);
+    } finally {
+      if (mounted) {
+        ref.read(isLoadingProvider.notifier).state = false;
+      }
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    ref.read(isLoadingProvider.notifier).state = true;
+    try {
+      await FirebaseAuthService.instance.signInWithGoogle(
+        createAccount: false,
+      );
+      if (!mounted) return;
+      ref.invalidate(userProfileProvider);
+      context.go('/dashboard');
+    } catch (e) {
+      if (!mounted) return;
+      if (e is AuthException && e.code == 'google-account-not-registered') {
+        await _showGoogleSignupPrompt();
+        return;
+      }
+      final message = e is NetworkException
+          ? ConnectivityHelper.offlineRetryMessage
+          : e is FirebaseAuthException
+              ? (e.message ?? 'Google দিয়ে লগইন করা যায়নি। আবার চেষ্টা করুন।')
+              : e is AuthException
+                  ? (e.message ?? 'Google দিয়ে লগইন করা যায়নি।')
+                  : 'Google দিয়ে লগইন করা যায়নি। আবার চেষ্টা করুন।';
       _showError(message);
     } finally {
       if (mounted) {
@@ -203,6 +271,61 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           text: AppStrings.signIn,
                           isLoading: isLoading,
                           onPressed: _handlePhoneLogin,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      FadeInUp(
+                        delay: const Duration(milliseconds: 630),
+                        child: Row(
+                          children: [
+                            const Expanded(
+                                child: Divider(color: AppColors.cardBorder)),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                'অথবা',
+                                style: AppTextStyles.hindSiliguri(
+                                  fontSize: 11,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ),
+                            const Expanded(
+                                child: Divider(color: AppColors.cardBorder)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      FadeInUp(
+                        delay: const Duration(milliseconds: 700),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: OutlinedButton.icon(
+                            onPressed: isLoading ? null : _handleGoogleLogin,
+                            icon: SvgPicture.asset(
+                              'assets/svg/google_user.svg',
+                              width: 22,
+                              height: 22,
+                            ),
+                            label: Text(
+                              'Google দিয়ে চালিয়ে যান',
+                              style: AppTextStyles.hindSiliguri(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: AppColors.surfaceRaised,
+                              side:
+                                  const BorderSide(color: AppColors.cardBorder),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),

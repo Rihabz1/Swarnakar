@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 
 class ConnectivityHelper {
   static final Connectivity _connectivity = Connectivity();
@@ -18,6 +19,14 @@ class ConnectivityHelper {
     if (results.contains(ConnectivityResult.none)) {
       return false;
     }
+
+    // Browsers do not support dart:io DNS lookups. A failed
+    // InternetAddress.lookup on Flutter Web is therefore not evidence that the
+    // user is offline. Actual Firebase requests still surface network errors.
+    if (kIsWeb) {
+      return true;
+    }
+
     return _hasInternetAccess();
   }
 

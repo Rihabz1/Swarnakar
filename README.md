@@ -9,14 +9,24 @@
 ![Platform](https://img.shields.io/badge/Platforms-Android%20%7C%20Web-34A853)
 ![Version](https://img.shields.io/badge/version-2.1.0-gold)
 ![Status](https://img.shields.io/badge/status-active%20prototype-orange)
-![Tests](https://img.shields.io/badge/automated%20tests-101%20passing-16A34A)
-![Coverage](https://img.shields.io/badge/coverage%20floor-10%25-2563EB)
+![Tests](https://img.shields.io/badge/automated%20tests-122%20passing-16A34A)
+![Coverage](https://img.shields.io/badge/coverage-68.64%25-2563EB)
 
 Swarnakar is a feature-oriented Flutter application designed for Bangladesh's jewellery ecosystem. It brings market prices, trade calculations, weight conversion, zakat estimation, account management, and subscription-aware experiences into one Bengali-first interface.
 
 The project demonstrates practical Flutter architecture, reactive Firestore streams, Riverpod state management, responsive UI, connectivity handling, Bengali localization, and cross-platform integration.
 
-> **Project maturity:** functional prototype. The main user journeys are implemented, but authentication, payments, backend security, tests, and the web production build require additional work before launch.
+> **Project maturity:** tested portfolio prototype. Authentication, responsive web deployment, Firestore rules, and the main calculation journeys are implemented. Subscription activation is intentionally simulated and no real payment is collected.
+
+## Live demo
+
+**[Open Swarnakar on Firebase Hosting](https://swarnakar-59dd6.web.app/#/login)**
+
+The deployed app is intended for portfolio demonstration. Market values depend on the `prices/current` Firestore document and must not be treated as financial advice.
+
+## Preview
+
+![Swarnakar brand preview](assets/images/swarnakar.png)
 
 ## Quick navigation
 
@@ -68,7 +78,7 @@ The experience uses a dark navy and gold visual language intended to evoke premi
 | Price history | Goldr chart in embedded HTML | Third-party scripts | Partial |
 | Reports | Category filters and report cards | Bundled mock records | Prototype |
 | Accounts | Signup, login, profile, password reset | Custom Firestore accounts | Prototype |
-| Subscription | Plans, gated UI, guest option | Local/Profile state | UI only |
+| Subscription | Plans, gated UI, guest option | Local/Profile state | Clearly labelled demo only |
 | Connectivity | Offline detection and recovery | Network plus DNS lookup | Implemented |
 
 ## Technology stack
@@ -96,7 +106,7 @@ Package metadata requires Dart 3.x. The latest verified local environment used F
 ## System architecture
 
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"18px","fontFamily":"Arial","textColor":"#111827","primaryColor":"#FFF3C4","primaryTextColor":"#111827","primaryBorderColor":"#B7791F","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#2563EB","edgeLabelBackground":"#FFFFFF","clusterBkg":"#F8FAFC","clusterBorder":"#64748B","clusterTextColor":"#111827","titleColor":"#111827"}}}%%
+%%{init: {"theme":"base","flowchart":{"curve":"basis","nodeSpacing":55,"rankSpacing":70},"themeVariables":{"background":"#0D1117","fontSize":"20px","fontFamily":"Arial","textColor":"#F8FAFC","primaryTextColor":"#F8FAFC","secondaryTextColor":"#F8FAFC","tertiaryTextColor":"#F8FAFC","lineColor":"#94A3B8","edgeLabelBackground":"#111827","clusterBkg":"#0F172A","clusterBorder":"#475569","clusterTextColor":"#F8FAFC"}}}%%
 flowchart TB
     User([User]) --> UI
 
@@ -135,10 +145,10 @@ flowchart TB
     Services --> DNS
     Functions -. future trusted operations .-> Firestore
 
-    classDef active fill:#172554,stroke:#60A5FA,color:#FFFFFF,stroke-width:2px;
-    classDef backend fill:#FDE68A,stroke:#B45309,color:#111827,stroke-width:2px;
-    classDef external fill:#DCFCE7,stroke:#15803D,color:#14532D,stroke-width:2px;
-    classDef planned fill:#F3E8FF,stroke:#7E22CE,color:#3B0764,stroke-width:2px,stroke-dasharray:5 5;
+    classDef active fill:#172554,stroke:#60A5FA,color:#FFFFFF,stroke-width:3px;
+    classDef backend fill:#78350F,stroke:#FB923C,color:#FFFFFF,stroke-width:3px;
+    classDef external fill:#14532D,stroke:#4ADE80,color:#FFFFFF,stroke-width:3px;
+    classDef planned fill:#4C1D5F,stroke:#C084FC,color:#FFFFFF,stroke-width:3px,stroke-dasharray:7 5;
     class UI,Router,State,Services,Models,Local active;
     class Firestore,Config backend;
     class Goldr,CDN,DNS external;
@@ -157,7 +167,7 @@ flowchart TB
 ## Runtime data flow
 
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"darkMode":true,"background":"#0D1117","fontSize":"18px","fontFamily":"Arial","textColor":"#F8FAFC","primaryColor":"#DBEAFE","primaryTextColor":"#111827","primaryBorderColor":"#60A5FA","secondaryTextColor":"#F8FAFC","tertiaryTextColor":"#F8FAFC","lineColor":"#CBD5E1","actorBkg":"#FDE68A","actorBorder":"#F59E0B","actorTextColor":"#111827","actorLineColor":"#94A3B8","signalColor":"#CBD5E1","signalTextColor":"#F8FAFC","labelBoxBkgColor":"#DCFCE7","labelBoxBorderColor":"#22C55E","labelTextColor":"#111827","loopTextColor":"#F8FAFC","noteBkgColor":"#FEF3C7","noteBorderColor":"#F59E0B","noteTextColor":"#111827","activationBkgColor":"#DBEAFE","activationBorderColor":"#60A5FA","sequenceNumberColor":"#FFFFFF","titleColor":"#F8FAFC"}}}%%
+%%{init: {"theme":"base","sequence":{"diagramMarginX":45,"diagramMarginY":25,"actorMargin":75,"messageMargin":48,"noteMargin":18},"themeVariables":{"background":"#0D1117","fontSize":"20px","fontFamily":"Arial","textColor":"#F8FAFC","primaryTextColor":"#F8FAFC","secondaryTextColor":"#F8FAFC","tertiaryTextColor":"#F8FAFC","lineColor":"#94A3B8","actorBkg":"#172554","actorBorder":"#60A5FA","actorTextColor":"#FFFFFF","actorLineColor":"#60A5FA","signalColor":"#CBD5E1","signalTextColor":"#F8FAFC","labelBoxBkgColor":"#4C1D5F","labelBoxBorderColor":"#C084FC","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#164E63","noteBorderColor":"#22D3EE","noteTextColor":"#FFFFFF","activationBkgColor":"#14532D","activationBorderColor":"#4ADE80","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     autonumber
     actor User
@@ -166,17 +176,20 @@ sequenceDiagram
     participant Network as Connectivity helper
     participant DB as Cloud Firestore
 
-    User->>Screen: Open dashboard or market page
-    Screen->>Provider: Watch AsyncValue
-    Provider->>Network: Require internet
-    Network-->>Provider: Connected
-    Provider->>DB: Subscribe to prices/current
-    DB-->>Provider: Snapshot stream
-    Provider->>Provider: Parse and group values
-    Provider-->>Screen: loading / data / error
-    Screen-->>User: Render localized UI
-    DB-->>Provider: Updated snapshot
-    Provider-->>Screen: Reactive refresh
+    rect rgb(13, 17, 23)
+        Note over User,DB: Live market-price pipeline
+        User->>Screen: Open market page
+        Screen->>Provider: Watch AsyncValue
+        Provider->>Network: Check internet
+        Network-->>Provider: Connected
+        Provider->>DB: Subscribe to prices/current
+        DB-->>Provider: Snapshot stream
+        Provider->>Provider: Parse and group
+        Provider-->>Screen: Loading, data, or error
+        Screen-->>User: Render Bengali UI
+        DB-->>Provider: Price update
+        Provider-->>Screen: Refresh UI
+    end
 ~~~
 
 This stream-based design avoids manual polling. Firestore changes flow through Riverpod and rebuild only listening widgets.
@@ -225,45 +238,80 @@ This stream-based design avoids manual polling. Firestore changes flow through R
 
 ## Navigation map
 
+The route map is split into two compact diagrams so GitHub does not shrink one wide diagram into unreadable text.
+
+### Authentication routes
+
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"19px","fontFamily":"Arial","textColor":"#111827","primaryColor":"#DBEAFE","primaryTextColor":"#111827","primaryBorderColor":"#1D4ED8","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#475569","edgeLabelBackground":"#FFFFFF","clusterBkg":"#F8FAFC","clusterBorder":"#94A3B8","clusterTextColor":"#111827","titleColor":"#111827"}}}%%
+%%{init: {"theme":"base","flowchart":{"curve":"basis","nodeSpacing":55,"rankSpacing":70},"themeVariables":{"background":"#0D1117","fontSize":"22px","fontFamily":"Arial","primaryTextColor":"#F8FAFC","secondaryTextColor":"#F8FAFC","tertiaryTextColor":"#F8FAFC","lineColor":"#94A3B8","edgeLabelBackground":"#111827","clusterBkg":"#0F172A","clusterBorder":"#475569","clusterTextColor":"#F8FAFC"}}}%%
 flowchart TB
-    Splash["/"] -->|session found| Dashboard["/dashboard"]
-    Splash -->|no session| Login["/login"]
-    Login --> Signup["/signup"]
-    Login --> Forgot["/forgot-password"]
-    Signup --> OTP["/otp"]
+    Splash["START<br/><b>/</b>"]
+    Login["LOGIN<br/><b>/login</b>"]
+    Signup["SIGN UP<br/><b>/signup</b>"]
+    Forgot["RECOVERY<br/><b>/forgot-password</b>"]
+    OTP["VERIFY OTP<br/><b>/otp</b>"]
+    Reset["NEW PASSWORD<br/><b>/reset-password</b>"]
+    Home["DASHBOARD<br/><b>/dashboard</b>"]
+
+    Splash --> Login
+    Splash --> Home
+    Login --> Signup
+    Login --> Forgot
+    Signup --> OTP
     Forgot --> OTP
-    OTP -->|reset flow| Reset["/reset-password"]
-    OTP -->|signup complete| Dashboard
-    Login -->|valid credentials| Dashboard
+    OTP --> Reset
+    OTP --> Home
+    Login --> Home
 
-    Dashboard --> Gold["/gold-price"]
-    Dashboard --> Silver["/silver-price"]
-    Dashboard --> Calc["/calculator"]
-    Dashboard --> Convert["/converter"]
-    Dashboard --> Zakat["/zakat"]
-    Dashboard --> History["/price-history"]
-    Dashboard --> Settings["/settings"]
-    Dashboard --> Paywall["/paywall"]
-
-    Gold --> Dashboard
-    Silver --> Dashboard
-    Calc --> Dashboard
-    Convert --> Dashboard
-    Zakat --> Dashboard
-    History --> Dashboard
-    Settings --> Dashboard
-    Paywall --> Dashboard
-
-    classDef entry fill:#FDE68A,stroke:#B45309,color:#111827,stroke-width:3px;
-    classDef auth fill:#F3E8FF,stroke:#7E22CE,color:#3B0764,stroke-width:2px;
-    classDef home fill:#DCFCE7,stroke:#15803D,color:#14532D,stroke-width:3px;
-    classDef feature fill:#DBEAFE,stroke:#1D4ED8,color:#172554,stroke-width:2px;
-    class Splash entry;
+    classDef start fill:#164E63,stroke:#22D3EE,color:#FFFFFF,stroke-width:3px;
+    classDef auth fill:#4C1D5F,stroke:#C084FC,color:#FFFFFF,stroke-width:3px;
+    classDef success fill:#14532D,stroke:#4ADE80,color:#FFFFFF,stroke-width:4px;
+    class Splash start;
     class Login,Signup,Forgot,OTP,Reset auth;
-    class Dashboard home;
-    class Gold,Silver,Calc,Convert,Zakat,History,Settings,Paywall feature;
+    class Home success;
+~~~
+
+### Dashboard and feature routes
+
+~~~mermaid
+%%{init: {"theme":"base","flowchart":{"curve":"basis","nodeSpacing":55,"rankSpacing":70},"themeVariables":{"background":"#0D1117","fontSize":"22px","fontFamily":"Arial","primaryTextColor":"#F8FAFC","secondaryTextColor":"#F8FAFC","tertiaryTextColor":"#F8FAFC","lineColor":"#94A3B8","edgeLabelBackground":"#111827","clusterBkg":"#0F172A","clusterBorder":"#475569","clusterTextColor":"#F8FAFC"}}}%%
+flowchart TB
+    Home["DASHBOARD<br/><b>/dashboard</b>"]
+
+    subgraph Market["MARKET"]
+        Gold["Gold prices<br/><b>/gold-price</b>"]
+        Silver["Silver prices<br/><b>/silver-price</b>"]
+        History["Price history<br/><b>/price-history</b>"]
+    end
+
+    subgraph Tools["BUSINESS TOOLS"]
+        Calc["Calculator<br/><b>/calculator</b>"]
+        Convert["Converter<br/><b>/converter</b>"]
+        Zakat["Zakat<br/><b>/zakat</b>"]
+    end
+
+    subgraph Account["ACCOUNT"]
+        Settings["Settings<br/><b>/settings</b>"]
+        Paywall["Demo plans<br/><b>/paywall</b>"]
+    end
+
+    Home <--> Gold
+    Home <--> Silver
+    Home <--> History
+    Home <--> Calc
+    Home <--> Convert
+    Home <--> Zakat
+    Home <--> Settings
+    Home <--> Paywall
+
+    classDef home fill:#164E63,stroke:#22D3EE,color:#FFFFFF,stroke-width:4px;
+    classDef market fill:#14532D,stroke:#4ADE80,color:#FFFFFF,stroke-width:3px;
+    classDef tool fill:#172554,stroke:#60A5FA,color:#FFFFFF,stroke-width:3px;
+    classDef account fill:#4C1D5F,stroke:#C084FC,color:#FFFFFF,stroke-width:3px;
+    class Home home;
+    class Gold,Silver,History market;
+    class Calc,Convert,Zakat tool;
+    class Settings,Paywall account;
 ~~~
 
 All main feature routes use declarative GoRouter pages. Android also receives custom left/right edge gestures that return to the dashboard.
@@ -272,48 +320,17 @@ All main feature routes use declarative GoRouter pages. Android also receives cu
 
 ## Database design
 
-Firestore is document-oriented, so the following diagram represents the logical schema rather than relational enforcement.
+Firestore is document-oriented. These conventional ER diagrams show the document entities, field types, primary/foreign keys, and ownership relationship without shrinking the text into one oversized image.
 
-~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"19px","fontFamily":"Arial","textColor":"#111827","primaryTextColor":"#111827","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#475569","edgeLabelBackground":"#FFFFFF","clusterBkg":"#F8FAFC","clusterBorder":"#64748B","clusterTextColor":"#111827","titleColor":"#111827"}}}%%
-flowchart TB
-    DB[("Cloud Firestore")]
+### Accounts and reports
 
-    DB --> Users["users / userId"]
-    DB --> Prices["prices / current"]
-    DB --> Nisab["zakat / nisab"]
-    DB -. planned .-> Reports["users / userId / reports / reportId"]
+![Accounts and reports ER schema](docs/diagrams/accounts-schema.svg)
 
-    Users --> Identity["Identity<br/>uid · name · phone · email"]
-    Users --> Business["Business profile<br/>shopName · address"]
-    Users --> Security["Prototype security<br/>passwordHash · resetOtp · expiry"]
-    Users --> Subscription["Entitlement<br/>isSubscribed · plan · subExpires"]
-    Users --> Audit["Audit<br/>createdAt · updatedAt · lastLoginAt"]
+### Market reference data
 
-    Prices --> GoldFields["Gold prices<br/>22k · 21k · old · paka · tukra"]
-    Prices --> SilverFields["Silver prices<br/>22k · 21k · chandi · acid"]
-    Prices --> MarketMeta["Market metadata<br/>updatedAt · notice"]
+![Market reference data schema](docs/diagrams/market-schema.svg)
 
-    Nisab --> GoldNisab["gold_nisab"]
-    Nisab --> SilverNisab["silver_nisab"]
-
-    Reports --> ReportFields["Future report<br/>type · item · date · value"]
-
-    classDef database fill:#FDE68A,stroke:#B45309,color:#111827,stroke-width:3px;
-    classDef collection fill:#DBEAFE,stroke:#1D4ED8,color:#172554,stroke-width:3px;
-    classDef profile fill:#F3E8FF,stroke:#7E22CE,color:#3B0764,stroke-width:2px;
-    classDef market fill:#DCFCE7,stroke:#15803D,color:#14532D,stroke-width:2px;
-    classDef warning fill:#FEE2E2,stroke:#DC2626,color:#7F1D1D,stroke-width:2px;
-    classDef future fill:#F1F5F9,stroke:#64748B,color:#1E293B,stroke-width:2px,stroke-dasharray:5 5;
-    class DB database;
-    class Users,Prices,Nisab collection;
-    class Identity,Business,Subscription,Audit profile;
-    class GoldFields,SilverFields,MarketMeta,GoldNisab,SilverNisab market;
-    class Security warning;
-    class Reports,ReportFields future;
-~~~
-
-REPORT relationships are intentionally marked as future design: reports currently come from bundled mock data and are not persisted.
+`uid` is the user document key. `reportId` is the planned report document key, while `userId` identifies its owner. Reports currently come from bundled mock data and are not persisted.
 
 ### Expected documents
 
@@ -353,14 +370,14 @@ These are monetary thresholds. The same values are bundled as fallbacks and requ
 
 The profile includes identity, business information, subscription metadata, password hash, temporary reset fields, and audit timestamps. Phone numbers are normalized and checked against the Bangladesh mobile pattern.
 
-No Firestore Security Rules or indexes are versioned in this repository. This must be corrected before any public deployment.
+Firestore Security Rules are versioned in this repository and covered by 12 emulator authorization tests. They should still receive a production security review before handling real payments or sensitive customer data.
 
 ## Authentication lifecycle
 
-The current flow is custom Firestore authentication—not Firebase Authentication.
+Authentication currently combines Firebase Authentication for Google accounts with a prototype Firestore-based phone/password flow.
 
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"18px","fontFamily":"Arial","textColor":"#111827","primaryColor":"#DBEAFE","primaryTextColor":"#111827","primaryBorderColor":"#1D4ED8","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#7C3AED","edgeLabelBackground":"#FFFFFF","actorBkg":"#FDE68A","actorBorder":"#B45309","actorTextColor":"#111827","signalColor":"#1E3A8A","signalTextColor":"#111827","labelBoxBkgColor":"#DCFCE7","labelBoxBorderColor":"#15803D","labelTextColor":"#111827","loopTextColor":"#111827","noteBkgColor":"#FEF3C7","noteBorderColor":"#D97706","noteTextColor":"#111827","titleColor":"#111827"}}}%%
+%%{init: {"theme":"base","sequence":{"diagramMarginX":45,"diagramMarginY":25,"actorMargin":75,"messageMargin":48,"noteMargin":18},"themeVariables":{"background":"#0D1117","fontSize":"20px","fontFamily":"Arial","textColor":"#F8FAFC","primaryTextColor":"#F8FAFC","secondaryTextColor":"#F8FAFC","tertiaryTextColor":"#F8FAFC","lineColor":"#94A3B8","actorBkg":"#172554","actorBorder":"#60A5FA","actorTextColor":"#FFFFFF","actorLineColor":"#60A5FA","signalColor":"#CBD5E1","signalTextColor":"#F8FAFC","labelBoxBkgColor":"#4C1D5F","labelBoxBorderColor":"#C084FC","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#164E63","noteBorderColor":"#22D3EE","noteTextColor":"#FFFFFF","activationBkgColor":"#14532D","activationBorderColor":"#4ADE80","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     autonumber
     actor User
@@ -369,7 +386,7 @@ sequenceDiagram
     participant Prefs as Shared Preferences
     participant DB as Firestore users
 
-    rect rgb(239, 246, 255)
+    rect rgb(15, 23, 42)
         Note over User,DB: Signup prototype
         User->>UI: Name, phone, password
         UI->>Service: Stage signup
@@ -381,7 +398,7 @@ sequenceDiagram
         Service->>Prefs: Save session phone
     end
 
-    rect rgb(254, 243, 199)
+    rect rgb(17, 24, 39)
         Note over User,DB: Login
         User->>UI: Phone and password
         UI->>Service: Sign in
@@ -392,7 +409,7 @@ sequenceDiagram
         Service-->>UI: User profile
     end
 
-    rect rgb(243, 232, 255)
+    rect rgb(30, 27, 75)
         Note over User,DB: App restart
         UI->>Service: Restore session
         Service->>Prefs: Read session phone
@@ -406,7 +423,7 @@ This diagram documents current behavior, not a recommended production pattern. S
 ## State management
 
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"19px","fontFamily":"Arial","textColor":"#111827","primaryTextColor":"#111827","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#475569","edgeLabelBackground":"#FFFFFF","clusterTextColor":"#111827","titleColor":"#111827"}}}%%
+%%{init: {"theme":"base","flowchart":{"curve":"basis","nodeSpacing":55,"rankSpacing":70},"themeVariables":{"background":"#0D1117","fontSize":"21px","fontFamily":"Arial","textColor":"#F8FAFC","primaryTextColor":"#F8FAFC","secondaryTextColor":"#F8FAFC","tertiaryTextColor":"#F8FAFC","lineColor":"#94A3B8","edgeLabelBackground":"#111827","clusterTextColor":"#F8FAFC"}}}%%
 flowchart TB
     Firestore[("Firestore snapshots")] --> Streams["StreamProvider"]
     Connectivity["Connectivity stream"] --> Streams
@@ -426,11 +443,11 @@ flowchart TB
     State --> Filter["Report filters"]
     State --> Entitlement["Temporary entitlement"]
 
-    classDef source fill:#FDE68A,stroke:#B45309,color:#111827,stroke-width:2px;
-    classDef provider fill:#DBEAFE,stroke:#1D4ED8,color:#172554,stroke-width:2px;
-    classDef decision fill:#F3E8FF,stroke:#7E22CE,color:#3B0764,stroke-width:3px;
-    classDef success fill:#DCFCE7,stroke:#15803D,color:#14532D,stroke-width:2px;
-    classDef failure fill:#FEE2E2,stroke:#DC2626,color:#7F1D1D,stroke-width:2px;
+    classDef source fill:#78350F,stroke:#FB923C,color:#FFFFFF,stroke-width:3px;
+    classDef provider fill:#172554,stroke:#60A5FA,color:#FFFFFF,stroke-width:3px;
+    classDef decision fill:#4C1D5F,stroke:#C084FC,color:#FFFFFF,stroke-width:3px;
+    classDef success fill:#14532D,stroke:#4ADE80,color:#FFFFFF,stroke-width:3px;
+    classDef failure fill:#7F1D1D,stroke:#FB7185,color:#FFFFFF,stroke-width:3px;
     class Firestore,Connectivity,Services,Inputs source;
     class Streams,Futures,State,Derived provider;
     class AsyncValue decision;
@@ -464,7 +481,7 @@ dart --version
 ### Install dependencies
 
 ~~~bash
-git clone <repository-url>
+git clone https://github.com/Rihabz1/Swarnakar.git
 cd Swarnakar
 flutter pub get
 flutter devices
@@ -538,7 +555,7 @@ uses the local project ID swarnakar-test and never connects to production data.
 Professional QA artifacts—including the strategy, traceability matrix, risk
 register, defect template, and release checklist—live under docs/quality.
 
-GitHub Actions runs formatting, analysis, 89 Flutter tests, coverage
+GitHub Actions runs formatting, analysis, 110 Flutter tests, coverage
 enforcement, Android and web builds, and 12 emulator authorization tests.
 
 ### Artifacts
@@ -549,7 +566,7 @@ flutter build appbundle --release
 flutter build web
 ~~~
 
-Release Android signing must be configured before publishing. The web build currently fails in the legacy platform-view registration used by price history.
+Release Android signing must be configured before publishing. The Flutter web build and Firebase Hosting deployment are available through the live-demo link above.
 
 Only Android and web Firebase options exist. Other platforms currently throw UnsupportedError.
 
@@ -580,22 +597,23 @@ Mock data, local entitlement toggles, incomplete backend code, and authenticatio
 | Quality gate | Current result | Target |
 | --- | --- | --- |
 | Dependency resolution | Available | Reproducible in CI |
-| Flutter analysis | 8 informational issues | Zero issues |
-| Unit/widget tests | No test directory | Critical paths covered |
+| Flutter analysis | Zero issues | Zero issues |
+| Unit/widget tests | 110 passing | Critical paths covered |
+| Flutter line coverage | 68.64% | Approximately 70% portfolio target |
 | Integration tests | Missing | Emulator-backed flows |
 | Android config | Present | Signed production bundle |
-| Web build | Fails at platformViewRegistry | Successful optimized build |
+| Web build | Passing | Successful optimized build |
 | Functions | Manifest only | Tested trusted backend |
 | Reports | Mock records | Per-user persisted history |
-| Payments | Visual prototype | Verified provider integration |
-| Firestore rules | Not committed | Least-privilege tested rules |
+| Payments | Explicitly labelled simulation | Verified provider integration if commercialized |
+| Firestore rules | 12 emulator tests passing | Least-privilege tested rules |
 
-Current analysis findings include deprecated dart:html usage and BuildContext usage across asynchronous gaps in settings.
+The portfolio quality gate requires clean static analysis, passing Flutter and Firestore suites, and a successful optimized web build.
 
 ### Delivery maturity
 
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"20px","fontFamily":"Arial","textColor":"#111827","primaryTextColor":"#111827","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#475569","edgeLabelBackground":"#FFFFFF","clusterTextColor":"#111827","titleColor":"#111827"}}}%%
+%%{init: {"theme":"base","flowchart":{"curve":"basis","nodeSpacing":55,"rankSpacing":65},"themeVariables":{"background":"#0D1117","fontSize":"21px","fontFamily":"Arial","textColor":"#F8FAFC","primaryTextColor":"#F8FAFC","secondaryTextColor":"#F8FAFC","tertiaryTextColor":"#F8FAFC","lineColor":"#94A3B8","edgeLabelBackground":"#111827","clusterTextColor":"#F8FAFC"}}}%%
 flowchart TB
     A["UI prototype<br/>complete"] --> B["Live market data<br/>partial"]
     B --> C["Quality and tests<br/>needed"]
@@ -603,9 +621,9 @@ flowchart TB
     D --> E["Payments and entitlements<br/>needed"]
     E --> F["Production release<br/>target"]
 
-    classDef done fill:#DCFCE7,stroke:#15803D,color:#14532D,stroke-width:3px;
-    classDef partial fill:#FEF3C7,stroke:#D97706,color:#78350F,stroke-width:3px;
-    classDef todo fill:#DBEAFE,stroke:#1D4ED8,color:#172554,stroke-width:2px;
+    classDef done fill:#14532D,stroke:#4ADE80,color:#FFFFFF,stroke-width:3px;
+    classDef partial fill:#78350F,stroke:#FB923C,color:#FFFFFF,stroke-width:3px;
+    classDef todo fill:#172554,stroke:#60A5FA,color:#FFFFFF,stroke-width:3px;
     class A done;
     class B partial;
     class C,D,E,F todo;
@@ -621,17 +639,17 @@ The following must be resolved before handling real customer credentials or paym
 4. Pending signup temporarily stores a plain-text password in Shared Preferences.
 5. A phone number acts as the session without a signed, expiring token.
 6. Subscription can be enabled locally without payment verification.
-7. Firestore rules and rule tests are absent.
+7. Firestore rules are tested, but should receive another production review before launch.
 8. Third-party JavaScript is executed for the historical chart.
 9. Financial fallbacks can become stale.
-10. Automated security and regression tests are absent.
+10. Browser-level end-to-end authentication tests are not yet automated.
 
 Recommended direction: adopt Firebase Authentication or another trusted identity provider, move privileged behavior to a backend, use short-lived verified tokens, enforce least-privilege rules, and validate payment entitlements server-side.
 
 ## Roadmap
 
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"19px","fontFamily":"Arial","textColor":"#111827","primaryTextColor":"#111827","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#475569","edgeLabelBackground":"#FFFFFF","clusterTextColor":"#111827","titleColor":"#111827"}}}%%
+%%{init: {"theme":"base","flowchart":{"curve":"basis","nodeSpacing":55,"rankSpacing":65},"themeVariables":{"background":"#0D1117","fontSize":"21px","fontFamily":"Arial","textColor":"#F8FAFC","primaryTextColor":"#F8FAFC","secondaryTextColor":"#F8FAFC","tertiaryTextColor":"#F8FAFC","lineColor":"#94A3B8","edgeLabelBackground":"#111827","clusterTextColor":"#F8FAFC"}}}%%
 flowchart TB
     Foundation["1 · Foundation<br/>Repair web build<br/>Resolve analyzer findings<br/>Add CI and tests"]
     Security["2 · Security<br/>Trusted authentication<br/>SMS OTP controls<br/>Tested Firestore rules"]
@@ -641,11 +659,11 @@ flowchart TB
 
     Foundation --> Security --> Product --> Commerce --> Release
 
-    classDef foundation fill:#DBEAFE,stroke:#1D4ED8,color:#172554,stroke-width:3px;
-    classDef security fill:#FEE2E2,stroke:#DC2626,color:#7F1D1D,stroke-width:3px;
-    classDef product fill:#F3E8FF,stroke:#7E22CE,color:#3B0764,stroke-width:3px;
-    classDef commerce fill:#FEF3C7,stroke:#D97706,color:#78350F,stroke-width:3px;
-    classDef release fill:#DCFCE7,stroke:#15803D,color:#14532D,stroke-width:3px;
+    classDef foundation fill:#172554,stroke:#60A5FA,color:#FFFFFF,stroke-width:3px;
+    classDef security fill:#7F1D1D,stroke:#FB7185,color:#FFFFFF,stroke-width:3px;
+    classDef product fill:#4C1D5F,stroke:#C084FC,color:#FFFFFF,stroke-width:3px;
+    classDef commerce fill:#78350F,stroke:#FB923C,color:#FFFFFF,stroke-width:3px;
+    classDef release fill:#14532D,stroke:#4ADE80,color:#FFFFFF,stroke-width:3px;
     class Foundation foundation;
     class Security security;
     class Product product;

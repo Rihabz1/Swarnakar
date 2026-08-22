@@ -6,6 +6,9 @@ import 'package:swarnakar/shared/models/user_model.dart';
 import 'package:swarnakar/features/auth/domain/bd_phone_number.dart';
 import 'dart:math';
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class FirebaseAuthService {
   FirebaseAuthService._();
@@ -22,9 +25,11 @@ class FirebaseAuthService {
   Future<bool> restoreSession() async {
     final prefs = await SharedPreferences.getInstance();
     final phone = prefs.getString(_sessionPhoneKey);
-    if (phone == null || phone.isEmpty) return false;
-    _sessionPhone = phone;
-    return true;
+    if (phone != null && phone.isNotEmpty) {
+      _sessionPhone = phone;
+      return true;
+    }
+    return FirebaseAuth.instance.currentUser != null;
   }
 
   Future<void> clearSession() async {
@@ -387,9 +392,17 @@ class FirebaseAuthService {
   Future<UserModel?> getCurrentUserProfile() async {
     await ConnectivityHelper.ensureConnected();
     final phone = _sessionPhone;
-    if (phone == null || phone.isEmpty) return null;
-    final doc = await _findUserDocByPhone(phone);
-    if (doc == null) return null;
+    if (phone != null && phone.isNotEmpty) {
+      final doc = await _findUserDocByPhone(phone);
+      if (doc != null) return _userModelFromDoc(doc);
+    }
+
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) return null;
+    final doc = await _runFirestore(
+      () => _firestore.collection('users').doc(firebaseUser.uid).get(),
+    );
+    if (!doc.exists) return null;
     return _userModelFromDoc(doc);
   }
 
@@ -553,6 +566,77 @@ class FirebaseAuthService {
       default:
         return e.message ?? 'পাসওয়ার্ড আপডেট ব্যর্থ হয়েছে।';
     }
+  }
+
+  Future<UserCredential> signInWithGoogle({required bool createAccount}) async {
+    await ConnectivityHelper.ensureConnected();
+
+    late final UserCredential result;
+    if (kIsWeb) {
+      final provider = GoogleAuthProvider();
+      provider.setCustomParameters({'prompt': 'select_account'});
+      result = await FirebaseAuth.instance.signInWithPopup(provider);
+    } else {
+      final googleSignIn = GoogleSignIn.instance;
+      await googleSignIn.initialize();
+
+      final googleUser = await googleSignIn.authenticate();
+      final googleAuth = googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
+      result = await FirebaseAuth.instance.signInWithCredential(credential);
+    }
+
+    final user = result.user;
+    if (user == null) {
+      throw AuthException(
+        code: 'google-user-missing',
+        message: 'Google অ্যাকাউন্ট থেকে ব্যবহারকারীর তথ্য পাওয়া যায়নি।',
+      );
+    }
+
+    final isNewUser = result.additionalUserInfo?.isNewUser ?? false;
+    if (!createAccount && isNewUser) {
+      await user.delete();
+      throw AuthException(
+        code: 'google-account-not-registered',
+        message: 'এই Google অ্যাকাউন্টটি নিবন্ধিত নয়। প্রথমে সাইন আপ করুন।',
+      );
+    }
+
+    if (createAccount && !isNewUser) {
+      await FirebaseAuth.instance.signOut();
+      throw AuthException(
+        code: 'google-account-already-registered',
+        message: 'এই Google অ্যাকাউন্টটি ইতিমধ্যে নিবন্ধিত। সাইন ইন করুন।',
+      );
+    }
+
+    final now = FieldValue.serverTimestamp();
+    await _runFirestore(
+      () => _firestore.collection('users').doc(user.uid).set(
+        {
+          'uid': user.uid,
+          'name': user.displayName ?? '',
+          'email': user.email ?? '',
+          'phone': user.phoneNumber ?? '',
+          'photoUrl': user.photoURL ?? '',
+          'provider': 'google',
+          'lastLoginAt': now,
+          'updatedAt': now,
+          if (isNewUser) ...{
+            'isSubscribed': false,
+            'plan': '',
+            'subExpires': null,
+            'createdAt': now,
+          },
+        },
+        SetOptions(merge: true),
+      ),
+    );
+
+    return result;
   }
 }
 

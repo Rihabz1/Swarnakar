@@ -10,6 +10,7 @@ import 'package:swarnakar/shared/widgets/app_bottom_nav.dart';
 import 'package:swarnakar/shared/widgets/section_heading.dart';
 import 'package:swarnakar/shared/widgets/gold_price_card.dart';
 import 'package:swarnakar/shared/widgets/offline_state_card.dart';
+import 'package:swarnakar/shared/widgets/load_error_state_card.dart';
 import 'package:swarnakar/shared/widgets/price_row_widget.dart';
 import 'package:swarnakar/shared/widgets/subscribe_banner.dart';
 import 'package:swarnakar/core/providers/core_providers.dart';
@@ -66,6 +67,14 @@ class SilverPriceScreen extends ConsumerWidget {
         color: AppColors.background,
         child: pricesBySectionAsync.when(
           data: (pricesBySection) {
+            if (pricesBySection.isEmpty) {
+              return const Center(
+                child: Text(
+                  'এই মুহূর্তে রৌপ্যের মূল্য পাওয়া যাচ্ছে না।',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              );
+            }
             final subtitleText = _buildUpdatedAtText(pricesBySection);
             return SingleChildScrollView(
               child: Column(
@@ -113,14 +122,11 @@ class SilverPriceScreen extends ConsumerWidget {
                 },
               );
             }
-            return Center(
-              child: Text(
-                AppStrings.errorOccurred,
-                style: AppTextStyles.hindSiliguri(
-                  fontSize: 13,
-                  color: AppColors.error,
-                ),
-              ),
+            return LoadErrorStateCard(
+              onRetry: () {
+                ref.invalidate(silverPricesProvider);
+                ref.invalidate(silverPricesBySection);
+              },
             );
           },
         ),

@@ -53,11 +53,13 @@ class SettingsScreen extends ConsumerWidget {
                   shopName: shopName,
                   address: address,
                 );
+                if (!context.mounted) return;
                 ref.invalidate(userProfileProvider);
                 if (Navigator.canPop(context)) {
                   Navigator.pop(context);
                 }
               } catch (e) {
+                if (!context.mounted) return;
                 final message = e is NetworkException
                     ? ConnectivityHelper.offlineRetryMessage
                     : e is AuthException
@@ -200,20 +202,23 @@ class SettingsScreen extends ConsumerWidget {
               }
 
               setSheetState(() => isSaving = true);
+              final messenger = ScaffoldMessenger.of(context);
               try {
                 await FirebaseAuthService.instance.changePasswordForCurrentUser(
                   currentPassword: current,
                   newPassword: next,
                   phone: profile.phone,
                 );
+                if (!context.mounted) return;
                 if (Navigator.canPop(context)) {
                   Navigator.pop(context);
                 }
-                ScaffoldMessenger.of(context)
+                messenger
                   ..hideCurrentSnackBar()
                   ..showSnackBar(const SnackBar(
                       content: Text('পাসওয়ার্ড আপডেট হয়েছে।')));
               } catch (e) {
+                if (!context.mounted) return;
                 final message = e is NetworkException
                     ? ConnectivityHelper.offlineRetryMessage
                     : e is AuthException
