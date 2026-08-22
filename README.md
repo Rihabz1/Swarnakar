@@ -157,7 +157,7 @@ flowchart TB
 ## Runtime data flow
 
 ~~~mermaid
-%%{init: {"theme":"base","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"18px","fontFamily":"Arial","textColor":"#111827","primaryColor":"#DBEAFE","primaryTextColor":"#111827","primaryBorderColor":"#1D4ED8","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#7C3AED","edgeLabelBackground":"#FFFFFF","actorBkg":"#FDE68A","actorBorder":"#B45309","actorTextColor":"#111827","signalColor":"#1E3A8A","signalTextColor":"#111827","labelBoxBkgColor":"#DCFCE7","labelBoxBorderColor":"#15803D","labelTextColor":"#111827","loopTextColor":"#111827","noteBkgColor":"#FEF3C7","noteBorderColor":"#D97706","noteTextColor":"#111827","titleColor":"#111827"}}}%%
+%%{init: {"theme":"base","themeCSS":"svg { background-color: #FFFFFF !important; } .messageText, .loopText, .labelText, .sequenceNumber { fill: #111827 !important; } .messageLine0, .messageLine1, .actor-line { stroke: #334155 !important; }","themeVariables":{"darkMode":false,"background":"#FFFFFF","fontSize":"18px","fontFamily":"Arial","textColor":"#111827","primaryColor":"#DBEAFE","primaryTextColor":"#111827","primaryBorderColor":"#1D4ED8","secondaryTextColor":"#111827","tertiaryTextColor":"#111827","lineColor":"#334155","actorBkg":"#FDE68A","actorBorder":"#92400E","actorTextColor":"#111827","signalColor":"#334155","signalTextColor":"#111827","labelBoxBkgColor":"#DCFCE7","labelBoxBorderColor":"#15803D","labelTextColor":"#111827","loopTextColor":"#111827","noteBkgColor":"#FEF3C7","noteBorderColor":"#B45309","noteTextColor":"#111827","sequenceNumberColor":"#111827","titleColor":"#111827"}}}%%
 sequenceDiagram
     autonumber
     actor User
