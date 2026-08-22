@@ -1,7 +1,8 @@
 import 'package:intl/intl.dart';
 
 class DateFormatter {
-  static final DateFormat _bnDateTime = DateFormat('dd MMMM yyyy, hh:mm a', 'bn_BD');
+  static final DateFormat _bnDateTime =
+      DateFormat('dd MMMM yyyy, hh:mm a', 'bn_BD');
 
   static String formatUpdatedAt(String? raw) {
     if (raw == null) return '';

@@ -61,9 +61,11 @@ class GoldPriceCard extends StatelessWidget {
                           children: [
                             Positioned.fill(
                               child: BackdropFilter(
-                                filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                                filter:
+                                    ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
                                 child: Container(
-                                  color: AppColors.background.withValues(alpha: 0.06),
+                                  color: AppColors.background
+                                      .withValues(alpha: 0.06),
                                 ),
                               ),
                             ),

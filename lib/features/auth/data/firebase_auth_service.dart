@@ -3,6 +3,7 @@ import 'package:bcrypt/bcrypt.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swarnakar/core/utils/connectivity_helper.dart';
 import 'package:swarnakar/shared/models/user_model.dart';
+import 'package:swarnakar/features/auth/domain/bd_phone_number.dart';
 import 'dart:math';
 import 'dart:convert';
 
@@ -89,8 +90,8 @@ class FirebaseAuthService {
     required String password,
   }) async {
     await ConnectivityHelper.ensureConnected();
-    final normalizedPhone = _normalizeLocalPhone(phone);
-    if (!_isValidBdMobile(normalizedPhone)) {
+    final normalizedPhone = normalizeBdPhone(phone);
+    if (!isValidBdMobile(normalizedPhone)) {
       throw AuthException(
         code: 'invalid-phone-number',
         message: 'সঠিক মোবাইল নম্বর দিন।',
@@ -157,8 +158,8 @@ class FirebaseAuthService {
   }) async {
     try {
       await ConnectivityHelper.ensureConnected();
-      final normalizedPhone = _normalizeLocalPhone(phone);
-      if (!_isValidBdMobile(normalizedPhone)) {
+      final normalizedPhone = normalizeBdPhone(phone);
+      if (!isValidBdMobile(normalizedPhone)) {
         throw AuthException(
           code: 'invalid-phone-number',
           message: 'সঠিক মোবাইল নম্বর দিন।',
@@ -197,8 +198,8 @@ class FirebaseAuthService {
     required String newPassword,
   }) async {
     await ConnectivityHelper.ensureConnected();
-    final normalizedPhone = _normalizeLocalPhone(phone);
-    if (!_isValidBdMobile(normalizedPhone)) {
+    final normalizedPhone = normalizeBdPhone(phone);
+    if (!isValidBdMobile(normalizedPhone)) {
       throw AuthException(
         code: 'invalid-phone-number',
         message: 'সঠিক মোবাইল নম্বর দিন।',
@@ -241,8 +242,8 @@ class FirebaseAuthService {
           message: 'লগইন পাওয়া যায়নি। আবার লগইন করুন।',
         );
       }
-      final normalizedPhone = _normalizeLocalPhone(lookupPhone);
-      if (!_isValidBdMobile(normalizedPhone)) {
+      final normalizedPhone = normalizeBdPhone(lookupPhone);
+      if (!isValidBdMobile(normalizedPhone)) {
         throw AuthException(
           code: 'invalid-phone-number',
           message: 'সঠিক মোবাইল নম্বর দিন।',
@@ -288,8 +289,8 @@ class FirebaseAuthService {
 
   Future<String> requestPasswordResetOtp(String phone) async {
     await ConnectivityHelper.ensureConnected();
-    final normalizedPhone = _normalizeLocalPhone(phone);
-    if (!_isValidBdMobile(normalizedPhone)) {
+    final normalizedPhone = normalizeBdPhone(phone);
+    if (!isValidBdMobile(normalizedPhone)) {
       throw AuthException(
         code: 'invalid-phone-number',
         message: 'সঠিক মোবাইল নম্বর দিন।',
@@ -323,8 +324,8 @@ class FirebaseAuthService {
     required String newPassword,
   }) async {
     await ConnectivityHelper.ensureConnected();
-    final normalizedPhone = _normalizeLocalPhone(phone);
-    if (!_isValidBdMobile(normalizedPhone)) {
+    final normalizedPhone = normalizeBdPhone(phone);
+    if (!isValidBdMobile(normalizedPhone)) {
       throw AuthException(
         code: 'invalid-phone-number',
         message: 'সঠিক মোবাইল নম্বর দিন।',
@@ -428,7 +429,7 @@ class FirebaseAuthService {
     String normalizedPhone,
   ) async {
     await ConnectivityHelper.ensureConnected();
-    if (!_isValidBdMobile(normalizedPhone)) {
+    if (!isValidBdMobile(normalizedPhone)) {
       return null;
     }
     final snapshot = await _runFirestore(
@@ -458,14 +459,6 @@ class FirebaseAuthService {
       plan: (data['plan'] as String?) ?? '',
       subExpires: subExpires is Timestamp ? subExpires.toDate() : null,
     );
-  }
-
-  String _normalizeLocalPhone(String value) {
-    return value.replaceAll(RegExp(r'[^0-9]'), '');
-  }
-
-  bool _isValidBdMobile(String phone) {
-    return RegExp(r'^01[3-9]\d{8}$').hasMatch(phone);
   }
 
   Future<void> _persistSessionPhone(String phone) async {

@@ -71,7 +71,8 @@ class _GoldenInputFieldState extends State<GoldenInputField> {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: widget.isGlassmorphic ? 0.12 : 0.18),
+            color: Colors.black
+                .withValues(alpha: widget.isGlassmorphic ? 0.12 : 0.18),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -104,7 +105,8 @@ class _GoldenInputFieldState extends State<GoldenInputField> {
               onChanged: widget.onChanged,
               obscureText: _obscureText && widget.obscureText,
               validator: widget.validator,
-              maxLines: _obscureText && widget.obscureText ? 1 : widget.maxLines,
+              maxLines:
+                  _obscureText && widget.obscureText ? 1 : widget.maxLines,
               maxLength: widget.maxLength,
               style: AppTextStyles.hindSiliguri(
                 fontSize: 14,
@@ -143,7 +145,9 @@ class _GoldenInputFieldState extends State<GoldenInputField> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 14),
                 child: Icon(
-                  _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  _obscureText
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
                   color: widget.isGlassmorphic
                       ? AppColors.vividGold.withValues(alpha: 0.9)
                       : AppColors.gold,

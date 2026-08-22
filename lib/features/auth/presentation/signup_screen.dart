@@ -8,6 +8,7 @@ import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 import 'package:swarnakar/shared/widgets/golden_button.dart';
 import 'package:swarnakar/core/utils/connectivity_helper.dart';
 import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
+import 'package:swarnakar/features/auth/domain/bd_phone_number.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -35,21 +36,6 @@ class _SignupScreenState extends State<SignupScreen> {
       selection: TextSelection.collapsed(offset: nextOffset),
       composing: TextRange.empty,
     );
-  }
-
-  String _normalizePhone(String value) {
-    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.startsWith('880') && digits.length == 13) {
-      return digits.substring(2);
-    }
-    if (digits.startsWith('88') && digits.length == 13) {
-      return digits.substring(2);
-    }
-    return digits;
-  }
-
-  bool _isValidBdMobile(String phone) {
-    return RegExp(r'^01[3-9]\d{8}$').hasMatch(phone);
   }
 
   @override
@@ -80,7 +66,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   bool _validateSignup() {
     final name = _nameController.text.trim();
-    final phone = _normalizePhone(_phoneController.text.trim());
+    final phone = normalizeBdPhone(_phoneController.text.trim());
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
     final whitespaceRegex = RegExp(r'\s');
@@ -92,7 +78,7 @@ class _SignupScreenState extends State<SignupScreen> {
       _showError('সবগুলো তথ্য দিন।');
       return false;
     }
-    if (!_isValidBdMobile(phone)) {
+    if (!isValidBdMobile(phone)) {
       _showError('সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন (01XXXXXXXXX)।');
       return false;
     }
@@ -216,7 +202,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               text: AppStrings.createAccount,
                               onPressed: () async {
                                 if (!_validateSignup()) return;
-                                final phone = _normalizePhone(
+                                final phone = normalizeBdPhone(
                                     _phoneController.text.trim());
                                 try {
                                   await FirebaseAuthService.instance

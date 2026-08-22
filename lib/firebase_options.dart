@@ -66,5 +66,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'swarnakar-59dd6.firebasestorage.app',
     measurementId: 'G-NG8JVMJ7Z9',
   );
-
 }

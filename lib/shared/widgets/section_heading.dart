@@ -20,7 +20,8 @@ class SectionHeading extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Column(
-        crossAxisAlignment: isCentered ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+        crossAxisAlignment:
+            isCentered ? CrossAxisAlignment.center : CrossAxisAlignment.start,
         children: [
           Text(
             title,

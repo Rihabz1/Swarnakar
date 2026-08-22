@@ -58,7 +58,8 @@ class ReportsScreen extends ConsumerWidget {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 child: Row(
                   children: filterTags.map((tag) {
                     final isActive = filter == tag;
@@ -66,14 +67,20 @@ class ReportsScreen extends ConsumerWidget {
                       padding: const EdgeInsets.only(right: 8),
                       child: GestureDetector(
                         onTap: () {
-                          ref.read(activeReportFilterProvider.notifier).state = tag;
+                          ref.read(activeReportFilterProvider.notifier).state =
+                              tag;
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 7),
                           decoration: BoxDecoration(
-                            color: isActive ? AppColors.gold.withValues(alpha: 0.14) : Colors.transparent,
+                            color: isActive
+                                ? AppColors.gold.withValues(alpha: 0.14)
+                                : Colors.transparent,
                             border: Border.all(
-                              color: isActive ? AppColors.gold.withValues(alpha: 0.45) : AppColors.gold.withValues(alpha: 0.2),
+                              color: isActive
+                                  ? AppColors.gold.withValues(alpha: 0.45)
+                                  : AppColors.gold.withValues(alpha: 0.2),
                               width: 1,
                             ),
                             borderRadius: BorderRadius.circular(22),
@@ -82,7 +89,9 @@ class ReportsScreen extends ConsumerWidget {
                             tag,
                             style: AppTextStyles.hindSiliguri(
                               fontSize: 11,
-                              color: isActive ? AppColors.gold : AppColors.textMuted,
+                              color: isActive
+                                  ? AppColors.gold
+                                  : AppColors.textMuted,
                             ),
                           ),
                         ),
@@ -94,7 +103,8 @@ class ReportsScreen extends ConsumerWidget {
             ),
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 itemCount: reports.length,
                 itemBuilder: (context, index) {
                   final report = reports[index];
@@ -108,7 +118,8 @@ class ReportsScreen extends ConsumerWidget {
                           color: AppColors.gold.withValues(alpha: 0.16),
                         ),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [

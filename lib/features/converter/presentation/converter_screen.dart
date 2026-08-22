@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
 import 'package:swarnakar/core/theme/app_colors.dart';
 import 'package:swarnakar/core/theme/app_text_styles.dart';
+import 'package:swarnakar/features/converter/domain/weight_converter.dart';
 import 'package:swarnakar/shared/widgets/app_bottom_nav.dart';
 import 'package:swarnakar/shared/widgets/golden_input_field.dart';
 
@@ -15,9 +16,6 @@ class ConverterScreen extends StatefulWidget {
 }
 
 class _ConverterScreenState extends State<ConverterScreen> {
-  static const double _gramsPerBhori = 11.664;
-  static const double _gramsPerOunce = 31.1035;
-
   late final TextEditingController _inputController;
   late final NumberFormat _numberFormat;
 
@@ -267,9 +265,10 @@ class _ConverterScreenState extends State<ConverterScreen> {
   }
 
   Widget _buildConversionHint() {
-    final bhoriToGram = _numberFormat.format(_gramsPerBhori);
-    final ounceToGram = _numberFormat.format(_gramsPerOunce);
-    final bhoriToOunce = _numberFormat.format(_gramsPerBhori / _gramsPerOunce);
+    final bhoriToGram = _numberFormat.format(gramsPerBhori);
+    final ounceToGram = _numberFormat.format(gramsPerTroyOunce);
+    final bhoriToOunce =
+        _numberFormat.format(gramsPerBhori / gramsPerTroyOunce);
 
     return Container(
       width: double.infinity,
@@ -330,8 +329,11 @@ class _ConverterScreenState extends State<ConverterScreen> {
       return;
     }
 
-    final grams = _toGrams(value, _fromUnit);
-    final converted = _fromGrams(grams, _toUnit);
+    final converted = convertWeight(
+      value: value,
+      fromUnit: _fromUnit,
+      toUnit: _toUnit,
+    );
     setState(() {
       _output = _numberFormat.format(converted);
     });
@@ -344,19 +346,5 @@ class _ConverterScreenState extends State<ConverterScreen> {
       _toUnit = temp;
     });
     _recalculate();
-  }
-
-  double _toGrams(double value, String unit) {
-    if (unit == AppStrings.gramUnit) return value;
-    if (unit == AppStrings.bhoriUnit) return value * _gramsPerBhori;
-    if (unit == AppStrings.ounceUnit) return value * _gramsPerOunce;
-    return value;
-  }
-
-  double _fromGrams(double grams, String unit) {
-    if (unit == AppStrings.gramUnit) return grams;
-    if (unit == AppStrings.bhoriUnit) return grams / _gramsPerBhori;
-    if (unit == AppStrings.ounceUnit) return grams / _gramsPerOunce;
-    return grams;
   }
 }

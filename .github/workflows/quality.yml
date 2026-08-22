@@ -1,0 +1,86 @@
+name: Quality
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flutter-quality:
+    name: Flutter quality gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.6
+          channel: stable
+          cache: true
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool
+      - name: Static analysis
+        run: flutter analyze --no-fatal-infos
+      - name: Run tests with coverage
+        run: flutter test --coverage --reporter expanded
+      - name: Enforce coverage floor
+        run: dart run tool/check_coverage.dart 10
+      - name: Build Android debug APK
+        run: flutter build apk --debug
+      - name: Build production web bundle
+        run: flutter build web
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-coverage
+          path: coverage/lcov.info
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Upload builds
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-builds
+          path: |
+            build/app/outputs/flutter-apk/app-debug.apk
+            build/web
+          if-no-files-found: error
+          retention-days: 7
+
+  firestore-security:
+    name: Firestore Security Rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: firestore-tests/package-lock.json
+      - name: Install locked dependencies
+        working-directory: firestore-tests
+        run: npm ci
+      - name: Run emulator authorization tests
+        working-directory: firestore-tests
+        run: npm test
+      - name: Audit test dependencies
+        working-directory: firestore-tests
+        run: npm audit --audit-level=critical

@@ -50,7 +50,8 @@ class AppTheme {
             width: 1.5,
           ),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         hintStyle: const TextStyle(
           color: AppColors.textSecondary,
           fontSize: 12,

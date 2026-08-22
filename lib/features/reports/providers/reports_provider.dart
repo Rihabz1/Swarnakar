@@ -3,7 +3,8 @@ import 'package:swarnakar/shared/models/report_model.dart';
 import 'package:swarnakar/features/reports/data/reports_mock.dart';
 import 'package:swarnakar/core/constants/app_strings.dart';
 
-final activeReportFilterProvider = StateProvider<String>((ref) => AppStrings.all);
+final activeReportFilterProvider =
+    StateProvider<String>((ref) => AppStrings.all);
 
 final allReportsProvider = Provider<List<ReportModel>>((ref) {
   return mockReports;

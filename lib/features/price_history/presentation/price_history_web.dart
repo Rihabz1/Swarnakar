@@ -1,6 +1,6 @@
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
-import 'dart:ui' as ui;
+import 'dart:ui_web' as ui_web;
 import 'package:flutter/widgets.dart';
 
 const String _viewType = 'price-history-iframe';
@@ -10,8 +10,7 @@ String _latestHtml = '';
 Widget buildPriceHistoryWebView(String htmlContent) {
   _latestHtml = htmlContent;
   if (!_registered) {
-    // ignore: undefined_prefixed_name
-    ui.platformViewRegistry.registerViewFactory(_viewType, (int viewId) {
+    ui_web.platformViewRegistry.registerViewFactory(_viewType, (int viewId) {
       final element = html.IFrameElement()
         ..style.border = '0'
         ..style.width = '100%'

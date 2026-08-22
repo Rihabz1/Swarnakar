@@ -108,7 +108,7 @@ class AppTextStyles {
       );
 
   static TextStyle get bodySmall => hindSiliguri(
-      fontSize: 11,
+        fontSize: 11,
         fontWeight: FontWeight.normal,
         color: AppColors.textSecondary,
       );
@@ -120,7 +120,7 @@ class AppTextStyles {
       );
 
   static TextStyle get labelMuted => hindSiliguri(
-      fontSize: 10,
+        fontSize: 10,
         fontWeight: FontWeight.normal,
         color: AppColors.textMuted,
       );

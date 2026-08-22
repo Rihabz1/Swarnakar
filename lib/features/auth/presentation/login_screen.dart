@@ -10,6 +10,7 @@ import 'package:swarnakar/shared/widgets/golden_button.dart';
 import 'package:swarnakar/core/providers/core_providers.dart';
 import 'package:swarnakar/core/utils/connectivity_helper.dart';
 import 'package:swarnakar/features/auth/data/firebase_auth_service.dart';
+import 'package:swarnakar/features/auth/domain/bd_phone_number.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -35,21 +36,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       selection: TextSelection.collapsed(offset: nextOffset),
       composing: TextRange.empty,
     );
-  }
-
-  String _normalizePhone(String value) {
-    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.startsWith('880') && digits.length == 13) {
-      return digits.substring(2);
-    }
-    if (digits.startsWith('88') && digits.length == 13) {
-      return digits.substring(2);
-    }
-    return digits;
-  }
-
-  bool _isValidBdMobile(String phone) {
-    return RegExp(r'^01[3-9]\d{8}$').hasMatch(phone);
   }
 
   void _handleForgotPassword() {
@@ -82,7 +68,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_validateLogin()) return;
     ref.read(isLoadingProvider.notifier).state = true;
     try {
-      final phone = _normalizePhone(_phoneController.text.trim());
+      final phone = normalizeBdPhone(_phoneController.text.trim());
       await FirebaseAuthService.instance.signInWithPhonePassword(
         phone: phone,
         password: _passwordController.text,
@@ -106,7 +92,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   bool _validateLogin() {
-    final phone = _normalizePhone(_phoneController.text.trim());
+    final phone = normalizeBdPhone(_phoneController.text.trim());
     final password = _passwordController.text;
     final whitespaceRegex = RegExp(r'\s');
 
@@ -114,7 +100,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _showError('মোবাইল নম্বর ও পাসওয়ার্ড দিন।');
       return false;
     }
-    if (!_isValidBdMobile(phone)) {
+    if (!isValidBdMobile(phone)) {
       _showError('সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন (01XXXXXXXXX)।');
       return false;
     }
